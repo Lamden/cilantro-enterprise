@@ -66,7 +66,7 @@ variable "domain" {
 variable "size" {
   type        = "string"
   description = "The size of the node to launch"
-  default     = "t2.large"
+  default     = "t2.small"
 }
 
 #######################

@@ -6,6 +6,7 @@ from cilantro_ee.storage.ledis import SafeLedis
 from sanic.exceptions import ServerError
 from sanic_limiter import Limiter, get_remote_address
 from sanic_cors import CORS, cross_origin
+from sanic.exceptions import NotFound
 
 from cilantro_ee.messages.transaction.contract import ContractTransaction
 from cilantro_ee.messages.transaction.publish import PublishTransaction
@@ -71,6 +72,17 @@ def _get_contract_obj(contract):
         del contract_obj['code_obj']
     return contract_obj
 
+# Prevent Cross-Site Scripting attacks (embedding script tags into the path, getting 404 back with
+# embedded script tags which are then executed) by using middleware to modify the response object
+# before returning to the client.
+@app.middleware('response')
+async def prevent_xss(request, response):
+    response.headers["x-xss-protection"] = "1; mode=block"
+
+# Santize 404 responses to not return the path to prevent basic XSS attack vectors
+@app.exception(NotFound)
+async def sanitize_404s(request, exception):
+    return text("Requested URL not found")
 
 @app.route("/", methods=["POST","OPTIONS",])
 async def submit_transaction(request):

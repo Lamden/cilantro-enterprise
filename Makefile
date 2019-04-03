@@ -48,6 +48,8 @@ dockertest:
 	sleep 8
 	docker exec -it cil /app/scripts/start_unit_tests.sh
 
+local: clean dockerbuild dockerrun
+
 money: clean dockerbuild dockerrun dockertest
 
 scrub: money

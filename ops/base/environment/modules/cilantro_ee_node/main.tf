@@ -240,7 +240,7 @@ resource "null_resource" "setup-ssl" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo SSL_ENABLED=True DNS_NAME=${var.domain} HOST_NAME=${var.type}_${var.index} bash /home/ubuntu/setup-ssl.sh",
+      "sudo SSL_ENABLED=True DNS_NAME=${var.domain} HOST_NAME=${var.type}_${var.index} SUBNET_PREFIX=${var.subdomain_prefix ? "${var.keyname}" : ""} bash /home/ubuntu/setup-ssl.sh",
     ]
   }
 
@@ -437,7 +437,7 @@ resource "null_resource" "docker" {
     ]
   }
 
-  depends_on = ["null_resource.cilantro_ee-conf", "null_resource.circus-conf", "null_resource.aggregate-ips", "aws_eip.static-ip"]
+  depends_on = ["null_resource.cilantro_ee-conf", "null_resource.circus-conf", "null_resource.aggregate-ips", "aws_eip.static-ip", "null_resource.setup-ssl"]
 }
 
 output "public_ip" {

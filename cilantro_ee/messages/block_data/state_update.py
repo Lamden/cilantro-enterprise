@@ -85,22 +85,6 @@ class BlockDataReply(BlockData):
         return cls.from_data(block._data)
 
 
-class SkipBlockNotification2(MessageBaseJson):
-    PREV_B_HASH = 'prev_b_hash'
-
-    def validate(self):
-        assert is_valid_hex(self.prev_block_hash), "Not valid hash: {}".format(self.prev_block_hash)
-
-    @classmethod
-    def create(cls, prev_block_hash: str):
-        data = {cls.PREV_B_HASH: prev_block_hash}
-        return cls.from_data(data)
-
-    @property
-    def prev_block_hash(self):
-        return self._data[self.PREV_B_HASH]
-
-
 class FailedBlockNotification(MessageBaseJson):
     PREV_B_HASH = 'prev_b_hash'
     SB = 'sb'

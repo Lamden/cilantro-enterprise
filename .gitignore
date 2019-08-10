@@ -54,6 +54,7 @@ vmnet_configs/constitutions/private
 ops/environments/*/.cache/*
 ops/environments/*/conf
 ops/environments/TJ*
+ops/environments/*
 
 # Config files
 db_conf.ini

@@ -18,3 +18,8 @@ class MessageTypes:
     BURN_INPUT_HASHES = b'\x13'
 
     TRANSACTION_BATCH = b'\x15'
+
+    # update signals
+    TRIGGER_UPDATE = b'\x16'
+    UPDATE_READY = b'\x17'
+    TRIGGER_SWITCH = b'\x18'

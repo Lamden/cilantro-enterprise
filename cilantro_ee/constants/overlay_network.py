@@ -19,6 +19,10 @@ DISCOVERY_ITER = 50
 # CLIENT_SETUP_TIMEOUT = DISCOVERY_LONG_WAIT * DISCOVERY_ITER
 CLIENT_SETUP_TIMEOUT = 10          # fixed amount in EE version
 
+cil_pepper = [{'version': 0.1,
+               'checksum': None,
+               'status': 'active'}]
+
 PEPPER = env('PEPPER', 'cilantro_pepper')
 EVENT_URL = 'ipc://overlay-event-ipc-sock'
 CMD_URL = 'ipc://overlay-cmd-ipc-sock'

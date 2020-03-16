@@ -116,7 +116,7 @@ class Node:
         self.block_fetcher = BlockFetcher(
             wallet=self.wallet,
             ctx=self.ctx,
-            parameters=self.parameters,
+            peers=self.catchup_peers,
         )
 
         self.network = Network(

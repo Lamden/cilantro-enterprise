@@ -1,6 +1,6 @@
 import cilantro_ee.sockets.struct
 from cilantro_ee.storage import VKBook
-from cilantro_ee.sockets.services import get
+from cilantro_ee.sockets.services import get, _get
 
 import json
 import zmq.asyncio
@@ -80,16 +80,23 @@ class Parameters:
                  wallet,
                  contacts: VKBook,
                  network_parameters: NetworkParameters=NetworkParameters(),
-                 debug=False
+                 debug=True,
+                 linger=500
                  ):
 
         self.socket_base = socket_base
+
         self.ctx = ctx
         self.wallet = wallet
         self.network_parameters = network_parameters
         self.contacts = contacts
 
         self.peer_service_address = self.network_parameters.resolve(socket_base, ServiceType.PEER)
+
+        self.peer_socket = ctx.socket(zmq.DEALER)
+        self.peer_socket.setsockopt(zmq.LINGER, linger)
+        self.peer_socket.connect(str(self.peer_service_address))
+
         self.sockets = {}
 
         self.log = get_logger('Parameters')
@@ -205,7 +212,7 @@ class Parameters:
         find_message = ['find', node]
         find_message = json.dumps(find_message).encode()
 
-        return await get(self.peer_service_address, msg=find_message, ctx=self.ctx, timeout=1000)
+        return await _get(self.peer_socket, msg=find_message, ctx=self.ctx, timeout=1000)
 
     @staticmethod
     def new_nodes(phone_book_nodes, current_nodes):

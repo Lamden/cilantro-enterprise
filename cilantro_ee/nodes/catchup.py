@@ -120,10 +120,7 @@ class BlockFetcher:
     def __init__(self, wallet: Wallet,
                  ctx: zmq.asyncio.Context,
                  blocks: CilantroStorageDriver=None,
-                 state=BlockchainDriver(),
-                 parameters: Parameters=None):
-
-        self.parameters = parameters
+                 state=BlockchainDriver()):
 
         self.wallet = wallet
         self.ctx = ctx

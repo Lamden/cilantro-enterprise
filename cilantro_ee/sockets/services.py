@@ -4,7 +4,7 @@ import asyncio
 from zmq.utils import monitor
 import pathlib
 from zmq.auth.certs import load_certificate
-
+import zmq.asyncio
 from cilantro_ee.sockets.struct import SocketStruct
 
 log = get_logger("BaseServices")
@@ -38,6 +38,24 @@ class Outbox:
         return None
 
 
+async def _get(socket: zmq.asyncio.Socket, msg: bytes, ctx:zmq.Context, timeout=1000, linger=500, retries=10, dealer=True):
+    if retries < 0:
+        return None
+
+    try:
+        # Allow passing an existing socket to save time on initializing a _new one and waiting for connection.
+        await socket.send(msg)
+
+        event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
+        if event:
+            response = await socket.recv()
+            return response
+        else:
+            return None
+    except Exception as e:
+        return await get(socket, msg, ctx, timeout, linger, retries-1)
+
+
 async def get(socket_id: SocketStruct, msg: bytes, ctx:zmq.Context, timeout=1000, linger=500, retries=10, dealer=True):
     if retries < 0:
         return None
@@ -69,6 +87,7 @@ async def get(socket_id: SocketStruct, msg: bytes, ctx:zmq.Context, timeout=1000
         return await get(socket_id, msg, ctx, timeout, linger, retries-1)
 
 
+# Deprecate
 async def send_out(ctx, msg, socket_id):
     # Setup a socket and its monitor
     socket = ctx.socket(zmq.DEALER)
@@ -92,10 +111,12 @@ async def send_out(ctx, msg, socket_id):
     return False, evnt_dict['endpoint'].decode()
 
 
+# Deprecate
 async def multicast(ctx, msg: bytes, peers: list):
     return await asyncio.gather(*[send_out(ctx, msg, p) for p in peers])
 
 
+# Deprecate
 async def secure_send_out(wallet, ctx, msg, socket_id, server_vk, cert_dir='cilsocks'):
     # Setup a socket and its monitor
     socket = ctx.socket(zmq.DEALER)
@@ -133,6 +154,7 @@ async def secure_send_out(wallet, ctx, msg, socket_id, server_vk, cert_dir='cils
     return False, evnt_dict['endpoint'].decode()
 
 
+# Deprecate
 async def secure_multicast(wallet, ctx, msg: bytes, peers: list, cert_dir='cilsocks'):
     return await asyncio.gather(*[
         secure_send_out(

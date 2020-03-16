@@ -11,7 +11,7 @@ import asyncio
 from cilantro_ee.sockets.authentication import SocketAuthenticator
 from cilantro_ee.storage.contract import BlockchainDriver
 from contracting.client import ContractingClient
-
+from cilantro_ee.sockets.outbox import Peers, MN
 from cilantro_ee.nodes.rewards import RewardManager
 
 from cilantro_ee.logger.base import get_logger
@@ -104,6 +104,15 @@ class Node:
         self.constitution = constitution
         self.overwrite = overwrite
 
+        # Peers for catchup
+        self.catchup_peers = Peers(
+            wallet=self.wallet,
+            ctx=self.ctx,
+            parameters=self.parameters,
+            service_type=ServiceType.BLOCK_SERVER,
+            node_type=MN
+        )
+
         self.block_fetcher = BlockFetcher(
             wallet=self.wallet,
             ctx=self.ctx,
@@ -164,6 +173,7 @@ class Node:
         self.nbn_inbox.stop()
         self.running = False
 
+    # Should this be where we put the peer stuff? Do later...
     def update_sockets(self):
         # UPDATE SOCKETS IF NEEDED
         mn = self.elect_masternodes.quick_read('top_candidate')
@@ -197,7 +207,6 @@ class Node:
                 self.on_deck_master = dl
 
     def version_check(self):
-
         # check for trigger
         self.version_state = self.client.get_contract('upgrade')
         self.mn_votes = self.version_state.quick_read('mn_vote')

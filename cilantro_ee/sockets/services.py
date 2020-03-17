@@ -92,10 +92,12 @@ async def send_out(ctx, msg, socket_id):
     return False, evnt_dict['endpoint'].decode()
 
 
+# Deprecate
 async def multicast(ctx, msg: bytes, peers: list):
     return await asyncio.gather(*[send_out(ctx, msg, p) for p in peers])
 
 
+# Deprecate
 async def secure_send_out(wallet, ctx, msg, socket_id, server_vk, cert_dir='cilsocks'):
     # Setup a socket and its monitor
     socket = ctx.socket(zmq.DEALER)

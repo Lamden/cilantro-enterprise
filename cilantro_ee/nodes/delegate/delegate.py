@@ -146,6 +146,7 @@ class Delegate(Node):
         while self.running:
             await self.parameters.refresh()
             self.masternode_socket_book.sync_sockets()
+            # Sync the rest of the peers here
 
             filtered_work = await self.acquire_work()
 

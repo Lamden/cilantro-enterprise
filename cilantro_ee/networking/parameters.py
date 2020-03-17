@@ -1,6 +1,6 @@
 import cilantro_ee.sockets.struct
 from cilantro_ee.storage import VKBook
-from cilantro_ee.sockets.services import get, _get
+from cilantro_ee.sockets.services import _get
 
 import json
 import zmq.asyncio

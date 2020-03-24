@@ -31,7 +31,6 @@ setup(
         'termcolor',
         'Cython==0.29',
         'argparse_actions==0.4.4',
-        'psutil==5.7.0',
     ],
     entry_points={
         'console_scripts': [

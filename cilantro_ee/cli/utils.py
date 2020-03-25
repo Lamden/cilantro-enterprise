@@ -56,8 +56,8 @@ def version_reboot():
         target_version = None
 
     try:
-        path = os.environ.get('CIL_PATH')
-        os.chdir(path)
+        base_dir = input("Absolute path package directory:")
+        os.chdir(base_dir)
 
         # get latest release
         rel = input("Enter New Release branch:")

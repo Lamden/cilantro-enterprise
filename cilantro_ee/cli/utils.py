@@ -79,6 +79,11 @@ def version_reboot():
     else:
         log.info("Pkg signature verified proceeding with reboot")
 
+    # rebuilding package
+    base = os.environ.get('PKG_ROOT')
+    os.chdir(base)
+    subprocess.run('python3 setup.py develop', shell=True)
+
     # Find cil process
     PNAME = 'cil'
     for proc in psutil.process_iter():
@@ -86,6 +91,8 @@ def version_reboot():
         if proc.name() == PNAME:
             print("{} : {} proc shutting down".format(proc.pid, proc.name()))
             proc.kill()
+
+
 
 
 def get_update_state():

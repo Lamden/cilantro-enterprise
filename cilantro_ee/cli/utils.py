@@ -63,6 +63,7 @@ def version_reboot():
     for proc in psutil.process_iter():
         # check whether the process name matches
         if proc.name() == PNAME:
+            print("{} : {} proc shutting down".format(proc.pid, proc.name()))
             proc.kill()
 
 

@@ -74,12 +74,6 @@ def vote(iaddr):
     # TODO randomize proc in future
     proc = constitution.get("masternodes", "")
 
-    # pkg_check = verify_pkg()
-    #
-    # if pkg_check is False:
-    #     print('Invalid package hash does not match')
-    #     return
-
     SERVER = f'http://{iaddr}:18080'
 
     nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key().hex()))

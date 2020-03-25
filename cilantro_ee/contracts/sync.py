@@ -123,8 +123,11 @@ def submit_from_genesis_json_file(filename, client, root=os.path.dirname(__file_
         if contract.get('submit_as') is not None:
             contract_name = contract['submit_as']
 
-        client.submit(code, name=contract_name, owner=contract['owner'],
-                      constructor_args=contract['constructor_args'])
+        try:
+            client.submit(code, name=contract_name, owner=contract['owner'],
+                          constructor_args=contract['constructor_args'])
+        except:
+            pass
 
 
 def submit_node_election_contracts(initial_masternodes, boot_mns, initial_delegates, boot_dels, client, master_price=100_000,
@@ -134,17 +137,23 @@ def submit_node_election_contracts(initial_masternodes, boot_mns, initial_delega
     with open(members) as f:
         code = f.read()
 
-    client.submit(code, name='masternodes', owner='election_house', constructor_args={
-        'initial_members': initial_masternodes,
-        'minimum': boot_mns,
-        'candidate': 'elect_masternodes'
-    })
+    try:
+        client.submit(code, name='masternodes', owner='election_house', constructor_args={
+            'initial_members': initial_masternodes,
+            'minimum': boot_mns,
+            'candidate': 'elect_masternodes'
+        })
+    except:
+        pass
 
-    client.submit(code, name='delegates', owner='election_house', constructor_args={
-        'initial_members': initial_delegates,
-        'minimum': boot_dels,
-        'candidate': 'elect_delegates'
-    })
+    try:
+        client.submit(code, name='delegates', owner='election_house', constructor_args={
+            'initial_members': initial_delegates,
+            'minimum': boot_dels,
+            'candidate': 'elect_delegates'
+        })
+    except:
+        pass
 
     # add to election house
     election_house = client.get_contract('election_house')
@@ -173,12 +182,18 @@ def submit_node_election_contracts(initial_masternodes, boot_mns, initial_delega
     with open(elect_members) as f:
         code = f.read()
 
-    client.submit(code, name='elect_masternodes', constructor_args={
-        'policy': 'masternodes',
-        'cost': master_price,
-    })
+    try:
+        client.submit(code, name='elect_masternodes', constructor_args={
+            'policy': 'masternodes',
+            'cost': master_price,
+        })
+    except:
+        pass
 
-    client.submit(code, name='elect_delegates', constructor_args={
-        'policy': 'delegates',
-        'cost': delegate_price,
-    })
+    try:
+        client.submit(code, name='elect_delegates', constructor_args={
+            'policy': 'delegates',
+            'cost': delegate_price,
+        })
+    except:
+        pass

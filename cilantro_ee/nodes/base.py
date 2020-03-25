@@ -209,7 +209,7 @@ class Node:
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
 
-        self.get_update_state()
+        # self.log.info("{}".format(self.get_update_state()))
 
         if self.version_state:
             self.log.info('Waiting for Consensys on vote')
@@ -223,9 +223,6 @@ class Node:
                 version_reboot()
             else:
                 self.log.info('waiting for vote on upgrade')
-
-            # ready
-            #TODO we can merge it with vote - to be decided
 
     def get_update_state(self):
         self.active_upgrade = self.version_state.quick_read('upg_lock')

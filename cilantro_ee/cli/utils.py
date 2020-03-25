@@ -63,6 +63,7 @@ def version_reboot():
         rel = input("Enter New Release branch:")
         br = f'{rel}'
 
+        run("fetch")
         run("checkout", "-b", br)
     except OSError as err:
         log.error("OS error: {0}".format(err))
@@ -80,8 +81,7 @@ def version_reboot():
         log.info("Pkg signature verified proceeding with reboot")
 
     # rebuilding package
-    base = os.environ.get('PKG_ROOT')
-    os.chdir(base)
+    os.chdir(base_dir)
     subprocess.run('python3 setup.py develop', shell=True)
 
     # Find cil process

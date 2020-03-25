@@ -116,9 +116,8 @@ def start_node(args):
 
     # Setup Environment
     CURR_DIR = pathlib.Path(os.getcwd())
-    os.environ['PKG_ROOT'] = str(CURR_DIR.parent)
-    os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro_ee'
-
+    os.environ['PKG_ROOT'] = str(CURR_DIR.absolute())
+    os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro-enterprise/cilantro_ee'
 
     if args.node_type == 'masternode':
         # Start mongo

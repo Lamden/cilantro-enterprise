@@ -129,3 +129,7 @@ def upgrade():
     # rebuilding package
     os.chdir(base_dir)
     subprocess.run('python3 setup.py develop', shell=True)
+
+    # restart node
+
+    log.info("Use CMD: cil start to start updated network")

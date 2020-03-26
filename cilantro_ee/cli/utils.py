@@ -45,6 +45,8 @@ def verify_cil_pkg(pkg_hash):
     else:
         return False
 
+def strip_ip(node):
+    return node[6:]
 
 def version_reboot(bn):
     driver = BlockchainDriver()
@@ -61,8 +63,7 @@ def version_reboot(bn):
     log.info("target version {}".format(target_version))
 
     info = {}
-
-    info['nodes'] = bn
+    info['nodes'] = [strip_ip(i) for i in bn]
     info['version'] = target_version
 
     with open('network_info.txt', 'w') as outfile:

@@ -5,6 +5,7 @@ from cilantro_ee.nodes.new_block_inbox import NBNInbox
 from cilantro_ee.storage import VKBook
 from cilantro_ee.contracts import sync
 from cilantro_ee.networking.parameters import Parameters, ServiceType, NetworkParameters
+from cilantro_ee.networking.peers import PeerServer
 import cilantro_ee
 import zmq.asyncio
 import asyncio
@@ -220,7 +221,7 @@ class Node:
             vote_consensus = self.version_state.quick_read('upg_consensus')
             if vote_consensus:
                 self.log.info('Rebooting Node with new version')
-                version_reboot(wallet=self.wallet)
+                version_reboot(bn=self.bootnodes)
             else:
                 self.log.info('waiting for vote on upgrade')
 

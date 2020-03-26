@@ -1,7 +1,7 @@
 import argparse
 from cilantro_ee.cli.utils import validate_ip, version_reboot
 from cilantro_ee.cli.start import start_node, setup_node, join_network
-from cilantro_ee.cli.update import verify_pkg, trigger, vote, check_ready_quorum, upgrade
+from cilantro_ee.cli.update import trigger, vote, check_ready_quorum, upgrade
 from cilantro_ee.storage import MasterStorage, BlockchainDriver
 
 

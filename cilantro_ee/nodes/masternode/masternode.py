@@ -224,7 +224,6 @@ class Masternode(Node):
             
             self.driver.reads.clear()
             self.driver.pending_writes.clear()
-            self.version_check()
             self.update_sockets()
 
             # STORE IT IN THE BACKEND
@@ -235,6 +234,7 @@ class Masternode(Node):
 
         self.nbn_inbox.clean()
         self.nbn_inbox.update_signers()
+        #self.version_check()
 
     def store_txs(self, block):
         for subblock in block['subBlocks']:
@@ -270,6 +270,8 @@ class Masternode(Node):
             await self.nbn_socket_book.send_to_peers(
                 msg=canonical.dict_to_msg_block(block)
             )
+            self.version_check()
+
 
     def stop(self):
         super().stop()

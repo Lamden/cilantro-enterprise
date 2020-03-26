@@ -47,6 +47,8 @@ def verify_cil_pkg(pkg_hash):
 
 
 def version_reboot(wallet):
+    vk = wallet.verifying_key()
+    log.info("vk - {}".format(vk))
     driver = BlockchainDriver()
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
 
@@ -57,7 +59,7 @@ def version_reboot(wallet):
         assert target_version is None, "New version target Cannot be None"
         return
 
-    peers = PeerServer.get_vk(wallet.verifying_key().hex())
+    peers = PeerServer.get_vk(vk=vk)
     log.info("peer list {}".format(peers))
     log.info("target version {}".format(target_version))
 

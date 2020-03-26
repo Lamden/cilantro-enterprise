@@ -1,14 +1,15 @@
 import aiohttp
 import asyncio
 import requests
+import subprocess
+import os
 from getpass import getpass
-from cilantro_ee.nodes.base import Node
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from cilantro_ee.cli.utils import get_update_state
 from cilantro_ee.cli.start import resolve_constitution
-
-from scripts.pkg import verify_pkg
+from cilantro_ee.logger.base import get_logger
+log = get_logger('Cmd-upd')
 
 
 async def cil_interface(server, packed_data, sleep=2):
@@ -101,3 +102,30 @@ def vote(iaddr):
 
 def check_ready_quorum(iaddr):
     get_update_state()
+
+
+def run(*args):
+    return subprocess.check_call(['git'] + list(args))
+
+
+def upgrade():
+    try:
+        base_dir = input("Absolute path package directory:")
+        os.chdir(base_dir)
+
+        # get latest release
+        rel = input("Enter New Release branch:")
+        br = f'{rel}'
+
+        run("fetch")
+        run("checkout", "-b", br)
+    except OSError as err:
+        log.error("OS error: {0}".format(err))
+        return
+    except:
+        log.error("Unexpected error:", sys.exc_info())
+        return
+
+    # rebuilding package
+    os.chdir(base_dir)
+    subprocess.run('python3 setup.py develop', shell=True)

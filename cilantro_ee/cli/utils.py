@@ -1,4 +1,5 @@
 import os
+import json
 import sys
 import psutil
 import subprocess
@@ -8,6 +9,9 @@ from checksumdir import dirhash
 from contracting.client import ContractingClient
 from cilantro_ee.storage.contract import BlockchainDriver
 from cilantro_ee.logger.base import get_logger
+from cilantro_ee.networking.peers import PeerServer
+from cilantro_ee.crypto.wallet import Wallet
+
 
 log = get_logger('Cmd')
 
@@ -42,11 +46,7 @@ def verify_cil_pkg(pkg_hash):
         return False
 
 
-def run(*args):
-    return subprocess.check_call(['git'] + list(args))
-
-
-def version_reboot():
+def version_reboot(wallet):
     driver = BlockchainDriver()
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
 
@@ -54,35 +54,20 @@ def version_reboot():
         target_version = driver.get_var(contract='upgrade', variable='upg_pepper', mark=False)
     else:
         target_version = None
-
-    try:
-        base_dir = input("Absolute path package directory:")
-        os.chdir(base_dir)
-
-        # get latest release
-        rel = input("Enter New Release branch:")
-        br = f'{rel}'
-
-        run("fetch")
-        run("checkout", "-b", br)
-    except OSError as err:
-        log.error("OS error: {0}".format(err))
-        return
-    except:
-        log.error("Unexpected error:", sys.exc_info())
+        assert target_version is None, "New version target Cannot be None"
         return
 
-    result = verify_cil_pkg(target_version)
+    peers = PeerServer.get_vk(wallet.verifying_key().hex())
+    log.info("peer list {}".format(peers))
+    log.info("target version {}".format(target_version))
 
-    if result is False:
-        log.error("Failed to verify pepper {} on branch {}".format(target_version, rel))
-        return
-    else:
-        log.info("Pkg signature verified proceeding with reboot")
+    info = {}
 
-    # rebuilding package
-    os.chdir(base_dir)
-    subprocess.run('python3 setup.py develop', shell=True)
+    info['nodes'] = peers
+    info['version'] = target_version
+
+    with open('network_info.txt', 'w') as outfile:
+        json.dump(info, outfile)
 
     # Find cil process
     PNAME = 'cil'
@@ -91,8 +76,6 @@ def version_reboot():
         if proc.name() == PNAME:
             print("{} : {} proc shutting down".format(proc.pid, proc.name()))
             proc.kill()
-
-
 
 
 def get_update_state():

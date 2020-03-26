@@ -1,7 +1,7 @@
 import argparse
 from cilantro_ee.cli.utils import validate_ip, version_reboot
 from cilantro_ee.cli.start import start_node, setup_node, join_network
-from cilantro_ee.cli.update import verify_access, verify_pkg, trigger, vote, check_ready_quorum
+from cilantro_ee.cli.update import verify_pkg, trigger, vote, check_ready_quorum, upgrade
 from cilantro_ee.storage import MasterStorage, BlockchainDriver
 
 
@@ -111,7 +111,7 @@ def main():
             vote(iaddr=args.ip)
 
         if args.now:
-            version_reboot()
+            upgrade()
 
         if args.check:
             check_ready_quorum(iaddr=args.ip)

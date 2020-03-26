@@ -45,8 +45,10 @@ def verify_cil_pkg(pkg_hash):
     else:
         return False
 
+
 def strip_ip(node):
     return node[6:]
+
 
 def version_reboot(bn):
     driver = BlockchainDriver()
@@ -58,9 +60,6 @@ def version_reboot(bn):
         target_version = None
         assert target_version is None, "New version target Cannot be None"
         return
-
-    log.info("peer list {}".format(bn))
-    log.info("target version {}".format(target_version))
 
     info = {}
     info['nodes'] = [strip_ip(i) for i in bn]

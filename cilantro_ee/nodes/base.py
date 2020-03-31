@@ -210,7 +210,14 @@ class Node:
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
 
-        print("master contacts - {}, mywallet - {}".format(self.contacts.masternodes, self.wallet.verifying_key()))
+        print("master contacts - {}, mywallet - {}".format(self.contacts.masternodes,
+                                                           self.wallet.verifying_key().hex()))
+
+        for key in self.contacts.masternodes:
+            if self.wallet.verifying_key().hex() == key:
+                node_type = True
+            else:
+                node_type = False
 
         if self.version_state:
             self.log.info('Waiting for Consensys on vote')
@@ -221,7 +228,7 @@ class Node:
             vote_consensus = self.version_state.quick_read('upg_consensus')
             if vote_consensus:
                 self.log.info('Rebooting Node with new version')
-                version_reboot(bn=self.bootnodes)
+                version_reboot(bn=self.bootnodes, is_master=node_type)
             else:
                 self.log.info('waiting for vote on upgrade')
 

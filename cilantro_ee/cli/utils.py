@@ -50,7 +50,7 @@ def strip_ip(node):
     return node[6:]
 
 
-def version_reboot(bn):
+def version_reboot(bn, is_master):
     driver = BlockchainDriver()
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
 
@@ -65,7 +65,12 @@ def version_reboot(bn):
     info['nodes'] = [strip_ip(i) for i in bn]
     info['version'] = target_version
 
-    with open('network_info.txt', 'w') as outfile:
+    if is_master:
+        info['type'] = 'masternode'
+    else:
+        info['type'] = 'delegate'
+
+    with open('network_info.json', 'w') as outfile:
         json.dump(info, outfile)
 
     # Find cil process

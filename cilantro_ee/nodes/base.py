@@ -210,7 +210,7 @@ class Node:
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
 
-        # self.log.info("{}".format(self.get_update_state()))
+        print("master contacts - {}, mywallet - {}".format(self.contacts.masternodes, self.wallet.verifying_key()))
 
         if self.version_state:
             self.log.info('Waiting for Consensys on vote')

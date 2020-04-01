@@ -2,6 +2,7 @@ import os
 import json
 import sys
 import psutil
+import pathlib
 import subprocess
 import ipaddress
 import cilantro_ee
@@ -67,6 +68,39 @@ def reboot_config(key=None):
 
     with open('key.json', 'w') as outfile:
         json.dump(myid, outfile)
+
+def restart():
+
+    # Read configs
+    rd_key = pathlib.Path(os.getcwd()) + '/key.json'
+
+    f = open(str(rd_key), 'r')
+    k = json.load(f)
+    f.close()
+
+    assert 'sk' in k.keys(), 'No key found.'
+    print(k)
+
+    cfg_path = pathlib.Path(os.getcwd()) + '/key.json'
+    f = open(str(cfg_path), 'r')
+    cfg = json.load(f)
+    f.close()
+
+    assert 'nodes' in cfg.keys(), 'No bootnodes found'
+    assert 'version' in cfg.keys(), 'No pepper found'
+    assert 'type' in cfg.keys(), 'No Node Type'
+    print(cfg)
+
+    bn = cfg['nodes']
+    bn_str = ''
+
+    for i in bn:
+        bn_str = bn_str + " " + i
+
+    cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
+
+    print(cmd)
+    #subprocess.run('python3 setup.py develop', shell=True)
 
 
 def version_reboot(bn, is_master):

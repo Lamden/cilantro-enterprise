@@ -28,8 +28,8 @@ def setup_cilparser(parser):
 
     upd_parser = subparser.add_parser('update')
 
-    upd_parser.add_argument('-t', '--trigger', dest = 'pkg_hash', nargs = '?', type =str,
-                            help='str: Notify network of new update with given pkg_hash')
+    upd_parser.add_argument('-t', '--trigger', dest = 'pepper', nargs = '?', type =str,
+                            help='str: Notify network of new update with given pepper')
 
     upd_parser.parse_args('--trigger'.split())
 
@@ -104,8 +104,8 @@ def main():
         print(args)
         ip = validate_ip(address=args.ip)
 
-        if args.pkg_hash:
-            trigger(pkg=args.pkg_hash, iaddr=ip)
+        if args.pepper:
+            trigger(pkg=args.pepper, iaddr=ip)
 
         if args.vote:
             vote(iaddr=args.ip)

@@ -210,19 +210,20 @@ class Node:
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
 
-        print("master contacts - {}, mywallet - {}".format(self.contacts.masternodes,
-                                                           self.wallet.verifying_key().hex()))
-
-        for key in self.contacts.masternodes:
-            if self.wallet.verifying_key().hex() == key:
-                node_type = True
-            else:
-                node_type = False
-
         if self.version_state:
             self.log.info('Waiting for Consensys on vote')
             self.log.info('num masters voted -> {}'.format(self.mn_votes))
             self.log.info('num delegates voted -> {}'.format(self.dl_votes))
+
+            # Given node is either master or delegate default assumes it to be valid
+            # delegate
+
+            node_type = False
+
+            for key in self.contacts.masternodes:
+                if self.wallet.verifying_key().hex() == key:
+                    self.log.info("Node Type : Master")
+                    node_type = True
 
             # check for vote consensys
             vote_consensus = self.version_state.quick_read('upg_consensus')
@@ -230,7 +231,7 @@ class Node:
                 self.log.info('Rebooting Node with new version')
                 version_reboot(bn=self.bootnodes, is_master=node_type)
             else:
-                self.log.info('waiting for vote on upgrade')
+                self.log.info('{} waiting for vote on upgrade'.format(node_type))
 
     def get_update_state(self):
         self.active_upgrade = self.version_state.quick_read('upg_lock')

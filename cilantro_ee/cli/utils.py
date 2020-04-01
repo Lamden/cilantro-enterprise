@@ -50,6 +50,25 @@ def strip_ip(node):
     return node[6:]
 
 
+def ask(question):
+    while "the answer is invalid":
+        reply = str(input(question+' (y/n): ')).lower().strip()
+        if reply[0] == 'y':
+            return True
+        if reply[0] == 'n':
+            return False
+
+
+def reboot_config(key=None):
+    if key is None:
+        return
+
+    myid = {'sk': key}
+
+    with open('key.json', 'w') as outfile:
+        json.dump(myid, outfile)
+
+
 def version_reboot(bn, is_master):
     driver = BlockchainDriver()
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)

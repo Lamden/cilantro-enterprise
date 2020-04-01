@@ -108,7 +108,7 @@ def restart():
     cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
 
     print(cmd)
-    subprocess.run('python3 setup.py develop', shell=True)
+    #subprocess.run('python3 setup.py develop', shell=True)
 
 
 def version_reboot(bn, is_master):
@@ -140,9 +140,9 @@ def version_reboot(bn, is_master):
         # check whether the process name matches
         if proc.name() == PNAME:
             print("{} : {} proc shutting down".format(proc.pid, proc.name()))
+            restart()
             proc.kill()
 
-    restart()
 
 def get_update_state():
     driver = BlockchainDriver()

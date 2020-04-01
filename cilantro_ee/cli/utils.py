@@ -69,22 +69,30 @@ def reboot_config(key=None):
     with open('key.json', 'w') as outfile:
         json.dump(myid, outfile)
 
+
 def restart():
 
     # Read configs
     rd_key = pathlib.Path(os.getcwd()) + '/key.json'
 
-    f = open(str(rd_key), 'r')
-    k = json.load(f)
-    f.close()
+    try:
+        f = open(str(rd_key), 'r')
+        k = json.load(f)
+        f.close()
+    except IOError:
+        log.info("Manual restart needed - Auto upgrade not Authorized")
+        return
 
     assert 'sk' in k.keys(), 'No key found.'
     print(k)
 
-    cfg_path = pathlib.Path(os.getcwd()) + '/key.json'
-    f = open(str(cfg_path), 'r')
-    cfg = json.load(f)
-    f.close()
+    try:
+        cfg_path = pathlib.Path(os.getcwd()) + '/key.json'
+        f = open(str(cfg_path), 'r')
+        cfg = json.load(f)
+        f.close()
+    except IOError:
+        log.error("Config not found - restart manually")
 
     assert 'nodes' in cfg.keys(), 'No bootnodes found'
     assert 'version' in cfg.keys(), 'No pepper found'
@@ -100,7 +108,7 @@ def restart():
     cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
 
     print(cmd)
-    #subprocess.run('python3 setup.py develop', shell=True)
+    subprocess.run('python3 setup.py develop', shell=True)
 
 
 def version_reboot(bn, is_master):
@@ -134,6 +142,7 @@ def version_reboot(bn, is_master):
             print("{} : {} proc shutting down".format(proc.pid, proc.name()))
             proc.kill()
 
+    restart()
 
 def get_update_state():
     driver = BlockchainDriver()

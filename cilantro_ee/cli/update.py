@@ -123,7 +123,7 @@ def abort_upgrade(iaddr):
         pack = TransactionBuilder(
             sender=my_wallet.verifying_key(),
             contract='upgrade',
-            function='vote',
+            function='reset_contract',
             kwargs=kwargs,
             stamps=100_000,
             processor=bytes.fromhex(proc[0]),

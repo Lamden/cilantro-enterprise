@@ -81,11 +81,17 @@ def check_vote_state():
     if all_votes > (all_nodes * 2/3):
         upg_consensus.set(True)
 
-
+@export
 def reset_contract():
-    upg_init_time.set(None)
-    upg_consensus.set(False)
-    upg_lock.set(False)
+    if upg_lock.get() is True:
+        upg_init_time.set(None)
+        upg_consensus.set(False)
+        upg_lock.set(False)
+
+        mn_vote.set(0)
+        dl_vote.set(0)
+        tot_mn.set(0)
+        tot_dl.set(0)
 
 
 def assert_parallel_upg_check():

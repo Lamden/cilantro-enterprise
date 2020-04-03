@@ -103,6 +103,38 @@ def vote(iaddr):
     loop.run_until_complete(cil_interface(server=iaddr, packed_data=m, sleep=2))
 
 
+def abort_upgrade(iaddr):
+    q = ask(question='Are you sure to abort version upgrade')
+
+    if q is True:
+        file = input("Enter patch to constitution:")
+        constitution = resolve_constitution(fp=file)
+        proc = constitution.get("masternodes", "")
+
+        my_wallet = verify_access()
+
+        SERVER = f'http://{iaddr}:18080'
+
+        nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key().hex()))
+        nonce = nonce_req.json()['nonce']
+
+        kwargs = {'vk': my_wallet.verifying_key().hex()}
+
+        pack = TransactionBuilder(
+            sender=my_wallet.verifying_key(),
+            contract='upgrade',
+            function='vote',
+            kwargs=kwargs,
+            stamps=100_000,
+            processor=bytes.fromhex(proc[0]),
+            nonce=nonce
+        )
+
+        pack.sign(my_wallet.signing_key())
+        m = pack.serialize()
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(cil_interface(server=iaddr, packed_data=m, sleep=2))
+
 def check_ready_quorum(iaddr):
     get_update_state()
 

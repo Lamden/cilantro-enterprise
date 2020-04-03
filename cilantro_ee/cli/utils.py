@@ -108,7 +108,7 @@ def restart():
     cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
 
     print(cmd)
-    #subprocess.run('python3 setup.py develop', shell=True)
+    #subprocess.run(cmd, shell=True)
 
 
 def version_reboot(bn, is_master):

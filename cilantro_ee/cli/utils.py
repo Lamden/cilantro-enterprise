@@ -110,7 +110,8 @@ def restart():
     cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
 
     print(cmd)
-    subprocess.run(cmd, shell=True)
+    p = subprocess.run(cmd, shell=True)
+    print(p.stdout)
     cron = CronTab(user='root')
     job = cron.new(command=cmd)
     job.minute.every(1)

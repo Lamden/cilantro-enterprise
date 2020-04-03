@@ -10,7 +10,7 @@ from checksumdir import dirhash
 from contracting.client import ContractingClient
 from cilantro_ee.storage.contract import BlockchainDriver
 from cilantro_ee.logger.base import get_logger
-from cilantro_ee.networking.peers import PeerServer
+from crontab import CronTab
 from cilantro_ee.crypto.wallet import Wallet
 
 
@@ -70,6 +70,8 @@ def reboot_config(key=None):
         json.dump(myid, outfile)
 
 
+
+
 def restart():
 
     # Read configs
@@ -109,6 +111,11 @@ def restart():
 
     print(cmd)
     #subprocess.run(cmd, shell=True)
+    cron = CronTab(user='root')
+    job = cron.new(command=cmd)
+    job.minute.every(1)
+    cron.write()
+    print('cron.write() was just executed')
 
 
 def version_reboot(bn, is_master):

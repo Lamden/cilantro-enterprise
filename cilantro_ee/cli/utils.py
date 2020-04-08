@@ -56,10 +56,10 @@ def ask(question):
     while "the answer is invalid":
         reply = str(input(question+' (y/n): ')).lower().strip()
         if reply[0] == 'y':
-            print(reply[0])
+            print("Selected: {}".format(reply[0]))
             return True
         if reply[0] == 'n':
-            print(reply[0])
+            print("Selected: {}".format(reply[0]))
             return False
 
 
@@ -162,8 +162,8 @@ def version_reboot(bn, is_master):
         # check whether the process name matches
         if proc.name() == PNAME:
             print("{} : {} proc shutting down".format(proc.pid, proc.name()))
-            restart()
             proc.kill()
+            restart()
 
 
 def get_update_state():

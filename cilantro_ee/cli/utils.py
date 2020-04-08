@@ -71,14 +71,12 @@ def reboot_config(key=None):
     log.info("Writing config")
 
 
-
-
 def restart():
 
     # Read configs
     rd_key = pathlib.Path(os.getcwd())
 
-    #p = rd_key + '/key.json'
+    p = str(rd_key) + '/key.json'
 
     print('{}{}'.format(rd_key, '/key.json'))
 

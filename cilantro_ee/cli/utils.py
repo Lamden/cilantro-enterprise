@@ -1,5 +1,6 @@
 import os
 import json
+import shlex
 import sys
 import psutil
 import pathlib
@@ -55,8 +56,10 @@ def ask(question):
     while "the answer is invalid":
         reply = str(input(question+' (y/n): ')).lower().strip()
         if reply[0] == 'y':
+            print(reply[0])
             return True
         if reply[0] == 'n':
+            print(reply[0])
             return False
 
 
@@ -109,10 +112,19 @@ def restart():
         bn_str = bn_str + " " + i
 
     cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
-
     print(cmd)
-    p = subprocess.run(cmd, shell=True)
-    print(p.stdout)
+
+    args = shlex.split(cmd)
+
+    print(args)
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = p.stdout.read()
+    stderr = p.stderr.read()
+    if stdout:
+        print(stdout)
+    if stderr:
+        print(stderr)
+
     # cron = CronTab(user='root')
     # job = cron.new(command=cmd)
     # job.minute.every(1)

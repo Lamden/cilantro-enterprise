@@ -122,9 +122,9 @@ def restart():
     stdout = p.stdout.read()
     stderr = p.stderr.read()
     if stdout:
-        print(stdout)
+        print(stdout.decode())
     if stderr:
-        print(stderr)
+        print(stderr.decode())
 
     # cron = CronTab(user='root')
     # job = cron.new(command=cmd)

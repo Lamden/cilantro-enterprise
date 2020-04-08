@@ -2,6 +2,7 @@ import requests
 import pathlib
 import json
 import os
+import time
 import asyncio
 import subprocess
 from subprocess import call
@@ -94,6 +95,9 @@ def resolve_raw_constitution(text):
 
 
 def start_node(args):
+    # sleep for restart module for ppid to be killed
+    time.sleep(5)
+
     assert args.node_type == 'masternode' or args.node_type == 'delegate', \
         'Provide node type as "masternode" or "delegate"'
 

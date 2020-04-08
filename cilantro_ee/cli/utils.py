@@ -111,13 +111,14 @@ def restart():
     for i in bn:
         bn_str = bn_str + " " + i
 
-    cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
+    cmd = f"nohup cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
     print(cmd)
 
     args = shlex.split(cmd)
 
     print(args)
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print("Restarted proc {}".format(p.pid))
     stdout = p.stdout.read()
     stderr = p.stderr.read()
     if stdout:

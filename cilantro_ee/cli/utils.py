@@ -78,9 +78,9 @@ def restart():
     # Read configs
     rd_key = pathlib.Path(os.getcwd())
 
-    p = rd_key + '/key.json'
+    #p = rd_key + '/key.json'
 
-    print('{}{}'.format(rd_key, p))
+    print('{}{}'.format(rd_key, '/key.json'))
 
     try:
         f = open(str(p), 'r')

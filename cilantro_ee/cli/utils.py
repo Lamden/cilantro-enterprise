@@ -68,6 +68,7 @@ def reboot_config(key=None):
 
     with open('key.json', 'w') as outfile:
         json.dump(myid, outfile)
+    log.info("Writing config")
 
 
 
@@ -75,10 +76,14 @@ def reboot_config(key=None):
 def restart():
 
     # Read configs
-    rd_key = pathlib.Path(os.getcwd()) + '/key.json'
+    rd_key = pathlib.Path(os.getcwd())
+
+    p = rd_key + '/key.json'
+
+    print('{}{}'.format(rd_key, p))
 
     try:
-        f = open(str(rd_key), 'r')
+        f = open(str(p), 'r')
         k = json.load(f)
         f.close()
     except IOError:

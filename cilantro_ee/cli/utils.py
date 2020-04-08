@@ -74,11 +74,9 @@ def reboot_config(key=None):
 def restart():
 
     # Read configs
-    rd_key = pathlib.Path(os.getcwd())
+    p = str(pathlib.Path(os.getcwd())) + '/key.json'
 
-    p = str(rd_key) + '/key.json'
-
-    print('{}{}'.format(rd_key, '/key.json'))
+    print('{}{}'.format(p, '/key.json'))
 
     try:
         f = open(str(p), 'r')
@@ -92,7 +90,7 @@ def restart():
     print(k)
 
     try:
-        cfg_path = pathlib.Path(os.getcwd()) + '/key.json'
+        cfg_path = str(pathlib.Path(os.getcwd())) + '/network_info.json'
         f = open(str(cfg_path), 'r')
         cfg = json.load(f)
         f.close()

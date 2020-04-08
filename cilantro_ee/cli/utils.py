@@ -113,11 +113,11 @@ def restart():
     print(cmd)
     p = subprocess.run(cmd, shell=True)
     print(p.stdout)
-    cron = CronTab(user='root')
-    job = cron.new(command=cmd)
-    job.minute.every(1)
-    cron.write()
-    print('cron.write() was just executed')
+    # cron = CronTab(user='root')
+    # job = cron.new(command=cmd)
+    # job.minute.every(1)
+    # cron.write()
+    # print('cron.write() was just executed')
 
 
 def version_reboot(bn, is_master):

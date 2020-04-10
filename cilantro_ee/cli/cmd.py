@@ -39,11 +39,11 @@ def setup_cilparser(parser):
     upd_parser.add_argument('-c', '--check', action = 'store_true', default = False,
                             help='Bool : check current state of network')
 
-    upd_parser.add_argument('-a', '--abort', action = 'store_true', default = False,
-                            help='Bool : abort existing upgrade')
+    # upd_parser.add_argument('-a', '--abort', action = 'store_true', default = False,
+    #                         help='Bool : abort existing upgrade')
 
-    upd_parser.add_argument('-n', '--now', action = 'store_true', default = False,
-                            help='Bool : reboot to new network')
+    # upd_parser.add_argument('-n', '--now', action = 'store_true', default = False,
+    #                         help='Bool : reboot to new network')
 
     upd_parser.add_argument('-i', '--ip', type=str, help='Master Node TX End points',
                             required=True)
@@ -116,8 +116,8 @@ def main():
         if args.now:
             upgrade()
 
-        if args.abort:
-            abort_upgrade(iaddr=args.ip)
+        # if args.abort:
+        #     abort_upgrade(iaddr=args.ip)
 
         if args.check:
             check_ready_quorum(iaddr=args.ip)

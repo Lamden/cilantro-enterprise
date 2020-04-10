@@ -111,7 +111,7 @@ def restart():
     for i in bn:
         bn_str = bn_str + " " + i
 
-    cmd = f"nohup cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
+    cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
     print(cmd)
 
     args = shlex.split(cmd)
@@ -162,16 +162,16 @@ def version_reboot(bn, is_master):
         # check whether the process name matches
         if proc.name() == PNAME:
             print("{} : {} proc shutting down".format(proc.pid, proc.name()))
-            proc.kill()
             restart()
+            proc.kill()
 
 
 def get_update_state():
     driver = BlockchainDriver()
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
     pepper = driver.get_var(contract='upgrade', variable='upg_pepper', mark=False)
-    start_time = driver.get_var(contract='upgrade', variable='upg_init_time', mark=False)
-    window = driver.get_var(contract='upgrade', variable='upg_window', mark=False)
+    start_time = driver.get_var(contract='upgrade', variable='init_time', mark=False)
+    window = driver.get_var(contract='upgrade', variable='window', mark=False)
     mcount = driver.get_var(contract='upgrade', variable='tot_mn', mark=False)
     dcount = driver.get_var(contract='upgrade', variable='tot_dl', mark=False)
     mvotes = driver.get_var(contract='upgrade', variable='mn_vote', mark=False)

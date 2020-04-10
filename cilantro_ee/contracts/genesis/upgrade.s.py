@@ -10,9 +10,11 @@ import election_house
 # possible votes
 
 upg_lock = Variable() # network upgrade lock only one update can be performed
-upg_init_time = Variable()
 upg_pepper = Variable()
-upg_window = Variable()
+
+init_time = Variable()
+window = Variable()
+
 
 mn_vote = Variable()
 dl_vote = Variable()
@@ -44,9 +46,9 @@ def trigger_upgrade(pepper, initiator_vk):
     # for now only master's trigger upgrade
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
         upg_lock.set(True)
-        #upg_init_time.set(now)
+        upg_init_time.set(now)
         upg_pepper.set(pepper)
-        #upg_window.set(datetime.Timedelta(seconds=3000000000))
+        upg_window.set(604800) #1 week 7 * 24 * 60 * 60
         mn_vote.set(0)
         dl_vote.set(0)
         #assert election_house.current_value_for_policy('masternodes')
@@ -81,7 +83,6 @@ def check_vote_state():
     if all_votes > (all_nodes * 2/3):
         upg_consensus.set(True)
 
-@export
 def reset_contract(vk):
     if vk in election_house.current_value_for_policy('masternodes'):
         if upg_lock.get() is True:

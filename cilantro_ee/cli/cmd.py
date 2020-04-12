@@ -113,8 +113,8 @@ def main():
         if args.vote:
             vote(iaddr=args.ip)
 
-        if args.now:
-            upgrade()
+        # if args.now:
+        #     upgrade()
 
         # if args.abort:
         #     abort_upgrade(iaddr=args.ip)

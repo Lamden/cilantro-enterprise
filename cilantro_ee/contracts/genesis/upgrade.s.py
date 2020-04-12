@@ -50,7 +50,7 @@ def trigger_upgrade(pepper, initiator_vk):
     # for now only master's trigger upgrade
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
         upg_lock.set(True)
-        init_time.set(date.today())
+        init_time.set(now)
         upg_pepper.set(pepper)
         window.set(7) #1 week 7 * 24 * 60 * 60
         mn_vote.set(0)
@@ -101,7 +101,7 @@ def reset_contract(vk):
 
 def check_window():
 
-    today.set(date.today())
+    today.set(now)
     if today.get() - init_time.get() > window.get():
         return False
     else:

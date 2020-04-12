@@ -102,7 +102,9 @@ def reset_contract(vk):
 def check_window():
 
     today.set(now)
-    if today.get() - init_time.get() > window.get():
+    diff = today.get() - init_time.get()
+    window.set(window.get() - diff)
+    if window.get() <= 0:
         return False
     else:
         return True

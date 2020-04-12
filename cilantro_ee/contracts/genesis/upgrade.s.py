@@ -13,6 +13,7 @@ upg_lock = Variable() # network upgrade lock only one update can be performed
 upg_pepper = Variable()
 
 init_time = Variable()
+today = Variable()
 window = Variable()
 
 
@@ -41,14 +42,17 @@ def seed():
 @export
 def trigger_upgrade(pepper, initiator_vk):
     if upg_lock.get() is True:
-        assert_parallel_upg_check()
+        if check_window() is False:
+            reset_contract(initiator_vk)
+        else:
+            return
 
     # for now only master's trigger upgrade
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
         upg_lock.set(True)
-        upg_init_time.set(now)
+        init_time.set(date.today())
         upg_pepper.set(pepper)
-        upg_window.set(604800) #1 week 7 * 24 * 60 * 60
+        window.set(7) #1 week 7 * 24 * 60 * 60
         mn_vote.set(0)
         dl_vote.set(0)
         #assert election_house.current_value_for_policy('masternodes')
@@ -67,7 +71,7 @@ def vote(vk):
         if vk in election_house.current_value_for_policy('delegates'):
             dl_vote.set(dl_vote.get() + 1)
 
-        # if now - upg_init_time.get() >= upg_window.get():
+        # if now - init_time.get() >= window.get():
         #     reset_contract()
         
         check_vote_state()
@@ -86,7 +90,7 @@ def check_vote_state():
 def reset_contract(vk):
     if vk in election_house.current_value_for_policy('masternodes'):
         if upg_lock.get() is True:
-            upg_init_time.set(None)
+            init_time.set(None)
             upg_consensus.set(False)
             upg_lock.set(False)
 
@@ -95,6 +99,14 @@ def reset_contract(vk):
             tot_mn.set(0)
             tot_dl.set(0)
 
+def check_window():
+
+    today.set(date.today())
+    if today.get() - init_time.get() > window.get():
+        return False
+    else:
+        return True
+    
 
 def assert_parallel_upg_check():
     assert 'Upgrade under way. Cannot initiate parallel upgrade'

@@ -171,6 +171,7 @@ def get_update_state():
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
     pepper = driver.get_var(contract='upgrade', variable='upg_pepper', mark=False)
     start_time = driver.get_var(contract='upgrade', variable='init_time', mark=False)
+    current_time = driver.get_var(contract='upgrade', variable='today', mark=False)
     window = driver.get_var(contract='upgrade', variable='window', mark=False)
     mcount = driver.get_var(contract='upgrade', variable='tot_mn', mark=False)
     dcount = driver.get_var(contract='upgrade', variable='tot_dl', mark=False)
@@ -179,11 +180,11 @@ def get_update_state():
     consensus = driver.get_var(contract='upgrade', variable='upg_consensus', mark=False)
 
     print("Upgrade: {} Cil Pepper:  {}\n"
-          "Init time:   {}, Time Window:    {}\n"
+          "Init time:   {}, Time Window:    {}, Current: {}\n"
           "Masters:     {}\n"
           "Delegates:   {}\n"
           "MN-Votes:    {}\n "
           "DL-Votes:    {}\n "
           "Consensus:   {}\n"
-          .format(active_upgrade, pepper, start_time, window, mcount, dcount,
+          .format(active_upgrade, pepper, start_time, window, current_time, mcount, dcount,
                   mvotes, dvotes, consensus))

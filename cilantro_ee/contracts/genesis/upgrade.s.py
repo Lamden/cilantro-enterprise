@@ -12,11 +12,6 @@ import election_house
 upg_lock = Variable() # network upgrade lock only one update can be performed
 upg_pepper = Variable()
 
-init_time = Variable()
-today = Variable()
-window = Variable()
-
-
 mn_vote = Variable()
 dl_vote = Variable()
 
@@ -26,6 +21,7 @@ tot_dl = Variable()
 # Results
 upg_consensus = Variable()
 
+S = Hash()
 
 def check_vote_state():
     all_nodes = tot_mn.get() + tot_dl.get()
@@ -38,9 +34,9 @@ def check_vote_state():
 def reset_contract():
     # if vk in election_house.current_value_for_policy('masternodes'):
     #if upg_lock.get() is True:
-    init_time.set(None)
-    window.set(None)
-    today.set(None)
+    S['init_time'] = 0
+    S['window'] = 0
+    S['today'] = 0
     upg_consensus.set(False)
     upg_lock.set(False)
 
@@ -51,12 +47,9 @@ def reset_contract():
 
 
 def check_window():
-    today.set(now)
-    diff = today.get() - init_time.get()
-    window.set(window.get() - diff)
-
-    if window.get() <= 0:
-        reset_contract()
+    S['today'] = now
+    elapsed = S['today'] - S['init_time']
+    S['window'] -= elapsed
 
 
 def assert_parallel_upg_check():
@@ -68,9 +61,9 @@ def seed():
     upg_lock.set(False)
     upg_consensus.set(False)
 
-    init_time.set(None)
-    window.set(None)
-    today.set(None)
+    S['init_time'] = 0
+    S['window'] = 0
+    S['today'] = 0
 
     mn_vote.set(0)
     dl_vote.set(0)
@@ -81,13 +74,16 @@ def seed():
 def trigger_upgrade(pepper, initiator_vk):
     if upg_lock.get() is True:
         check_window()
+    if S['window'] < 0:
+        reset_contract()
 
     # for now only master's trigger upgrade
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
         upg_lock.set(True)
-        init_time.set(now)
+        S['init_time'] = now
         upg_pepper.set(pepper)
-        window.set(datetime.MINUTES * 1) #1 week 7 * 24 * 60 * 60
+        S['window'] = datetime.MINUTES * 1
+
         mn_vote.set(0)
         dl_vote.set(0)
         #assert election_house.current_value_for_policy('masternodes')
@@ -103,14 +99,13 @@ def vote(vk):
     if upg_lock.get() is True:
         check_window()
 
-        if window.get() > 0:
+        if S['window'] > 0:
             if vk in election_house.current_value_for_policy('masternodes'):
                 mn_vote.set(mn_vote.get() + 1)
             if vk in election_house.current_value_for_policy('delegates'):
                 dl_vote.set(dl_vote.get() + 1)
 
             check_vote_state()
-        # else:
-        #     assert 'update expired'
-
+        else:
+            reset_contract()
 

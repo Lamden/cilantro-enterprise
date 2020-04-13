@@ -91,6 +91,7 @@ def reset_contract(vk):
     if vk in election_house.current_value_for_policy('masternodes'):
         if upg_lock.get() is True:
             init_time.set(None)
+            window.set(None)
             upg_consensus.set(False)
             upg_lock.set(False)
 

@@ -27,6 +27,42 @@ tot_dl = Variable()
 upg_consensus = Variable()
 
 
+def check_vote_state():
+    all_nodes = tot_mn.get() + tot_dl.get()
+    all_votes = mn_vote.get() + dl_vote.get()
+
+    if all_votes > (all_nodes * 2 / 3):
+        upg_consensus.set(True)
+
+
+def reset_contract():
+    # if vk in election_house.current_value_for_policy('masternodes'):
+    if upg_lock.get() is True:
+        init_time.set(None)
+        window.set(None)
+        upg_consensus.set(False)
+        upg_lock.set(False)
+
+        mn_vote.set(0)
+        dl_vote.set(0)
+        tot_mn.set(0)
+        tot_dl.set(0)
+
+
+def check_window():
+    today.set(now)
+    diff = today.get() - init_time.get()
+    window.set(window.get() - diff)
+    if window.get() <= 0:
+        return False
+    else:
+        return True
+
+
+def assert_parallel_upg_check():
+    assert 'Upgrade under way. Cannot initiate parallel upgrade'
+
+
 @construct
 def seed():
     upg_lock.set(False)
@@ -37,15 +73,13 @@ def seed():
     tot_dl.set(0)
 
 
-
-
 @export
 def trigger_upgrade(pepper, initiator_vk):
     if upg_lock.get() is True:
         if check_window() is False:
-            reset_contract(initiator_vk)
+            reset_contract()
         else:
-            return
+            assert_parallel_upg_check()
 
     # for now only master's trigger upgrade
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
@@ -79,37 +113,3 @@ def vote(vk):
         assert 'no active upgrade'
 
 
-def check_vote_state():
-
-    all_nodes = tot_mn.get() + tot_dl.get()
-    all_votes = mn_vote.get() + dl_vote.get()
-
-    if all_votes > (all_nodes * 2/3):
-        upg_consensus.set(True)
-
-def reset_contract(vk):
-    if vk in election_house.current_value_for_policy('masternodes'):
-        if upg_lock.get() is True:
-            init_time.set(None)
-            window.set(None)
-            upg_consensus.set(False)
-            upg_lock.set(False)
-
-            mn_vote.set(0)
-            dl_vote.set(0)
-            tot_mn.set(0)
-            tot_dl.set(0)
-
-def check_window():
-
-    today.set(now)
-    diff = today.get() - init_time.get()
-    window.set(window.get() - diff)
-    if window.get() <= 0:
-        return False
-    else:
-        return True
-    
-
-def assert_parallel_upg_check():
-    assert 'Upgrade under way. Cannot initiate parallel upgrade'

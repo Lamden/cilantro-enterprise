@@ -53,10 +53,9 @@ def check_window():
     today.set(now)
     diff = today.get() - init_time.get()
     window.set(window.get() - diff)
+
     if window.get() <= 0:
-        return False
-    else:
-        return True
+        reset_contract()
 
 
 def assert_parallel_upg_check():
@@ -72,14 +71,10 @@ def seed():
     tot_mn.set(0)
     tot_dl.set(0)
 
-
 @export
 def trigger_upgrade(pepper, initiator_vk):
     if upg_lock.get() is True:
-        if check_window() is False:
-            reset_contract()
-        else:
-            assert_parallel_upg_check()
+        check_window()
 
     # for now only master's trigger upgrade
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
@@ -100,21 +95,16 @@ def trigger_upgrade(pepper, initiator_vk):
 @export
 def vote(vk):
     if upg_lock.get() is True:
+        check_window()
 
-        if check_window() is False:
-            reset_contract()
-            return
+        if window.get() > 0:
+            if vk in election_house.current_value_for_policy('masternodes'):
+                mn_vote.set(mn_vote.get() + 1)
+            if vk in election_house.current_value_for_policy('delegates'):
+                dl_vote.set(dl_vote.get() + 1)
 
-        if vk in election_house.current_value_for_policy('masternodes'):
-            mn_vote.set(mn_vote.get() + 1)
-        if vk in election_house.current_value_for_policy('delegates'):
-            dl_vote.set(dl_vote.get() + 1)
-
-        # if now - init_time.get() >= window.get():
-        #     reset_contract()
-        
-        check_vote_state()
-    else:
-        assert 'no active upgrade'
+            check_vote_state()
+        else:
+            assert 'update expired'
 
 

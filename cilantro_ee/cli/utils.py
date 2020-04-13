@@ -170,9 +170,9 @@ def get_update_state():
     driver = BlockchainDriver()
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
     pepper = driver.get_var(contract='upgrade', variable='upg_pepper', mark=False)
-    timer = driver.get_var(contract='upgrade', variable='S', mark=False)
-    # current_time = driver.get_var(contract='upgrade', variable='today', mark=False)
-    # window = driver.get_var(contract='upgrade', variable='window', mark=False)
+    start_time = driver.get_var(contract='upgrade', variable='S', argument=['init_time'], mark=False)
+    current_time = driver.get_var(contract='upgrade', variable='S', argument=['today'], mark=False)
+    window = driver.get_var(contract='upgrade', variable='S', argument=['window'], mark=False)
     mcount = driver.get_var(contract='upgrade', variable='tot_mn', mark=False)
     dcount = driver.get_var(contract='upgrade', variable='tot_dl', mark=False)
     mvotes = driver.get_var(contract='upgrade', variable='mn_vote', mark=False)
@@ -186,5 +186,5 @@ def get_update_state():
           "MN-Votes:    {}\n "
           "DL-Votes:    {}\n "
           "Consensus:   {}\n"
-          .format(active_upgrade, pepper, timer['init_time'], timer['window'], timer['today'], mcount, dcount,
+          .format(active_upgrade, pepper, start_time, current_time, window, mcount, dcount,
                   mvotes, dvotes, consensus))

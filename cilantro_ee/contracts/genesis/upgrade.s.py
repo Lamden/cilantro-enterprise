@@ -100,6 +100,11 @@ def trigger_upgrade(pepper, initiator_vk):
 @export
 def vote(vk):
     if upg_lock.get() is True:
+
+        if check_window() is False:
+            reset_contract()
+            return
+
         if vk in election_house.current_value_for_policy('masternodes'):
             mn_vote.set(mn_vote.get() + 1)
         if vk in election_house.current_value_for_policy('delegates'):

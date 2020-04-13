@@ -37,16 +37,17 @@ def check_vote_state():
 
 def reset_contract():
     # if vk in election_house.current_value_for_policy('masternodes'):
-    if upg_lock.get() is True:
-        init_time.set(None)
-        window.set(None)
-        upg_consensus.set(False)
-        upg_lock.set(False)
+    #if upg_lock.get() is True:
+    init_time.set(None)
+    window.set(None)
+    today.set(None)
+    upg_consensus.set(False)
+    upg_lock.set(False)
 
-        mn_vote.set(0)
-        dl_vote.set(0)
-        tot_mn.set(0)
-        tot_dl.set(0)
+    mn_vote.set(0)
+    dl_vote.set(0)
+    tot_mn.set(0)
+    tot_dl.set(0)
 
 
 def check_window():
@@ -66,6 +67,11 @@ def assert_parallel_upg_check():
 def seed():
     upg_lock.set(False)
     upg_consensus.set(False)
+
+    init_time.set(None)
+    window.set(None)
+    today.set(None)
+
     mn_vote.set(0)
     dl_vote.set(0)
     tot_mn.set(0)
@@ -81,7 +87,7 @@ def trigger_upgrade(pepper, initiator_vk):
         upg_lock.set(True)
         init_time.set(now)
         upg_pepper.set(pepper)
-        window.set(datetime.MINUTES * 2) #1 week 7 * 24 * 60 * 60
+        window.set(datetime.MINUTES * 1) #1 week 7 * 24 * 60 * 60
         mn_vote.set(0)
         dl_vote.set(0)
         #assert election_house.current_value_for_policy('masternodes')
@@ -104,7 +110,7 @@ def vote(vk):
                 dl_vote.set(dl_vote.get() + 1)
 
             check_vote_state()
-        else:
-            assert 'update expired'
+        # else:
+        #     assert 'update expired'
 
 

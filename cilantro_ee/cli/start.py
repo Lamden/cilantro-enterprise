@@ -126,9 +126,9 @@ def start_node(args):
     # Setup Environment
     CURR_DIR = pathlib.Path(os.getcwd())
     os.environ['CIL_ROOT'] = str(CURR_DIR.parent)
-    os.environ['CIL_MOD'] = os.environ.get('CIL_ROOT') + '/cilantro-enterprise/cilantro_ee'
+    os.environ['CIL_MOD'] = str(os.getenv('CIL_ROOT')) + '/cilantro-enterprise/cilantro_ee'
 
-    print(os.environ.get['CIL_ROOT'])
+    print(os.getenv('CIL_ROOT'))
 
     # Enable Auto Restart
     enable = ask(question='Authorize auto restart for cilantro')
@@ -251,9 +251,9 @@ def join_network(args):
     socket_base = f'tcp://{ip_str}'
 
     # Setup Environment
-    CURR_DIR = pathlib.Path(os.getcwd())
-    os.environ['PKG_ROOT'] = str(CURR_DIR.parent)
-    os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro_ee'
+    # CURR_DIR = pathlib.Path(os.getcwd())
+    # os.environ['PKG_ROOT'] = str(CURR_DIR.parent)
+    # os.environ['CIL_PATH'] = os.getenv('PKG_ROOT') + '/cilantro_ee'
 
 
     if args.node_type == 'masternode':

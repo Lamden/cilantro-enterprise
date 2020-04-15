@@ -69,6 +69,8 @@ def reboot_config(key=None):
 
     myid = {'sk': key}
 
+    cfg = ask("")
+
     with open('key.json', 'w') as outfile:
         json.dump(myid, outfile)
     log.info("Writing config")
@@ -77,7 +79,8 @@ def reboot_config(key=None):
 def restart():
 
     # Read configs
-    p = str(pathlib.Path(os.getcwd())) + '/key.json'
+    #p = str(pathlib.Path(os.getcwd())) + '/key.json'
+    p = str(os.environ['CIL_ROOT']) + '/key.json'
 
     print('{}{}'.format(p, '/key.json'))
 
@@ -93,7 +96,7 @@ def restart():
     print(k)
 
     try:
-        cfg_path = str(pathlib.Path(os.getcwd())) + '/network_info.json'
+        cfg_path = str(os.environ['CIL_ROOT']) + '/network_info.json'
         f = open(str(cfg_path), 'r')
         cfg = json.load(f)
         f.close()
@@ -163,7 +166,7 @@ def version_reboot(bn, is_master):
         if proc.name() == PNAME:
             print("{} : {} proc shutting down".format(proc.pid, proc.name()))
             proc.kill()
-            restart()
+            #restart()
 
 
 def get_update_state():

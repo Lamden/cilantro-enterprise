@@ -70,7 +70,7 @@ def vote(iaddr):
 
     #enable = ask(question='Authorize restart node')
 
-    my_wallet = verify_access(restart=enable)
+    my_wallet = verify_access(restart=False)
     file = input("Enter patch to constitution:")
 
     constitution = resolve_constitution(fp=file)

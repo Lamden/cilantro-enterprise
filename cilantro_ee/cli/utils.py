@@ -82,9 +82,10 @@ def restart():
 
     # Read configs
     #p = str(pathlib.Path(os.getcwd())) + '/key.json'
-    p = str(os.environ['CIL_ROOT']) + '/key.json'
+    #p = str(os.environ['CIL_ROOT']) + '/key.json'
 
-    print('{}{}'.format(p, '/key.json'))
+    p = '/root/cilantro-enterprise/key.json'
+    #print('{}{}'.format(p, '/key.json'))
 
     try:
         f = open(str(p), 'r')

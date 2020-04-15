@@ -16,8 +16,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.nodes.masternode.masternode import Masternode
 from cilantro_ee.nodes.delegate.delegate import Delegate
-from cilantro_ee.cli.utils import ask
-from cilantro_ee.cli.update import verify_access
+from cilantro_ee.cli.utils import ask, validate_key
 
 import time
 from getpass import getpass
@@ -134,7 +133,7 @@ def start_node(args):
     # Enable Auto Restart
     enable = ask(question='Authorize auto restart for cilantro')
     if enable:
-        w = verify_access(restart=enable)
+        w = validate_key(restart=enable)
 
     if args.node_type == 'masternode':
         # Start mongo

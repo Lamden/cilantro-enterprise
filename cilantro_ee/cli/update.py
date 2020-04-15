@@ -3,10 +3,8 @@ import asyncio
 import requests
 import subprocess
 import os
-from getpass import getpass
-from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto.transaction import TransactionBuilder
-from cilantro_ee.cli.utils import get_update_state, reboot_config, ask
+from cilantro_ee.cli.utils import get_update_state, ask, validate_key
 from cilantro_ee.cli.start import resolve_constitution
 from cilantro_ee.logger.base import get_logger
 log = get_logger('Cmd-upd')
@@ -23,22 +21,8 @@ async def cil_interface(server, packed_data, sleep=2):
         return result
 
 
-def verify_access(restart=False):
-    while True:
-        sk = getpass('Signing Key in Hex Format: ')
-
-        try:
-            wallet = Wallet(seed=bytes.fromhex(sk))
-            print('Access validated')
-            if restart is True:
-                reboot_config(key=sk)
-            return wallet
-        except:
-            print('Invalid format! Try again.')
-
-
 def trigger(pkg=None, iaddr=None):
-    my_wallet = verify_access(restart=False)
+    my_wallet = validate_key(restart=False)
     pepper = pkg  #TODO replace with verified pepper pkg
     kwargs = {'pepper': pepper, 'initiator_vk': my_wallet.verifying_key().hex()}
     vk = my_wallet.verifying_key()
@@ -70,7 +54,7 @@ def vote(iaddr):
 
     #enable = ask(question='Authorize restart node')
 
-    my_wallet = verify_access(restart=False)
+    my_wallet = validate_key(restart=False)
     file = input("Enter patch to constitution:")
 
     constitution = resolve_constitution(fp=file)
@@ -111,7 +95,7 @@ def abort_upgrade(iaddr):
         constitution = resolve_constitution(fp=file)
         proc = constitution.get("masternodes", "")
 
-        my_wallet = verify_access()
+        my_wallet = validate_key()
 
         SERVER = f'http://{iaddr}:18080'
 

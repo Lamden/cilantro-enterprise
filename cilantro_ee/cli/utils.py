@@ -2,6 +2,8 @@ import os
 import json
 import shlex
 import sys
+from getpass import getpass
+
 import psutil
 import pathlib
 import subprocess
@@ -190,3 +192,17 @@ def get_update_state():
           "Consensus:   {}\n"
           .format(active_upgrade, pepper, start_time, window, mcount, dcount,
                   mvotes, dvotes, consensus))
+
+
+def validate_key(restart=False):
+    while True:
+        sk = getpass('Signing Key in Hex Format: ')
+
+        try:
+            wallet = Wallet(seed=bytes.fromhex(sk))
+            print('Access validated')
+            if restart is True:
+                reboot_config(key=sk)
+            return wallet
+        except:
+            print('Invalid format! Try again.')

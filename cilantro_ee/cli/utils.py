@@ -200,7 +200,7 @@ def validate_key(restart=False, key=None):
             sk = getpass('Signing Key in Hex Format: ')
         else:
             sk = key
-            
+
         try:
             wallet = Wallet(seed=bytes.fromhex(sk))
             print('Access validated')

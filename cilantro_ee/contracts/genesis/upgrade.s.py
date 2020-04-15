@@ -78,6 +78,7 @@ def trigger_upgrade(pepper, initiator_vk):
         reset_contract()
     if S['window'] > 0:
         assert S['window'] == 0, "Can't Trigger new upgrade!!! Wait for existing upgrade to Finish or Expire"
+        return
 
     # for now only master's trigger upgrade
     if initiator_vk in election_house.current_value_for_policy('masternodes'):

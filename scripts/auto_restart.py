@@ -43,8 +43,12 @@ def main():
         c_status = check_pid(cpid)
 
         if False in {c_status, m_status}:
-            os.kill(mpid, signal.SIGTERM)
-            os.kill(cpid, signal.SIGTERM)
+            try:
+                os.kill(mpid, signal.SIGTERM)
+                os.kill(cpid, signal.SIGTERM)
+            except BaseException as err:
+                print("Error: {}".format(err))
+                continue
 
             # start mongo
             start_mongo()

@@ -194,10 +194,13 @@ def get_update_state():
                   mvotes, dvotes, consensus))
 
 
-def validate_key(restart=False):
+def validate_key(restart=False, key=None):
     while True:
-        sk = getpass('Signing Key in Hex Format: ')
-
+        if key is None:
+            sk = getpass('Signing Key in Hex Format: ')
+        else:
+            sk = key
+            
         try:
             wallet = Wallet(seed=bytes.fromhex(sk))
             print('Access validated')

@@ -133,7 +133,7 @@ def start_node(args):
     # Enable Auto Restart
     enable = ask(question='Authorize auto restart for cilantro')
     if enable:
-        w = validate_key(restart=enable)
+        w = validate_key(restart=enable, key = sk)
 
     if args.node_type == 'masternode':
         # Start mongo

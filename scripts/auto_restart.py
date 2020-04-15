@@ -48,7 +48,7 @@ def main():
                 os.kill(cpid, signal.SIGTERM)
             except BaseException as err:
                 print("Error: {}".format(err))
-                
+
 
             # start mongo
             start_mongo()

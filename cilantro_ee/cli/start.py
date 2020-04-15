@@ -2,6 +2,7 @@ import requests
 import pathlib
 import json
 import os
+import sys
 import time
 import asyncio
 import subprocess
@@ -30,6 +31,9 @@ def start_mongo():
                          stderr=open('/dev/null', 'w'))
         print('Starting MongoDB...')
         time.sleep(3)
+    except BaseException as err:
+        print("Failed to start Mongo")
+        print("Error: {}".format(err))
 
 
 def print_ascii_art():

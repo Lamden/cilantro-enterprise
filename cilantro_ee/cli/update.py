@@ -68,7 +68,7 @@ def trigger(pkg=None, iaddr=None):
 
 def vote(iaddr):
 
-    enable = ask(question='Authorize restart to new network')
+    #enable = ask(question='Authorize restart node')
 
     my_wallet = verify_access(restart=enable)
     file = input("Enter patch to constitution:")

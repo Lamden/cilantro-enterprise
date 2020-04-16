@@ -152,6 +152,9 @@ class Node:
 
         self.reward_manager = RewardManager(driver=self.driver, debug=False)
 
+        self.masternodes_contract = self.client.get_contract('masternodes')
+        self.delegates_contract = self.client.get_contract('delegates')
+
         self.running = False
 
     async def catchup(self, mn_seed):
@@ -235,38 +238,57 @@ class Node:
         self.running = False
 
     def update_sockets(self):
-        # UPDATE SOCKETS IF NEEDED
-        mn = self.elect_masternodes.quick_read('top_candidate')
-        dl = self.elect_delegates.quick_read('top_candidate')
+        allowed_sockets = self.masternodes_contract.quick_read('S', 'members')
+        allowed_sockets.extend(self.delegates_contract.quick_read('S', 'members'))
 
-        self.log.info(f'Top MN is {mn}')
-        self.log.info(f'Top DL is {dl}')
+        top_mn = self.elect_masternodes.quick_read('top_candidate')
+        if top_mn is not None:
+            allowed_sockets.append(top_mn)
 
-        update_mn = self.on_deck_master != mn and mn is not None
-        update_del = self.on_deck_delegate != dl and dl is not None
+        top_dl = self.elect_delegates.quick_read('top_candidate')
+        if top_dl is not None:
+            allowed_sockets.append(top_dl)
 
-        ## Check if
-        nodes_changed = self.contacts.masternodes != self.current_masters \
-                        or self.contacts.delegates != self.current_delegates
+        self.socket_authenticator.flush_all_keys()
 
-        if nodes_changed:
-            self.current_masters = deepcopy(self.contacts.masternodes)
-            self.current_delegates = deepcopy(self.contacts.delegates)
-
-        if update_mn or update_del or nodes_changed:
-            self.socket_authenticator.sync_certs()
-
-            if update_mn:
-                self.log.info(f'Adding on deck master {mn}')
-                self.socket_authenticator.add_verifying_key(bytes.fromhex(mn))
-                self.on_deck_master = mn
-
-            if update_del:
-                self.log.info(f'Adding on deck delegate {dl}')
-                self.socket_authenticator.add_verifying_key(bytes.fromhex(dl))
-                self.on_deck_master = dl
+        for k in allowed_sockets:
+            self.socket_authenticator.add_verifying_key(k)
 
         self.socket_authenticator.configure()
+
+    # def update_sockets(self):
+    #     # UPDATE SOCKETS IF NEEDED
+    #     mn = self.elect_masternodes.quick_read('top_candidate')
+    #     dl = self.elect_delegates.quick_read('top_candidate')
+    #
+    #     self.log.info(f'Top MN is {mn}')
+    #     self.log.info(f'Top DL is {dl}')
+    #
+    #     update_mn = self.on_deck_master != mn and mn is not None
+    #     update_del = self.on_deck_delegate != dl and dl is not None
+    #
+    #     ## Check if
+    #     nodes_changed = self.contacts.masternodes != self.current_masters \
+    #                     or self.contacts.delegates != self.current_delegates
+    #
+    #     if nodes_changed:
+    #         self.current_masters = deepcopy(self.contacts.masternodes)
+    #         self.current_delegates = deepcopy(self.contacts.delegates)
+    #
+    #     if update_mn or update_del or nodes_changed:
+    #         self.socket_authenticator.sync_certs()
+    #
+    #         if update_mn:
+    #             self.log.info(f'Adding on deck master {mn}')
+    #             self.socket_authenticator.add_verifying_key(bytes.fromhex(mn))
+    #             self.on_deck_master = mn
+    #
+    #         if update_del:
+    #             self.log.info(f'Adding on deck delegate {dl}')
+    #             self.socket_authenticator.add_verifying_key(bytes.fromhex(dl))
+    #             self.on_deck_master = dl
+    #
+    #     self.socket_authenticator.configure()
 
     def version_check(self):
 

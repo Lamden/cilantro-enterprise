@@ -7,6 +7,7 @@ import time
 import asyncio
 import subprocess
 from subprocess import call
+from shutil import copyfile
 
 import zmq.asyncio
 
@@ -124,14 +125,10 @@ def start_node(args):
     socket_base = f'tcp://{ip_str}'
 
     # Setup Environment
-    # CURR_DIR = pathlib.Path(os.getcwd())
-    # os.environ['CIL_ROOT'] = str(CURR_DIR.parent)
-    # os.environ['CIL_MOD'] = str(os.getenv('CIL_ROOT')) + '/cilantro-enterprise/cilantro_ee'
+    copyfile('/root/cilantro-enterprise/scripts/cil.service', '/etc/systemd/system/cil.service')
 
-    #print(os.getenv('CIL_ROOT'))
 
     # Enable Auto Restart
-
     key, config = read_cfg()
 
     if key is None or config is None:

@@ -1,0 +1,9 @@
+[Unit]
+Description=Cilantro Block Chain
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /root/cilantro-enterprise/scripts/auto_restart.py
+
+[Install]
+WantedBy=multi-user.target

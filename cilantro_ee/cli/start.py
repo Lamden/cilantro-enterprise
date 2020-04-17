@@ -16,7 +16,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.nodes.masternode.masternode import Masternode
 from cilantro_ee.nodes.delegate.delegate import Delegate
-from cilantro_ee.cli.utils import ask, validate_key
+from cilantro_ee.cli.utils import ask, validate_key, read_cfg
 
 import time
 from getpass import getpass
@@ -124,16 +124,24 @@ def start_node(args):
     socket_base = f'tcp://{ip_str}'
 
     # Setup Environment
-    CURR_DIR = pathlib.Path(os.getcwd())
-    os.environ['CIL_ROOT'] = str(CURR_DIR.parent)
-    os.environ['CIL_MOD'] = str(os.getenv('CIL_ROOT')) + '/cilantro-enterprise/cilantro_ee'
+    # CURR_DIR = pathlib.Path(os.getcwd())
+    # os.environ['CIL_ROOT'] = str(CURR_DIR.parent)
+    # os.environ['CIL_MOD'] = str(os.getenv('CIL_ROOT')) + '/cilantro-enterprise/cilantro_ee'
 
-    print(os.getenv('CIL_ROOT'))
+    #print(os.getenv('CIL_ROOT'))
 
     # Enable Auto Restart
-    enable = ask(question='Authorize auto restart for cilantro')
-    if enable:
-        w = validate_key(restart=enable, key = args.key)
+
+    key, config = read_cfg()
+
+    if key is None or config is None:
+        # booting for 1st time
+        enable = ask(question='Authorize auto restart for cilantro')
+
+        if enable:
+            validate_key(restart=enable, key = args.key)
+        else:
+            print("Auto Restart is disabled manual intervention to restart CIL")
 
     if args.node_type == 'masternode':
         # Start mongo

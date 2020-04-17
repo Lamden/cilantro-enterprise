@@ -78,8 +78,7 @@ def reboot_config(key=None):
     log.info("Writing config")
 
 
-def restart():
-
+def read_cfg():
     # Read configs
     #p = str(pathlib.Path(os.getcwd())) + '/key.json'
     #p = str(os.environ['CIL_ROOT']) + '/key.json'
@@ -107,11 +106,18 @@ def restart():
         f.close()
     except IOError:
         log.error("Config not found - restart manually")
+        return
 
     assert 'nodes' in cfg.keys(), 'No bootnodes found'
     assert 'version' in cfg.keys(), 'No pepper found'
     assert 'type' in cfg.keys(), 'No Node Type'
     print(cfg)
+
+    return k, cfg
+
+
+def restart(key, config):
+    k, cfg = read_cfg()
 
     bn = cfg['nodes']
     bn_str = ''
@@ -119,7 +125,7 @@ def restart():
     for i in bn:
         bn_str = bn_str + " " + i
 
-    cmd = f"nohup cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
+    cmd = f"cil start {cfg['type']} -k {k['sk']} -bn {bn_str}"
     print(cmd)
 
     args = shlex.split(cmd)
@@ -133,12 +139,6 @@ def restart():
         print(stdout.decode())
     if stderr:
         print(stderr.decode())
-
-    # cron = CronTab(user='root')
-    # job = cron.new(command=cmd)
-    # job.minute.every(1)
-    # cron.write()
-    # print('cron.write() was just executed')
 
 
 def version_reboot(bn, is_master):

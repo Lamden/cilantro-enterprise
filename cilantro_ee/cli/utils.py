@@ -116,7 +116,7 @@ def read_cfg():
     return k, cfg
 
 
-def restart(key, config):
+def restart():
     k, cfg = read_cfg()
 
     bn = cfg['nodes']

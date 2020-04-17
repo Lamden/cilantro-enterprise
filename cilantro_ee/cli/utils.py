@@ -84,11 +84,12 @@ def restart():
     #p = str(pathlib.Path(os.getcwd())) + '/key.json'
     #p = str(os.environ['CIL_ROOT']) + '/key.json'
 
-    p = '/root/cilantro-enterprise/key.json'
+    pkg_root = '/root/cilantro-enterprise'
     #print('{}{}'.format(p, '/key.json'))
 
     try:
-        f = open(str(p), 'r')
+        key_path = pkg_root + '/key.json'
+        f = open(str(key_path), 'r')
         k = json.load(f)
         f.close()
     except IOError:
@@ -99,7 +100,8 @@ def restart():
     print(k)
 
     try:
-        cfg_path = str(os.environ['CIL_ROOT']) + '/network_info.json'
+        #cfg_path = str(os.environ['CIL_ROOT']) + '/network_info.json'
+        cfg_path = pkg_root + '/network_info.json'
         f = open(str(cfg_path), 'r')
         cfg = json.load(f)
         f.close()

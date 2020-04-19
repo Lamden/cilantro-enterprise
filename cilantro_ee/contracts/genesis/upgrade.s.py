@@ -85,7 +85,7 @@ def trigger_upgrade(pepper, initiator_vk):
         upg_lock.set(True)
         S['init_time'] = now
         upg_pepper.set(pepper)
-        S['window'] = datetime.MINUTES * 1
+        S['window'] = datetime.MINUTES * 5
 
         mn_vote.set(0)
         dl_vote.set(0)

@@ -52,8 +52,6 @@ def trigger(pkg=None, iaddr=None):
 
 def vote(iaddr):
 
-    #enable = ask(question='Authorize restart node')
-
     my_wallet = validate_key(restart=False)
     file = input("Enter patch to constitution:")
 
@@ -66,7 +64,7 @@ def vote(iaddr):
 
     nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key().hex()))
     nonce = nonce_req.json()['nonce']
-    vk = my_wallet.verifying_key()
+    #vk = my_wallet.verifying_key()
 
     kwargs = {'vk': my_wallet.verifying_key().hex()}
 

@@ -396,13 +396,13 @@ class TestGovernanceOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        self.assertListEqual(o.masternodes[0].contacts.masternodes, [
+        self.assertListEqual(o.masternodes[0].masternode_contract('S', 'members'), [
             o.masternodes[0].wallet.verifying_key().hex(),
             o.masternodes[1].wallet.verifying_key().hex(),
             candidate.verifying_key().hex()
         ])
 
-        self.assertListEqual(o.masternodes[1].contacts.masternodes, [
+        self.assertListEqual(o.masternodes[1].masternode_contract('S', 'members'), [
             o.masternodes[0].wallet.verifying_key().hex(),
             o.masternodes[1].wallet.verifying_key().hex(),
             candidate.verifying_key().hex()
@@ -613,7 +613,7 @@ class TestGovernanceOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        self.assertListEqual(o.masternodes[0].contacts.delegates, [
+        self.assertListEqual(o.masternodes[0].delegate_contract.quick_read('S', 'members'), [
             o.delegates[0].wallet.verifying_key().hex(),
             o.delegates[1].wallet.verifying_key().hex(),
             o.delegates[2].wallet.verifying_key().hex(),
@@ -621,7 +621,7 @@ class TestGovernanceOrchestration(unittest.TestCase):
             candidate.verifying_key().hex()
         ])
 
-        self.assertListEqual(o.masternodes[1].contacts.delegates, [
+        self.assertListEqual(o.masternodes[1].delegate_contract.quick_read('S', 'members'), [
             o.delegates[0].wallet.verifying_key().hex(),
             o.delegates[1].wallet.verifying_key().hex(),
             o.delegates[2].wallet.verifying_key().hex(),

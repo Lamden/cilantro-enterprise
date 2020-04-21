@@ -3,7 +3,6 @@ from cilantro_ee.nodes.catchup import BlockFetcher
 from cilantro_ee.storage import MasterStorage
 
 from cilantro_ee.nodes.new_block_inbox import NBNInbox
-from cilantro_ee.storage import VKBook
 from cilantro_ee.contracts import sync
 from cilantro_ee.networking.parameters import Parameters, ServiceType, NetworkParameters
 import cilantro_ee
@@ -62,12 +61,6 @@ class Node:
 
         self.driver.commit()
         self.driver.clear_pending_state()
-
-        self.contacts = VKBook(
-            client=self.client,
-            boot_mn=constitution['masternode_min_quorum'],
-            boot_del=constitution['delegate_min_quorum'],
-        )
 
         self.masternode_contract = self.client.get_contract('masternodes')
         self.delegate_contract = self.client.get_contract('delegates')

@@ -129,7 +129,7 @@ class Masternode(Node):
 
             # await multicast(self.ctx, msg, self.nbn_sockets())
 
-        if len(self.contacts.masternodes) > 1:
+        if len(self.masternode_contract.quick_read('S', 'members')) > 1:
             self.driver.set_latest_block_num(1)
 
         await self.process_blocks()
@@ -159,7 +159,7 @@ class Masternode(Node):
             await self.parameters.refresh()
             self.nbn_socket_book.sync_sockets()
 
-            print(self.contacts.masternodes)
+            print(self.masternode_contract.quick_read('S', 'members'))
 
         await self.parameters.refresh()
         self.nbn_socket_book.sync_sockets()
@@ -237,16 +237,16 @@ class Masternode(Node):
             if sends is None:
                 return
 
-            self.log.info(self.contacts.masternodes)
-            self.log.info(self.contacts.delegates)
+            self.log.info(self.masternode_contract.quick_read("S", "members"))
+            self.log.info(self.delegate_contract.quick_read("S", "members"))
 
-            self.log.error(f'{len(self.contacts.masternodes)} MNS!')
+            self.log.error(f'{len(self.masternode_contract.quick_read("S", "members"))} MNS!')
 
             self.log.info(f'{sends}')
 
             # this really should just give us a block straight up
             block = await self.aggregator.gather_subblocks(
-                total_contacts=len(self.contacts.delegates),
+                total_contacts=len(self.delegate_contract.quick_read("S", "members")),
                 expected_subblocks=len(self.masternode_contract.quick_read("S", "members"))
             )
 

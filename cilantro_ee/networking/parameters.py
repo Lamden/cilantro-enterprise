@@ -1,5 +1,4 @@
 import cilantro_ee.sockets.struct
-from cilantro_ee.storage import VKBook
 from cilantro_ee.sockets.services import get
 
 import json

@@ -69,8 +69,11 @@ class Node:
             boot_del=constitution['delegate_min_quorum'],
         )
 
-        self.current_masters = deepcopy(self.contacts.masternodes)
-        self.current_delegates = deepcopy(self.contacts.delegates)
+        self.masternode_contract = self.client.get_contract('masternodes')
+        self.delegate_contract = self.client.get_contract('delegates')
+
+        self.current_masters = deepcopy(self.masternode_contract.quick_read('S', 'members'))
+        self.current_delegates = deepcopy(self.delegate_contract.quick_read('S', 'members'))
 
         self.parameters = Parameters(socket_base, ctx, wallet, contacts=self.contacts)
 
@@ -78,9 +81,6 @@ class Node:
 
         self.elect_masternodes = self.client.get_contract('elect_masternodes')
         self.elect_delegates = self.client.get_contract('elect_delegates')
-
-        self.masternode_contract = self.client.get_contract('masternodes')
-        self.delegate_contract = self.client.get_contract('delegates')
 
         self.update_sockets()
 

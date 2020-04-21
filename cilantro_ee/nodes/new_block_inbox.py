@@ -1,8 +1,8 @@
 import asyncio
 
 from cilantro_ee.messages import MessageType, Message
-from cilantro_ee.sockets.inbox import AsyncInbox, SecureAsyncInbox
-from cilantro_ee.storage import BlockchainDriver, VKBook
+from cilantro_ee.sockets.inbox import SecureAsyncInbox
+from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.logger.base import get_logger
 import math
 

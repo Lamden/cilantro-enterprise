@@ -81,6 +81,3 @@ class NBNInbox(SecureAsyncInbox):
 
     def clean(self):
         self.q = [nbn for nbn in self.q if nbn['blockNum'] >= self.driver.latest_block_num]
-
-    def update_signers(self):
-        pass

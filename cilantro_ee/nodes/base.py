@@ -194,7 +194,6 @@ class Node:
 
         self.driver.cache.clear()
         self.nbn_inbox.clean()
-        self.nbn_inbox.update_signers()
 
     async def start(self):
         await self.network.start()

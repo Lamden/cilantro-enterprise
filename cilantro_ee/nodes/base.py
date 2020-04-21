@@ -75,7 +75,13 @@ class Node:
         self.current_masters = deepcopy(self.masternode_contract.quick_read('S', 'members'))
         self.current_delegates = deepcopy(self.delegate_contract.quick_read('S', 'members'))
 
-        self.parameters = Parameters(socket_base, ctx, wallet, contacts=self.contacts)
+        self.parameters = Parameters(
+            socket_base,
+            ctx,
+            wallet,
+            masternode_contract=self.masternode_contract,
+            delegate_contract=self.delegate_contract
+        )
 
         self.socket_authenticator = SocketAuthenticator(ctx=self.ctx)
 

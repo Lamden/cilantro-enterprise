@@ -78,26 +78,29 @@ class Parameters:
                  socket_base: str,
                  ctx: zmq.asyncio.Context,
                  wallet,
-                 contacts: VKBook,
                  network_parameters: NetworkParameters=NetworkParameters(),
-                 debug=False
+                 debug=False,
+                 masternode_contract=None,
+                 delegate_contract=None
                  ):
 
         self.socket_base = socket_base
         self.ctx = ctx
         self.wallet = wallet
         self.network_parameters = network_parameters
-        self.contacts = contacts
 
         self.peer_service_address = self.network_parameters.resolve(socket_base, ServiceType.PEER)
         self.sockets = {}
+
+        self.masternode_contract = masternode_contract
+        self.delegate_contract = delegate_contract
 
         self.log = get_logger('Parameters')
         self.log.propagate = debug
 
     def get_masternode_sockets(self, service=None):
         masternodes = {}
-        vks = set(self.contacts.masternodes)
+        vks = set(self.masternode_contract.quick_read('S', 'members'))
 
         for k in self.sockets.keys():
             if k in vks:
@@ -113,13 +116,13 @@ class Parameters:
         return masternodes
 
     def get_masternode_vks(self):
-        vks = set(self.contacts.masternodes)
+        vks = set(self.masternode_contract.quick_read('S', 'members'))
         online_nodes = set(self.sockets.keys())
         return vks.intersection(online_nodes)
 
     def get_delegate_sockets(self, service=None):
         delegates = {}
-        vks = set(self.contacts.delegates)
+        vks = set(self.delegate_contract.quick_read('S', 'members'))
 
         for k in self.sockets.keys():
             if k in vks:
@@ -157,7 +160,7 @@ class Parameters:
         return self.network_parameters.resolve(socket, service)
 
     async def refresh(self):
-        pb_nodes = set(self.contacts.delegates + self.contacts.masternodes)
+        pb_nodes = set(self.delegate_contract.quick_read('S', 'members') + self.masternode_contract.quick_read('S', 'members'))
         self.log.info(f'Finding these nodes: {pb_nodes}')
 
         try:

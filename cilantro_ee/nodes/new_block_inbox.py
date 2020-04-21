@@ -24,15 +24,17 @@ class BadConsensusBlock(BlockNotificationException):
 
 
 class NBNInbox(SecureAsyncInbox):
-    def __init__(self, contacts: VKBook, driver: BlockchainDriver=BlockchainDriver(), verify=True, allow_current_block_num=False, *args, **kwargs):
+    def __init__(self, delegate_contract, driver: BlockchainDriver=BlockchainDriver(), verify=True, allow_current_block_num=False, *args, **kwargs):
         self.q = []
-        self.contacts = contacts
+
+        self.delegate_contract = delegate_contract
+
         self.driver = driver
         self.verify = verify
         self.quorum_ratio = 0.50
         self.allow_current_block_num = allow_current_block_num
         self.log = get_logger('NBN')
-        self.signers = len(self.contacts.delegates) # This has to be updated every block in case a delegate is added or removed
+
         super().__init__(*args, **kwargs)
 
     async def handle_msg(self, _id, msg):
@@ -59,7 +61,7 @@ class NBNInbox(SecureAsyncInbox):
 
         # Check if signed by quorum amount
         for sub_block in msg_blob.subBlocks:
-            if len(sub_block.signatures) < math.ceil(self.signers * self.quorum_ratio):
+            if len(sub_block.signatures) < math.ceil(len(self.delegate_contract.quick_read('S', 'members')) * self.quorum_ratio):
                 raise BadConsensusBlock
 
         # Deserialize off the socket
@@ -81,4 +83,4 @@ class NBNInbox(SecureAsyncInbox):
         self.q = [nbn for nbn in self.q if nbn['blockNum'] >= self.driver.latest_block_num]
 
     def update_signers(self):
-        self.signers = len(self.contacts.delegates)
+        pass

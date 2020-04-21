@@ -137,7 +137,7 @@ class Node:
                 bind=True),
             ctx=self.ctx,
             driver=self.driver,
-            contacts=self.contacts,
+            delegate_contract=self.delegate_contract,
             wallet=wallet
         )
 

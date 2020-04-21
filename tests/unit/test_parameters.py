@@ -3,7 +3,6 @@ from unittest import TestCase
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.sockets.struct import _socket
 from cilantro_ee.contracts import sync
-from cilantro_ee.storage.vkbook import VKBook
 from cilantro_ee.networking.network import Network
 from contracting.client import ContractingClient
 import cilantro_ee
@@ -78,7 +77,13 @@ class TestParameters(TestCase):
         )
 
         ctx = zmq.Context()
-        m = Parameters(socket_base='tcp://127.0.0.1', ctx=ctx, contacts=VKBook(client=self.client), wallet=Wallet())
+        m = Parameters(
+            socket_base='tcp://127.0.0.1',
+            ctx=ctx,
+            masternode_contract=self.client.get_contract('masternode'),
+            delegate_contract=self.client.get_contract('delegates'),
+            wallet=Wallet()
+        )
 
         m.sockets = {'a': ctx.socket(zmq.PUB), 'b': ctx.socket(zmq.PUB)}
 
@@ -99,7 +104,8 @@ class TestParameters(TestCase):
         )
 
         ctx = zmq.Context()
-        m = Parameters(socket_base='tcp://127.0.0.1', ctx=ctx, contacts=VKBook(client=self.client), wallet=Wallet())
+        m = Parameters(socket_base='tcp://127.0.0.1', ctx=ctx, masternode_contract=self.client.get_contract('masternode'),
+            delegate_contract=self.client.get_contract('delegates'), wallet=Wallet())
         m.sockets = {'a': ctx.socket(zmq.PUB), 'b': ctx.socket(zmq.PUB)}
 
         m.remove_node('c')
@@ -110,15 +116,14 @@ class TestParameters(TestCase):
     def test_get_masternode_sockets(self):
         constitution = self.get_vkbook_args()
 
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json')
+        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
             initial_delegates=constitution['delegates'],
             boot_dels=constitution['delegate_min_quorum'],
+            client=self.client
         )
-
-        PhoneBook = VKBook()
 
         w1 = Wallet()
 
@@ -130,7 +135,7 @@ class TestParameters(TestCase):
             'stu': 'tcp://127.0.0.1',
             'raghu': 'tcp://127.0.0.2'
         }
-        p1.peer_service.table.peers = raw
+        p1.peer_service.table = raw
 
         expected = {
             'stu': 'tcp://127.0.0.1',
@@ -139,7 +144,8 @@ class TestParameters(TestCase):
         # CHANGE CLIENT TO SOCKET
         masternodes = Parameters(socket_base='tcp://127.0.0.1',
                                  wallet=w1,
-                                 contacts=MockContacts(['stu'], delegates=[]),
+                                 masternode_contract=self.client.get_contract('masternodes'),
+                                 delegate_contract=self.client.get_contract('delegates'),
                                  ctx=self.ctx)
 
         self.assertDictEqual(masternodes.sockets, {})
@@ -173,8 +179,6 @@ class TestParameters(TestCase):
             client=self.client
         )
 
-        PhoneBook = VKBook(client=self.client)
-
         w1 = Wallet()
 
         p1 = Network(wallet=w1, ctx=self.ctx, socket_base='tcp://127.0.0.1')
@@ -194,7 +198,8 @@ class TestParameters(TestCase):
         # CHANGE CLIENT TO SOCKET
         masternodes = Parameters(socket_base='tcp://127.0.0.1',
                                  wallet=w1,
-                                 contacts=MockContacts(['stu'], delegates=['raghu']),
+                                 masternode_contract=self.client.get_contract('masternodes'),
+                                 delegate_contract=self.client.get_contract('delegates'),
                                  ctx=self.ctx)
 
         self.assertDictEqual(masternodes.sockets, {})
@@ -228,8 +233,6 @@ class TestParameters(TestCase):
             client=self.client
         )
 
-        PhoneBook = VKBook(client=self.client)
-
         w1 = Wallet()
 
         p1 = Network(wallet=w1, ctx=self.ctx, socket_base='tcp://127.0.0.1')
@@ -246,7 +249,8 @@ class TestParameters(TestCase):
         # CHANGE CLIENT TO SOCKET
         masternodes = Parameters(socket_base='tcp://127.0.0.1',
                                  wallet=w1,
-                                 contacts=MockContacts(['stu'], delegates=['raghu']),
+                                 masternode_contract=self.client.get_contract('masternodes'),
+                                 delegate_contract=self.client.get_contract('delegates'),
                                  ctx=self.ctx)
 
         self.assertDictEqual(masternodes.sockets, {})
@@ -280,8 +284,6 @@ class TestParameters(TestCase):
             client=self.client
         )
 
-        PhoneBook = VKBook(client=self.client)
-
         w1 = Wallet()
 
         p1 = Network(wallet=w1, ctx=self.ctx, socket_base='tcp://127.0.0.1')
@@ -302,7 +304,8 @@ class TestParameters(TestCase):
         # CHANGE CLIENT TO SOCKET
         masternodes = Parameters(socket_base='tcp://127.0.0.1',
                                  wallet=w1,
-                                 contacts=MockContacts(['stu'], delegates=['raghu']),
+                                 masternode_contract=self.client.get_contract('masternodes'),
+                                 delegate_contract=self.client.get_contract('delegates'),
                                  ctx=self.ctx)
 
         self.assertDictEqual(masternodes.sockets, {})
@@ -336,8 +339,6 @@ class TestParameters(TestCase):
             client=self.client
         )
 
-        PhoneBook = VKBook(client=self.client)
-
         w1 = Wallet()
 
         p1 = Network(wallet=w1, ctx=self.ctx, socket_base='tcp://127.0.0.1')
@@ -358,7 +359,8 @@ class TestParameters(TestCase):
         # CHANGE CLIENT TO SOCKET
         masternodes = Parameters(socket_base='tcp://127.0.0.1',
                                  wallet=w1,
-                                 contacts=MockContacts(['stu'], ['raghu']),
+                                 masternode_contract=self.client.get_contract('masternodes'),
+                                 delegate_contract=self.client.get_contract('delegates'),
                                  ctx=self.ctx)
 
         self.assertDictEqual(masternodes.sockets, {})
@@ -392,8 +394,6 @@ class TestParameters(TestCase):
             client=self.client
         )
 
-        PhoneBook = VKBook(client=self.client)
-
         w1 = Wallet()
         p1 = Network(wallet=w1, ctx=self.ctx, socket_base='tcp://127.0.0.1')
 
@@ -410,7 +410,8 @@ class TestParameters(TestCase):
 
         masternodes = Parameters(socket_base='tcp://127.0.0.1',
                                  wallet=w1,
-                                 contacts=MockContacts(['stu', 'raghu'], ['tejas', 'steve']),
+                                 masternode_contract=self.client.get_contract('masternodes'),
+                                 delegate_contract=self.client.get_contract('delegates'),
                                  ctx=ctx2)
 
         self.assertDictEqual(masternodes.sockets, {})

@@ -149,11 +149,11 @@ class MasterStorage:
 
 
 class DistributedMasterStorage(MasterStorage):
-    def __init__(self, key, distribute_writes=False, config_path=cilantro_ee.__path__[0], vkbook=None):
+    def __init__(self, key, distribute_writes=False, config_path=cilantro_ee.__path__[0], masternode_contract=None):
         super().__init__(config_path=config_path)
 
         self.distribute_writes = distribute_writes
-        self.vkbook = vkbook
+        self.masternode_contract = masternode_contract
 
         self.wallet = Wallet(seed=key)
 
@@ -170,7 +170,7 @@ class DistributedMasterStorage(MasterStorage):
         if self.test_hook is True:
             return self.active_masters
         else:
-            self.active_masters = len(self.vkbook.masternodes)
+            self.active_masters = len(self.masternode_contract.quick_read('S', 'members'))
             return self.active_masters
 
     def set_mn_id(self, vk):
@@ -180,7 +180,7 @@ class DistributedMasterStorage(MasterStorage):
         # this should be rewritten to just pull from Phonebook because it's dynamic now
 
         for i in range(self.get_master_set()):
-            if self.vkbook.masternodes[i] == vk:
+            if self.masternode_contract.quick_read('S', 'members')[i] == vk:
                 self.mn_id = i
                 return True
             else:
@@ -197,15 +197,15 @@ class DistributedMasterStorage(MasterStorage):
 
     def build_wr_list(self, curr_node_idx=0, jump_idx=1):
         # Use slices to make this a one liner
-        tot_mn = len(self.vkbook.masternodes)
+        tot_mn = len(self.masternode_contract.quick_read('S', 'members'))
         mn_list = []
 
         # if quorum req not met jump_idx is 0 wr on all active nodes
         if jump_idx == 0:
-            return self.vkbook.masternodes
+            return self.masternode_contract.quick_read('S', 'members')
 
         while curr_node_idx < tot_mn:
-            mn_list.append(self.vkbook.masternodes[curr_node_idx])
+            mn_list.append(self.masternode_contract.quick_read('S', 'members')[curr_node_idx])
             curr_node_idx += jump_idx
 
         return mn_list
@@ -300,13 +300,13 @@ class CilantroStorageDriver(DistributedMasterStorage):
             current_block_num += 1
 
         block_dict = block_from_subblocks(subblocks=sub_blocks, previous_hash=last_hash, block_num=current_block_num)
-        block_dict['blockOwners'] = [m for m in self.vkbook.masternodes],
+        block_dict['blockOwners'] = [m for m in self.masternode_contract.quick_read('S', 'members')],
 
         return block_dict
 
     def store_new_block(self, block):
         if block.get('blockOwners') is None:
-            block['blockOwners'] = self.vkbook.masternodes
+            block['blockOwners'] = self.masternode_contract.quick_read('S', 'members')
         self.evaluate_wr(entry=block)
 
     # def store_block(self, sub_blocks):

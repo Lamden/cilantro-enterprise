@@ -1,7 +1,6 @@
 from unittest import TestCase
 from cilantro_ee.storage.master import DistributedMasterStorage
 from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.storage.vkbook import VKBook
 from cilantro_ee.contracts import sync
 import cilantro_ee
 from contracting.client import ContractingClient
@@ -23,7 +22,7 @@ class TestDistributedMasterStorage(TestCase):
 
         w = Wallet()
         sk, vk = w.signing_key(), w.verifying_key()
-        self.db = DistributedMasterStorage(key=sk, vkbook=VKBook(self.client, 1, 1))
+        self.db = DistributedMasterStorage(key=sk, masternode_contract=self.client.get_contract('masternodes'))
 
     def tearDown(self):
         self.db.drop_collections()
@@ -34,7 +33,7 @@ class TestDistributedMasterStorage(TestCase):
     def test_get_masterset_test_hook_false(self):
         self.db.test_hook = False
 
-        self.assertEqual(len(self.db.vkbook.masternodes), self.db.get_master_set())
+        self.assertEqual(len(self.db.masternode_contract.quick_read('S', 'members')), self.db.get_master_set())
 
     def test_get_masterset_test_hook_true(self):
         am = self.db.active_masters
@@ -60,18 +59,6 @@ class TestDistributedMasterStorage(TestCase):
         self.assertEqual(self.db.mn_id, -1)
         self.assertFalse(success)
 
-    def test_set_mn_id_test_hook_false_master_in_active_masters(self):
-        PhoneBook = VKBook(self.client)
-
-        vk = PhoneBook.masternodes[0]
-
-        self.db.test_hook = False
-
-        success = self.db.set_mn_id(vk)
-
-        self.assertEqual(self.db.mn_id, 0)
-        self.assertTrue(success)
-
     def test_rep_pool_size_fails_when_active_masters_less_than_rep_factor(self):
         self.db.rep_factor = 999
         self.assertEqual(self.db.rep_pool_sz(), -1)
@@ -82,13 +69,6 @@ class TestDistributedMasterStorage(TestCase):
         self.db.rep_factor = 1
         pool = round(self.db.active_masters / self.db.rep_factor)
         self.assertEqual(self.db.rep_pool_sz(), pool)
-
-    def test_build_write_list_returns_all_mns_when_jump_idx_0(self):
-        PhoneBook = VKBook(self.client)
-
-        mns = PhoneBook.masternodes
-
-        self.assertEqual(mns, self.db.build_wr_list(None, 0))
 
     def test_build_write_list_curr_node_0_jump_idx_1_returns_all(self):
         masternodes = list(range(100))
@@ -103,10 +83,6 @@ class TestDistributedMasterStorage(TestCase):
             boot_dels=1,
             client=self.client
         )
-
-        big_vkbook = VKBook(self.client)
-
-        self.db.vkbook = big_vkbook
 
         write_list = self.db.build_wr_list(0, 1)
         self.assertEqual(masternodes, write_list)
@@ -125,9 +101,6 @@ class TestDistributedMasterStorage(TestCase):
             client=self.client
         )
 
-        big_vkbook = VKBook(self.client)
-
-        self.db.vkbook = big_vkbook
 
         write_list = self.db.build_wr_list(20, 1)
         self.assertEqual(masternodes[20:], write_list)
@@ -188,10 +161,6 @@ class TestDistributedMasterStorage(TestCase):
             boot_dels=1,
             client=self.client
         )
-
-        big_vkbook = VKBook(self.client)
-
-        self.db.vkbook = big_vkbook
 
         write_list = self.db.build_wr_list(20, 2)
         self.assertEqual(masternodes[20::2], write_list)

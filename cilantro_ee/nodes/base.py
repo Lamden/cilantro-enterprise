@@ -123,10 +123,10 @@ class Node:
             socket_base=socket_base,
             bootnodes=self.bootnodes,
             params=self.network_parameters,
-            initial_del_quorum=deepcopy(self.contacts.delegate_quorum_min),
-            initial_mn_quorum=deepcopy(self.contacts.masternode_quorum_min),
-            mn_to_find=deepcopy(self.contacts.masternodes),
-            del_to_find=deepcopy(self.contacts.delegates),
+            initial_mn_quorum=deepcopy(self.masternode_contract.quick_read('minimum_nodes')),
+            initial_del_quorum=deepcopy(self.delegate_contract.quick_read('minimum_nodes')),
+            mn_to_find=deepcopy(self.masternode_contract.quick_read('S', 'members')),
+            del_to_find=deepcopy(self.delegate_contract.quick_read('S', 'members')),
             mn_seed=mn_seed
         )
 

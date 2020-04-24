@@ -65,11 +65,33 @@ def ask(question):
             return False
 
 
+def run(*args):
+    return subprocess.check_call(['git'] + list(args))
+
+
 def reboot_config(key=None):
     if key is None:
         return
 
     myid = {'sk': key}
+
+    try:
+        path = '/root/cilantro-enterprise'
+        os.chdir(path)
+
+        # get latest release
+        rel = input("Enter New Release branch:")
+        br = f'{rel}'
+
+        run("checkout", "-b", br)
+
+        myid['target'] = rel
+
+    except OSError as err:
+        print("OS error: {0}".format(err))
+    except:
+        print("Unexpected error:", sys.exc_info())
+        raise
 
     with open('key.json', 'w') as outfile:
         json.dump(myid, outfile)

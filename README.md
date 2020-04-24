@@ -11,14 +11,8 @@ sudo apt-get install python3-pip -y
 ```
 
 ### Other Pip3 Pkg
-'''bash
-pip3 install --upgrade pip setuptools
-'''
-
-### Install RocksDB
 ```bash
-sudo apt-get install libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev libbz2-dev -y
-sudo apt-get install librocksdb-dev -y
+pip3 install --upgrade pip setuptools
 ```
 
 ### Install MongoDB
@@ -52,22 +46,16 @@ cd ~
 git clone https://github.com/Lamden/cilantro-enterprise.git
 cd cilantro-enterprise
 git fetch
-git checkout rel_gov_debug
+git checkout ori1-rel-gov-socks
 python3 setup.py develop
 ```
 
 ### Setup and run Mongo
 ```
-mongod --dbpath ~/blocks --logpath ~/logs.log --bind_ip_all
+mkdir ~/blocks
+mongod --dbpath ~/blocks --logpath ~/logs.log --bind_ip 127.0.0.1 --fork
 # cd cilantro-enterprise/scripts
 # python3 create_user.py # nolonger needed
-```
-
-### Start Rocks (Python Driver) and fork the process
-```
-pip3 install python-rocksdb
-
-rocks serve &
 ```
 
 ### Make a Constitution

@@ -1,10 +1,11 @@
 import zmq
 import asyncio
 from zmq.utils import monitor
+import os
 import pathlib
 from zmq.auth.certs import load_certificate
 from cilantro_ee.networking.parameters import Parameters, ServiceType
-
+from cilantro_ee.logger.base import get_logger
 # Sync sockets from parameters
 # If there is a difference between the sockets stored and the sockets in parameters:
 # Add and connect the ones that exist
@@ -23,6 +24,8 @@ class SecureSocketWrapper:
         self.socket = ctx.socket(zmq.DEALER)
         self.socket.curve_secretkey = wallet.curve_sk
         self.socket.curve_publickey = wallet.curve_vk
+
+        self._id = str(socket_id)
 
         cert_dir = pathlib.Path.home() / cert_dir
         cert_dir.mkdir(parents=True, exist_ok=True)
@@ -45,37 +48,32 @@ class Peers:
         self.parameters = parameters
         self.service_type = service_type
         self.node_type = node_type
+        self.log = get_logger('PEERS')
 
     def connect(self, socket_id, server_vk):
         s = self.sockets.get(server_vk)
         if s is None:
-            socket = SecureSocketWrapper(self.ctx, server_vk, socket_id, self.wallet, self.cert_dir)
-            self.sockets[server_vk] = socket
+            if os.path.exists(pathlib.Path.home() / self.cert_dir / f'{server_vk}.key'):
+                socket = SecureSocketWrapper(self.ctx, server_vk, socket_id, self.wallet, self.cert_dir)
+                self.log.info(f'Connecting to {server_vk}, {socket_id}')
+                self.sockets[server_vk] = socket
 
     async def send_to_peers(self, msg):
         return await asyncio.gather(*[self.send(socket_wrapper, msg) for socket_wrapper in self.sockets.values()])
 
     async def send(self, socket_wrapper: SecureSocketWrapper, msg):
-        # s = socket_wrapper.socket.get_monitor_socket()
-        #
-        # while not socket_wrapper.connected and not socket_wrapper.handshake_successful:
-        #     evnt = await s.recv_multipart()
-        #     evnt_dict = monitor.parse_monitor_message(evnt)
-        #     event = evnt_dict['event']
-        #     if event == 1:
-        #         socket_wrapper.connected = True
-        #     elif event == 4096:
-        #         socket_wrapper.handshake_successful = True
-        #     else:
-        #         raise Exception(f'Unknown event {event} encountered on socket monitor')
+        self.log.info(f'Sending message to : {socket_wrapper._id}')
 
         socket_wrapper.socket.send(msg, flags=zmq.NOBLOCK)
+
+        self.log.info('Done')
         # socket.close()
         return True
 
     def sync_sockets(self):
         if self.node_type == MN:
             sockets = self.parameters.get_masternode_sockets(self.service_type)
+            self.log.info(f'MN Socks: {sockets}')
         elif self.node_type == DEL:
             sockets = self.parameters.get_delegate_sockets(self.service_type)
         elif self.node_type == ALL:

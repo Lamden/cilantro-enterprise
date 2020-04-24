@@ -89,8 +89,10 @@ class TransactionStampsNegative(TransactionException):
 class TransactionSenderTooFewStamps(TransactionException):
     pass
 
+
 class TransactionContractNameInvalid(TransactionException):
     pass
+
 
 def transaction_is_valid(tx: transaction_capnp.Transaction,
                          expected_processor: bytes,
@@ -160,6 +162,7 @@ def transaction_is_valid(tx: transaction_capnp.Transaction,
 
         # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
         if ((balance - amount) * stamp_to_tau) / 3000 < 2:
+            print(f'BAL IS: {((balance - amount) * stamp_to_tau) / 3000}')
             raise TransactionSenderTooFewStamps
 
     if tx.payload.contractName == 'submission' and tx.payload.functionName == 'submit_contract':

@@ -1,7 +1,7 @@
 from cilantro_ee.crypto.canonical import verify_block, get_genesis_block
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.sockets.services import get
-from cilantro_ee.sockets.inbox import AsyncInbox
+from cilantro_ee.sockets.inbox import AsyncInbox, SecureAsyncInbox
 from cilantro_ee.logger.base import get_logger
 from cilantro_ee.storage import CilantroStorageDriver, BlockchainDriver
 from cilantro_ee.messages.message import Message
@@ -48,8 +48,6 @@ class BlockServer(AsyncInbox):
             self.log.info(f'Sending block data for block #{msg.blockNum}')
 
             block_dict = self.blocks.get_block(msg.blockNum)
-
-            self.log.info(f'Block data: {block_dict}')
 
             if block_dict is not None:
                 block_hash = block_dict.get('hash')
@@ -182,7 +180,7 @@ class BlockFetcher:
                 return unpacked
 
     async def find_valid_block(self, sockets, i, latest_hash):
-        if i == 0 or i == 1:
+        if i == 0:
             block = get_genesis_block()
             block['blockNum'] = i
             block['blockOwners'] = []
@@ -197,22 +195,30 @@ class BlockFetcher:
             socket = random.choice(sockets)
             block = await self.get_block_from_master(i, socket)
 
+            self.log.info(f'Got Block {i}')
+            self.log.info(f'Previous Hash: {latest_hash}')
+            self.log.info(f'Block.Hash: {block.hash}')
+
+            if block.hash == latest_hash:
+                break
+
             block_found = verify_block(
                 subblocks=block.subBlocks,
                 previous_hash=latest_hash,
-                proposed_hash=block.hash
+                proposed_hash=block.hash,
+                block_num=i
             )
 
         if block is not None:
-            block_dict = {
-                'hash': block.hash,
-                'blockNum': i,
-                'blockOwners': [],
-                'previous': latest_hash,
-                'subBlocks': [s for s in block.subBlocks]
-            }
+            # block_dict = {
+            #     'hash': block.hash,
+            #     'blockNum': i,
+            #     'blockOwners': [],
+            #     'previous': latest_hash,
+            #     'subBlocks': [s for s in block.subBlocks]
+            # }
 
-            return block_dict
+            return block.to_dict()
 
     async def fetch_blocks(self, sockets, latest_block_available=0):
         self.log.info('Fetching blocks...')
@@ -234,13 +240,16 @@ class BlockFetcher:
         block_dict = await self.find_valid_block(sockets, block_num, block_hash)
 
         if self.blocks is not None:
-            self.blocks.put(block_dict)
+            self.blocks.store_block(block_dict)
 
         self.state.update_with_block(block_dict)
         self.state.set_latest_block_hash(block_dict['hash'])
 
         if block_dict['blockNum'] > self.state.latest_block_num:
             self.state.latest_block_num = block_dict['blockNum']
+            self.log.info(f'Latest block num: {self.state.latest_block_num}')
+
+        self.state.commit()
 
     # Main Catchup function. Called at launch of node
     async def sync(self, sockets):
@@ -251,17 +260,16 @@ class BlockFetcher:
         current_height = await self.get_latest_block_height(random.choice(sockets))
         latest_block_stored = self.state.get_latest_block_num()
 
-        latest_block_stored = max(latest_block_stored, 2)
+        latest_block_stored = max(latest_block_stored, 1)
 
         self.log.info(f'{current_height} / {latest_block_stored}')
 
         while current_height > latest_block_stored:
-
             await self.fetch_blocks(sockets, current_height)
             current_height = await self.get_latest_block_height(random.choice(sockets))
             latest_block_stored = self.state.get_latest_block_num()
 
-            latest_block_stored = max(latest_block_stored, 2)
+            latest_block_stored = max(latest_block_stored, 1)
 
             self.log.info(f'{current_height} / {latest_block_stored}')
 

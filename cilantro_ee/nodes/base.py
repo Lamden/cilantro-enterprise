@@ -1,5 +1,6 @@
 from cilantro_ee.networking.network import Network
 from cilantro_ee.nodes.catchup import BlockFetcher
+from cilantro_ee.storage import MasterStorage
 
 from cilantro_ee.nodes.new_block_inbox import NBNInbox
 from cilantro_ee.storage import VKBook
@@ -27,9 +28,17 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, overwrite=False,
-                 bootnodes=[], network_parameters=NetworkParameters(), driver=BlockchainDriver(), mn_seed=None, debug=True):
+                 bootnodes=[], network_parameters=NetworkParameters(), driver=BlockchainDriver(), mn_seed=None, debug=True, store=False):
 
         self.driver = driver
+        self.store = store
+
+        self.blocks = None
+        if self.store:
+            self.blocks = MasterStorage()
+
+        self.waiting_for_confirmation = False
+
         self.log = get_logger('NODE')
         self.log.propagate = debug
         self.log.info(constitution)
@@ -66,14 +75,15 @@ class Node:
 
         self.parameters = Parameters(socket_base, ctx, wallet, contacts=self.contacts)
 
-        self.socket_authenticator = SocketAuthenticator(wallet=wallet, contacts=self.contacts, ctx=self.ctx)
-        self.socket_authenticator.sync_certs()
+        self.socket_authenticator = SocketAuthenticator(ctx=self.ctx)
 
         self.elect_masternodes = self.client.get_contract('elect_masternodes')
-        self.on_deck_master = self.elect_masternodes.quick_read('top_candidate')
-
         self.elect_delegates = self.client.get_contract('elect_delegates')
-        self.on_deck_delegate = self.elect_delegates.quick_read('top_candidate')
+
+        self.masternode_contract = self.client.get_contract('masternodes')
+        self.delegate_contract = self.client.get_contract('delegates')
+
+        self.update_sockets()
 
         # Cilantro version / upgrade
 
@@ -93,17 +103,7 @@ class Node:
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
         # self.pending_cnt = self.all_votes - self.vote_cnt
-
-
         # stuff
-
-        if self.on_deck_master is not None:
-            self.log.info(f'Adding on deck master {self.on_deck_master}')
-            self.socket_authenticator.add_verifying_key(self.on_deck_master)
-
-        if self.on_deck_master is not None:
-            self.log.info(f'Adding on deck delegate {self.on_deck_delegate}')
-            self.socket_authenticator.add_verifying_key(self.on_deck_delegate)
 
         self.network_parameters = network_parameters
 
@@ -111,6 +111,7 @@ class Node:
         self.constitution = constitution
         self.overwrite = overwrite
 
+        # Should have a function to get the current NBN
         self.block_fetcher = BlockFetcher(
             wallet=self.wallet,
             ctx=self.ctx,
@@ -141,28 +142,82 @@ class Node:
             wallet=wallet
         )
 
-        self.reward_manager = RewardManager(driver=self.driver, vkbook=self.contacts, debug=True)
+        self.reward_manager = RewardManager(driver=self.driver, debug=False)
 
         self.running = False
+
+    async def catchup(self, mn_seed):
+        current = self.driver.get_latest_block_num()
+        latest = await self.block_fetcher.get_latest_block_height(mn_seed)
+
+        if current == 0:
+            current = 1
+
+        for i in range(current, latest):
+            block = await self.block_fetcher.get_block_from_master(i, mn_seed)
+            block = block.to_dict()
+            self.process_block(block)
+
+        while len(self.nbn_inbox.q) > 0:
+            block = self.nbn_inbox.q.pop(0)
+            self.process_block(block)
+
+    def should_process(self, block):
+        if self.waiting_for_confirmation:
+            return self.driver.latest_block_num <= block['blockNum'] and block['hash'] != 'f' * 64
+        else:
+            return self.driver.latest_block_num < block['blockNum'] and block['hash'] != 'f' * 64
+
+    def process_block(self, block):
+        # self.driver.reads.clear()
+        # self.driver.cache.clear()
+        #
+        # self.log.info(f'PENDING WRITES :{self.driver.pending_writes}')
+        # self.driver.pending_writes.clear()
+
+        if self.should_process(block):
+            self.driver.update_with_block(block)
+            self.reward_manager.issue_rewards(block=block)
+            self.update_sockets()
+
+            if self.store:
+                self.blocks.store_block(block)
+                #self.reward_manager.issue_rewards(block=block)
+                #self.update_sockets()
+        else:
+            self.log.error('Could not store block...')
+            if self.driver.latest_block_num >= block['blockNum']:
+                self.log.error(f'Latest block num = {self.driver.latest_block_num}')
+                self.log.error(f'New block num = {block["blockNum"]}')
+            if block['hash'] == 'f' * 64:
+                self.log.error(f'Block hash = {block["hash"]}')
+            self.driver.delete_pending_nonces()
+
+        self.driver.cache.clear()
+        self.nbn_inbox.clean()
+        self.nbn_inbox.update_signers()
 
     async def start(self):
         await self.network.start()
 
+        # Start block server
+        asyncio.ensure_future(self.nbn_inbox.serve())
+
         # Catchup when joining the network
         if self.network.mn_seed is not None:
-            await self.block_fetcher.sync(sockets=[
+            await self.catchup(
                 self.network_parameters.resolve(
                     self.network.mn_seed,
                     ServiceType.BLOCK_SERVER
                 )
-            ])
+            )
 
             self.log.info(self.network.peers())
 
             self.parameters.sockets.update(self.network.peers())
 
         # Start block server
-        asyncio.ensure_future(self.nbn_inbox.serve())
+        #asyncio.ensure_future(self.nbn_inbox.serve())
 
         self.running = True
 
@@ -172,36 +227,18 @@ class Node:
         self.running = False
 
     def update_sockets(self):
-        # UPDATE SOCKETS IF NEEDED
-        mn = self.elect_masternodes.quick_read('top_candidate')
-        dl = self.elect_delegates.quick_read('top_candidate')
+        od_mn = self.elect_masternodes.quick_read('top_candidate')
+        od_dl = self.elect_delegates.quick_read('top_candidate')
 
-        self.log.info(f'Top MN is {mn}')
-        self.log.info(f'Top DL is {dl}')
+        masternodes = self.masternode_contract.quick_read('S', 'members')
+        delegates = self.delegate_contract.quick_read('S', 'members')
 
-        update_mn = self.on_deck_master != mn and mn is not None
-        update_del = self.on_deck_delegate != dl and dl is not None
-
-        ## Check if
-        nodes_changed = self.contacts.masternodes != self.current_masters \
-                        or self.contacts.delegates != self.current_delegates
-
-        if nodes_changed:
-            self.current_masters = deepcopy(self.contacts.masternodes)
-            self.current_delegates = deepcopy(self.contacts.delegates)
-
-        if update_mn or update_del or nodes_changed:
-            self.socket_authenticator.sync_certs()
-
-            if update_mn:
-                self.log.info(f'Adding on deck master {mn}')
-                self.socket_authenticator.add_verifying_key(bytes.fromhex(mn))
-                self.on_deck_master = mn
-
-            if update_del:
-                self.log.info(f'Adding on deck delegate {dl}')
-                self.socket_authenticator.add_verifying_key(bytes.fromhex(dl))
-                self.on_deck_master = dl
+        self.socket_authenticator.add_governance_sockets(
+            masternode_list=masternodes,
+            delegate_list=delegates,
+            on_deck_masternode=od_mn,
+            on_deck_delegate=od_dl
+        )
 
     def version_check(self):
 
@@ -255,9 +292,3 @@ class Node:
                       self.tot_dl, self.all_votes,
                       self.mn_votes, self.dl_votes,
                       consensus))
-
-    def issue_rewards(self, block):
-        # ISSUE REWARDS
-        # stamps = self.reward_manager.stamps_in_block(block)
-        # self.reward_manager.set_pending_rewards(stamps / self.reward_manager.stamps_per_tau)
-        self.reward_manager.issue_rewards(block=block)

@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 import requests
 import subprocess
-import os
+import os, sys
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from cilantro_ee.cli.utils import get_update_state, ask, validate_key
 from cilantro_ee.cli.start import resolve_constitution
@@ -52,9 +52,8 @@ def trigger(pkg=None, iaddr=None):
 
 def vote(iaddr):
 
-    #enable = ask(question='Authorize restart node')
-
-    my_wallet = validate_key(restart=False)
+    enable = ask("Authorize auto upgrade to new version")
+    my_wallet = validate_key(restart=enable)      # Currently reboot is set for auto restart to kick in
     file = input("Enter patch to constitution:")
 
     constitution = resolve_constitution(fp=file)
@@ -66,7 +65,7 @@ def vote(iaddr):
 
     nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key().hex()))
     nonce = nonce_req.json()['nonce']
-    vk = my_wallet.verifying_key()
+    #vk = my_wallet.verifying_key()
 
     kwargs = {'vk': my_wallet.verifying_key().hex()}
 
@@ -142,7 +141,7 @@ def upgrade():
         log.error("OS error: {0}".format(err))
         return
     except:
-        log.error("Unexpected error:", sys.exc_info())
+        log.error("Unexpected error: {}".format(sys.exc_info()))
         return
 
     # rebuilding package

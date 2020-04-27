@@ -65,11 +65,18 @@ def ask(question):
             return False
 
 
+def run(*args):
+    return subprocess.check_call(['git'] + list(args))
+
+
 def reboot_config(key=None):
     if key is None:
         return
 
     myid = {'sk': key}
+
+    rel = input("Enter New Release branch:")
+    myid['target'] = rel
 
     with open('key.json', 'w') as outfile:
         json.dump(myid, outfile)
@@ -78,11 +85,7 @@ def reboot_config(key=None):
 
 def read_cfg():
     # Read configs
-    #p = str(pathlib.Path(os.getcwd())) + '/key.json'
-    #p = str(os.environ['CIL_ROOT']) + '/key.json'
-
     pkg_root = '/root/cilantro-enterprise'
-    #print('{}{}'.format(p, '/key.json'))
 
     try:
         key_path = pkg_root + '/key.json'
@@ -90,14 +93,16 @@ def read_cfg():
         k = json.load(f)
         f.close()
     except IOError:
-        log.info("Manual restart needed - Auto upgrade not Authorized")
-        return
+        log.error("Manual restart needed, couldn't read config")
+        return None, None
+    except BaseException as err:
+        log.error("{}".format(err))
+        return None, None
 
     assert 'sk' in k.keys(), 'No key found.'
     print(k)
 
     try:
-        #cfg_path = str(os.environ['CIL_ROOT']) + '/network_info.json'
         cfg_path = pkg_root + '/network_info.json'
         f = open(str(cfg_path), 'r')
         cfg = json.load(f)
@@ -114,8 +119,29 @@ def read_cfg():
     return k, cfg
 
 
+def checkout(target=None):
+    try:
+        path = '/root/cilantro-enterprise'
+        os.chdir(path)
+
+        # get latest release
+        br = f'{target}'
+        run("checkout", "-b", br)
+
+    except OSError as err:
+        log.error("OS error: {0}".format(err))
+        return err
+    except:
+        log.error("Unexpected error: {}".format(sys.exc_info()))
+
+
 def restart():
     k, cfg = read_cfg()
+
+    if k is None or cfg is None:
+        log.error("Failed to read config, manual restart needed")
+    else:
+        checkout(target=k['target'])
 
     bn = cfg['nodes']
     bn_str = ''
@@ -186,7 +212,7 @@ def get_update_state():
     consensus = driver.get_var(contract='upgrade', variable='upg_consensus', mark=False)
 
     print("Upgrade: {} Cil Pepper:  {}\n"
-          "Init time:   {}, Time Window:    {}, Current: {}\n"
+          "Init time:   {}, Last_Check: {}, Time Window: {}\n"
           "Masters:     {}\n"
           "Delegates:   {}\n"
           "MN-Votes:    {}\n "

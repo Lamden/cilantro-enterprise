@@ -1,10 +1,12 @@
 import unittest
-import os, pathlib
+import datetime
+import os, pathlib,time
 from cilantro_ee.contracts import sync
 from cilantro_ee.cli.utils import build_pepper
 from cilantro_ee.crypto.wallet import Wallet
 from contracting.db.driver import ContractDriver
 from contracting.client import ContractingClient
+from cilantro_ee.storage.contract import BlockchainDriver
 import cilantro_ee
 
 
@@ -12,6 +14,8 @@ class TestUpgradeContract(unittest.TestCase):
     def setUp(self):
 
         self.client = ContractingClient()
+        self.driver = BlockchainDriver()
+
 
         self.mn_wallets = [Wallet().verifying_key().hex() for _ in range(3)]
         self.dn_wallets = [Wallet().verifying_key().hex() for _ in range(3)]
@@ -43,6 +47,15 @@ class TestUpgradeContract(unittest.TestCase):
         self.assertEqual(lock, False)
         self.assertEqual(consensus, False)
 
+    def test_check_window(self):
+        start_time = self.driver.get_var(contract='upgrade', variable='S', arguments=['init_time'], mark=False)
+        current_time = self.driver.get_var(contract='upgrade', variable='S', arguments=['today'], mark=False)
+        window = self.driver.get_var(contract='upgrade', variable='S', arguments=['window'], mark=False)
+
+        self.assertEqual(start_time, 0)
+        self.assertEqual(current_time, 0)
+        self.assertEqual(window, 0)
+
     def test_trigger(self):
         p = build_pepper()
         vk = self.mn_wallets[1]
@@ -51,6 +64,21 @@ class TestUpgradeContract(unittest.TestCase):
 
         state = upgrade.quick_read(variable='upg_lock')
         self.assertEqual(state, True)
+
+        start_time = self.driver.get_var(contract='upgrade', variable='S', arguments=['init_time'], mark=False)
+        current_time = self.driver.get_var(contract='upgrade', variable='S', arguments=['today'], mark=False)
+        window = self.driver.get_var(contract='upgrade', variable='S', arguments=['window'], mark=False)
+
+        self.assertEqual(start_time, current_time)
+        self.assertEqual(str(window), '0:01:00')
+
+
+        upgrade.trigger_upgrade(pepper=p, initiator_vk=vk)
+        st = self.driver.get_var(contract='upgrade', variable='S', arguments=['init_time'], mark=False)
+        ct = self.driver.get_var(contract='upgrade', variable='S', arguments=['today'], mark=False)
+        win = self.driver.get_var(contract='upgrade', variable='S', arguments=['window'], mark=False)
+
+        print(st,ct,win)
 
     def test_consensys_n_reset(self):
         upgrade = self.client.get_contract('upgrade')

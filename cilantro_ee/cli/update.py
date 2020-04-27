@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 import requests
 import subprocess
-import os
+import os, sys
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from cilantro_ee.cli.utils import get_update_state, ask, validate_key
 from cilantro_ee.cli.start import resolve_constitution
@@ -140,7 +140,7 @@ def upgrade():
         log.error("OS error: {0}".format(err))
         return
     except:
-        log.error("Unexpected error:", sys.exc_info())
+        log.error("Unexpected error: {}".format(sys.exc_info()))
         return
 
     # rebuilding package

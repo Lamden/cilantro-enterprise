@@ -112,8 +112,11 @@ def read_cfg():
         k = json.load(f)
         f.close()
     except IOError:
-        log.info("Manual restart needed - Auto upgrade not Authorized")
-        return
+        log.info("Manual restart needed, couldn't read config")
+        return None,None
+    except BaseException as err:
+        print("{}".format(err))
+        return None,None
 
     assert 'sk' in k.keys(), 'No key found.'
     print(k)

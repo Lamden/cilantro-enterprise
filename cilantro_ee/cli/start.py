@@ -129,16 +129,16 @@ def start_node(args):
 
 
     # Enable Auto Restart
-    key, config = read_cfg()
+    # key, config = read_cfg()  #use restart logic to start the node again
 
-    if key is None or config is None:
-        # booting for 1st time
-        enable = ask(question='Authorize auto restart for cilantro')
-
-        if enable:
-            validate_key(restart=enable, key = args.key)
-        else:
-            print("Auto Restart is disabled manual intervention to restart CIL")
+    # if key is None or config is None:
+    #     # booting for 1st time
+    #     enable = ask(question='Authorize auto restart for cilantro')
+    #
+    #     if enable:
+    #         validate_key(restart=enable, key = args.key)
+    #     else:
+    #         print("Auto Restart is disabled manual intervention to restart CIL")
 
     if args.node_type == 'masternode':
         # Start mongo

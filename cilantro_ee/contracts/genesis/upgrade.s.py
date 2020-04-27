@@ -34,11 +34,13 @@ def check_vote_state():
 def reset_contract():
     # if vk in election_house.current_value_for_policy('masternodes'):
     #if upg_lock.get() is True:
-    S['init_time'] = 0
-    S['window'] = 0
-    S['today'] = 0
+    S['init_time'] = now
+    S['window'] = timedelta(days=0)
+    S['today'] = now
+
     upg_consensus.set(False)
     upg_lock.set(False)
+    upg_pepper.set('')
 
     mn_vote.set(0)
     dl_vote.set(0)
@@ -46,10 +48,9 @@ def reset_contract():
     tot_dl.set(0)
 
 
-def check_window():
+def check_window_expired():
     S['today'] = now
-    elapsed = S['today'] - S['init_time']
-    S['window'] -= elapsed
+    return now - S['init_time'] > S['window']
 
 
 def assert_parallel_upg_check():
@@ -61,9 +62,9 @@ def seed():
     upg_lock.set(False)
     upg_consensus.set(False)
 
-    S['init_time'] = 0
-    S['window'] = 0
-    S['today'] = 0
+    S['init_time'] = now
+    S['window'] = timedelta(seconds=60)
+    S['today'] = now
 
     mn_vote.set(0)
     dl_vote.set(0)
@@ -73,43 +74,44 @@ def seed():
 @export
 def trigger_upgrade(pepper, initiator_vk):
     if upg_lock.get() is True:
-        check_window()
-    if S['window'] < 0:
-        reset_contract()
-    if S['window'] > 0:
-        assert S['window'] == 0, "Can't Trigger new upgrade!!! Wait for existing upgrade to Finish or Expire"
-        return
+        if check_window_expired():
+            # previously triggered update has expired reset before proceeding
+            assert 'Stale upgrade state cleaning up'
+            reset_contract()
+        else:
+            assert 'Cannot run parallel upgrades'
 
-    # for now only master's trigger upgrade
-    if initiator_vk in election_house.current_value_for_policy('masternodes'):
-        upg_lock.set(True)
-        upg_pepper.set(pepper)
+    else:
+        # for now only master's trigger upgrade
+        if initiator_vk in election_house.current_value_for_policy('masternodes'):
+            upg_lock.set(True)
+            upg_pepper.set(pepper)
 
-        S['today'] = S['init_time'] = now
-        S['window'] = datetime.MINUTES * 5
+            S['today'] = S['init_time'] = now
+            S['window'] = timedelta(days=0)
 
-        mn_vote.set(0)
-        dl_vote.set(0)
-        #assert election_house.current_value_for_policy('masternodes')
+            mn_vote.set(0)
+            dl_vote.set(0)
+            #assert election_house.current_value_for_policy('masternodes')
 
-        mnum = len(election_house.current_value_for_policy('masternodes'))
-        dnum = len(election_house.current_value_for_policy('delegates'))
+            mnum = len(election_house.current_value_for_policy('masternodes'))
+            dnum = len(election_house.current_value_for_policy('delegates'))
 
-        tot_mn.set(mnum)
-        tot_dl.set(dnum)
+            tot_mn.set(mnum)
+            tot_dl.set(dnum)
 
 @export
 def vote(vk):
     if upg_lock.get() is True:
-        check_window()
+        if check_window_expired() is True:
+            assert 'Voting window has expired'
+            return
 
-        if S['window'] > 0:
-            if vk in election_house.current_value_for_policy('masternodes'):
-                mn_vote.set(mn_vote.get() + 1)
-            if vk in election_house.current_value_for_policy('delegates'):
-                dl_vote.set(dl_vote.get() + 1)
+        if vk in election_house.current_value_for_policy('masternodes'):
+            mn_vote.set(mn_vote.get() + 1)
+        if vk in election_house.current_value_for_policy('delegates'):
+            dl_vote.set(dl_vote.get() + 1)
 
-            check_vote_state()
-        else:
-            reset_contract()
+        check_vote_state()
+
 

@@ -1,5 +1,6 @@
 import unittest
-import os, pathlib
+import datetime
+import os, pathlib,time
 from cilantro_ee.contracts import sync
 from cilantro_ee.cli.utils import build_pepper
 from cilantro_ee.crypto.wallet import Wallet
@@ -68,7 +69,16 @@ class TestUpgradeContract(unittest.TestCase):
         current_time = self.driver.get_var(contract='upgrade', variable='S', arguments=['today'], mark=False)
         window = self.driver.get_var(contract='upgrade', variable='S', arguments=['window'], mark=False)
 
-        print("{}-{}-{}".format(start_time, current_time, window))
+        self.assertEqual(start_time, current_time)
+        self.assertEqual(str(window), '0:01:00')
+
+
+        upgrade.trigger_upgrade(pepper=p, initiator_vk=vk)
+        st = self.driver.get_var(contract='upgrade', variable='S', arguments=['init_time'], mark=False)
+        ct = self.driver.get_var(contract='upgrade', variable='S', arguments=['today'], mark=False)
+        win = self.driver.get_var(contract='upgrade', variable='S', arguments=['window'], mark=False)
+
+        print(st,ct,win)
 
     def test_consensys_n_reset(self):
         upgrade = self.client.get_contract('upgrade')

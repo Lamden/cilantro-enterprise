@@ -35,7 +35,7 @@ def reset_contract():
     # if vk in election_house.current_value_for_policy('masternodes'):
     #if upg_lock.get() is True:
     S['init_time'] = now
-    S['window'] = datetime.SECONDS * 60
+    S['window'] = datetime.MINUTES * 3
     S['today'] = now
 
     upg_consensus.set(False)
@@ -63,7 +63,7 @@ def seed():
     upg_consensus.set(False)
 
     S['init_time'] = now
-    S['window'] = datetime.SECONDS * 60
+    S['window'] = datetime.MINUTES * 3
     S['today'] = now
 
     mn_vote.set(0)
@@ -88,7 +88,7 @@ def trigger_upgrade(pepper, initiator_vk):
             upg_pepper.set(pepper)
 
             S['today'] = S['init_time'] = now
-            S['window'] = datetime.SECONDS * 60
+            S['window'] = datetime.MINUTES * 3
 
             mn_vote.set(0)
             dl_vote.set(0)

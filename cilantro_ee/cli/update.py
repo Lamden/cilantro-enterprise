@@ -52,7 +52,8 @@ def trigger(pkg=None, iaddr=None):
 
 def vote(iaddr):
 
-    my_wallet = validate_key(restart=True)      # Currently reboot is set for auto restart to kick in
+    enable = ask("Authorize auto upgrade to new version")
+    my_wallet = validate_key(restart=enable)      # Currently reboot is set for auto restart to kick in
     file = input("Enter patch to constitution:")
 
     constitution = resolve_constitution(fp=file)

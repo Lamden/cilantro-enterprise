@@ -212,7 +212,7 @@ def get_update_state():
     consensus = driver.get_var(contract='upgrade', variable='upg_consensus', mark=False)
 
     print("Upgrade: {} Cil Pepper:  {}\n"
-          "Init time:   {}, Time Window:    {}, Current: {}\n"
+          "Init time:   {}, Last_Check: {}, Time Window: {}\n"
           "Masters:     {}\n"
           "Delegates:   {}\n"
           "MN-Votes:    {}\n "

@@ -1,13 +1,13 @@
 from unittest import TestCase
 
-from cilantro_ee.nodes.masternode.webserver import WebServer
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.nodes.masternode.webserver import WebServer
+from cilantro.crypto.wallet import Wallet
 from contracting.client import ContractingClient
-from cilantro_ee.storage import BlockchainDriver
-from cilantro_ee.storage import CilantroStorageDriver
-from cilantro_ee.crypto.transaction import TransactionBuilder
+from cilantro.storage import BlockchainDriver
+from cilantro.storage import CilantroStorageDriver
+from cilantro.crypto.transaction import TransactionBuilder
 from contracting import config
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro.messages.capnp_impl import capnp_struct as schemas
 import os
 import capnp
 

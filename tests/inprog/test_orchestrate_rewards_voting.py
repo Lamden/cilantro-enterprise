@@ -1,10 +1,10 @@
 import unittest
 from tests.inprog.orchestrator import *
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.crypto.wallet import Wallet
 import zmq.asyncio
 from contracting.client import ContractingClient
 from decimal import Decimal
-from cilantro_ee.storage import MasterStorage
+from cilantro.storage import MasterStorage
 
 
 class TestGovernanceOrchestration(unittest.TestCase):

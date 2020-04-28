@@ -1,13 +1,13 @@
 from unittest import TestCase
 import zmq.asyncio
 import asyncio
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.sockets.authentication import SocketAuthenticator
+from cilantro.crypto.wallet import Wallet
+from cilantro.sockets.authentication import SocketAuthenticator
 import os
-from cilantro_ee.storage.vkbook import VKBook
+from cilantro.storage.vkbook import VKBook
 from nacl.signing import SigningKey
-from cilantro_ee.contracts import sync
-import cilantro_ee
+from cilantro.contracts import sync
+import cilantro
 from contracting.client import ContractingClient
 
 
@@ -22,7 +22,7 @@ class TestAuthenticator(TestCase):
         self.c = ContractingClient()
         self.c.flush()
 
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.c)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.c)
         sync.submit_node_election_contracts(initial_masternodes=masternodes, boot_mns=1,
                                             initial_delegates=delegates, boot_dels=1, client=self.c)
 

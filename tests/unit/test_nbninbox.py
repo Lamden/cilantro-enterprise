@@ -1,17 +1,17 @@
 from unittest import TestCase
-from cilantro_ee.contracts.sync import extract_vk_args
-from cilantro_ee.nodes.new_block_inbox import NBNInbox, BlockNumberMismatch, NotBlockNotificationMessageType
+from cilantro.contracts.sync import extract_vk_args
+from cilantro.nodes.new_block_inbox import NBNInbox, BlockNumberMismatch, NotBlockNotificationMessageType
 
-from cilantro_ee.storage.vkbook import VKBook
-from cilantro_ee.storage.contract import BlockchainDriver
-from cilantro_ee.messages.message import Message
-from cilantro_ee.messages.message_type import MessageType
+from cilantro.storage.vkbook import VKBook
+from cilantro.storage.contract import BlockchainDriver
+from cilantro.messages.message import Message
+from cilantro.messages.message_type import MessageType
 
-from cilantro_ee.sockets.struct import _socket
+from cilantro.sockets.struct import _socket
 
-from cilantro_ee.crypto.wallet import Wallet
-import cilantro_ee
-from cilantro_ee.contracts import sync
+from cilantro.crypto.wallet import Wallet
+import cilantro
+from cilantro.contracts import sync
 import zmq.asyncio
 import asyncio
 
@@ -22,7 +22,7 @@ def seed_vk_book(num_mn=10, mn_quorum=10, num_del=10, del_quorum=10):
     dn_wallets = [Wallet().verifying_key().hex() for _ in range(num_del)]
 
     # Sync contracts
-    sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json')
+    sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json')
     sync.submit_node_election_contracts(
         initial_masternodes=mn_wallets,
         boot_mns=mn_quorum,

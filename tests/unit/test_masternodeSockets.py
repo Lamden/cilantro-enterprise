@@ -1,12 +1,12 @@
 from unittest import TestCase
-from cilantro_ee.sockets.socket_book import SocketBook
-from cilantro_ee.storage.vkbook import VKBook
-from cilantro_ee.networking.network import Network
-from cilantro_ee.networking.parameters import ServiceType
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.sockets.struct import _socket
-from cilantro_ee.contracts import sync
-from cilantro_ee.ports import EVENT_PORT
+from cilantro.sockets.socket_book import SocketBook
+from cilantro.storage.vkbook import VKBook
+from cilantro.networking.network import Network
+from cilantro.networking.parameters import ServiceType
+from cilantro.crypto.wallet import Wallet
+from cilantro.sockets.struct import _socket
+from cilantro.contracts import sync
+from cilantro.ports import EVENT_PORT
 import zmq
 import zmq.asyncio
 import os

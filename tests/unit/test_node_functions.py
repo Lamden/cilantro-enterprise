@@ -1,12 +1,12 @@
-from cilantro_ee.nodes.base import Node
+from cilantro.nodes.base import Node
 from unittest import TestCase
 
 import asyncio
 import zmq.asyncio
-from cilantro_ee.storage import BlockchainDriver, MasterStorage
-from cilantro_ee.nodes.catchup import BlockServer
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.sockets.struct import SocketStruct
+from cilantro.storage import BlockchainDriver, MasterStorage
+from cilantro.nodes.catchup import BlockServer
+from cilantro.crypto.wallet import Wallet
+from cilantro.sockets.struct import SocketStruct
 
 async def stop_server(s, timeout):
     await asyncio.sleep(timeout)

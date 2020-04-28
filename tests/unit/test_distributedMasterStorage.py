@@ -1,9 +1,9 @@
 from unittest import TestCase
-from cilantro_ee.storage.master import DistributedMasterStorage
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.storage.vkbook import VKBook
-from cilantro_ee.contracts import sync
-import cilantro_ee
+from cilantro.storage.master import DistributedMasterStorage
+from cilantro.crypto.wallet import Wallet
+from cilantro.storage.vkbook import VKBook
+from cilantro.contracts import sync
+import cilantro
 from contracting.client import ContractingClient
 
 
@@ -12,7 +12,7 @@ class TestDistributedMasterStorage(TestCase):
         #m, d = sync.get_masternodes_and_delegates_from_constitution()
         self.client = ContractingClient()
         self.client.flush()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=Wallet().verifying_key().hex(),
             boot_mns=1,
@@ -95,7 +95,7 @@ class TestDistributedMasterStorage(TestCase):
         delegates = list(range(10))
 
         self.client.flush()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=masternodes,
             boot_mns=1,
@@ -116,7 +116,7 @@ class TestDistributedMasterStorage(TestCase):
         delegates = list(range(10))
 
         self.client.flush()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=masternodes,
             boot_mns=1,
@@ -180,7 +180,7 @@ class TestDistributedMasterStorage(TestCase):
         delegates = list(range(10))
 
         self.client.flush()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=masternodes,
             boot_mns=1,

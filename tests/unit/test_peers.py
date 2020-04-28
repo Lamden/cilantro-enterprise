@@ -1,11 +1,11 @@
-from cilantro_ee.sockets.outbox import Peers, DEL, MN, ALL
+from cilantro.sockets.outbox import Peers, DEL, MN, ALL
 from unittest import TestCase
 import zmq.asyncio
-from cilantro_ee.networking.parameters import Parameters, ServiceType
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.networking.network import Network
-from cilantro_ee.sockets.services import SocketStruct
-from cilantro_ee.sockets.authentication import SocketAuthenticator
+from cilantro.networking.parameters import Parameters, ServiceType
+from cilantro.crypto.wallet import Wallet
+from cilantro.networking.network import Network
+from cilantro.sockets.services import SocketStruct
+from cilantro.sockets.authentication import SocketAuthenticator
 import asyncio
 
 

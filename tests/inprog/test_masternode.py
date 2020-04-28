@@ -1,23 +1,23 @@
-from cilantro_ee.nodes.masternode.masternode import Masternode
+from cilantro.nodes.masternode.masternode import Masternode
 from unittest import TestCase
-from cilantro_ee.networking.discovery import *
+from cilantro.networking.discovery import *
 import zmq
 import zmq.asyncio
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.crypto.wallet import Wallet
 import asyncio
-from cilantro_ee.networking.network import Network
-from cilantro_ee.crypto import canonical
+from cilantro.networking.network import Network
+from cilantro.crypto import canonical
 from contracting.client import ContractingClient
-from cilantro_ee.nodes.work_inbox import WorkInbox
-from cilantro_ee.nodes.new_block_inbox import NBNInbox
-from cilantro_ee.sockets.struct import _socket
-from cilantro_ee.crypto.transaction import TransactionBuilder
-from cilantro_ee.crypto.transaction_batch import transaction_list_to_transaction_batch
-from cilantro_ee.storage import BlockchainDriver
+from cilantro.nodes.work_inbox import WorkInbox
+from cilantro.nodes.new_block_inbox import NBNInbox
+from cilantro.sockets.struct import _socket
+from cilantro.crypto.transaction import TransactionBuilder
+from cilantro.crypto.transaction_batch import transaction_list_to_transaction_batch
+from cilantro.storage import BlockchainDriver
 from contracting import config
 import os
 import capnp
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro.messages.capnp_impl import capnp_struct as schemas
 import secrets
 from tests import random_txs
 

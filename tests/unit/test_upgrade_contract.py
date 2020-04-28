@@ -1,11 +1,11 @@
 import unittest
 import os, pathlib
-from cilantro_ee.contracts import sync
-from cilantro_ee.cli.utils import build_pepper
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.contracts import sync
+from cilantro.cli.utils import build_pepper
+from cilantro.crypto.wallet import Wallet
 from contracting.db.driver import ContractDriver
 from contracting.client import ContractingClient
-import cilantro_ee
+import cilantro
 
 
 class TestUpgradeContract(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestUpgradeContract(unittest.TestCase):
 
 
         # Sync contracts
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=self.mn_wallets,
             boot_mns=3,

@@ -1,6 +1,6 @@
 from unittest import TestCase
-from cilantro_ee.nodes.masternode.webserver import WebServer
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.nodes.masternode.webserver import WebServer
+from cilantro.crypto.wallet import Wallet
 
 
 class TestWS(TestCase):

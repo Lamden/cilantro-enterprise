@@ -1,10 +1,10 @@
 from unittest import TestCase
-from cilantro_ee.nodes.delegate.delegate import Delegate
+from cilantro.nodes.delegate.delegate import Delegate
 
-from cilantro_ee.nodes.masternode.transaction_batcher import TransactionBatcher
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.crypto import canonical
-from cilantro_ee.storage import BlockchainDriver
+from cilantro.nodes.masternode.transaction_batcher import TransactionBatcher
+from cilantro.crypto.wallet import Wallet
+from cilantro.crypto import canonical
+from cilantro.storage import BlockchainDriver
 
 from contextlib import suppress
 import zmq.asyncio
@@ -13,8 +13,8 @@ import asyncio
 from contracting import config
 import os
 import capnp
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
-from cilantro_ee.crypto.transaction import TransactionBuilder
+from cilantro.messages.capnp_impl import capnp_struct as schemas
+from cilantro.crypto.transaction import TransactionBuilder
 
 from contracting.db.driver import ContractDriver
 

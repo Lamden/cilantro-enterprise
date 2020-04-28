@@ -1,10 +1,10 @@
 from unittest import TestCase
-from cilantro_ee.networking.discovery import *
+from cilantro.networking.discovery import *
 import zmq
 import zmq.asyncio
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.networking.network import discover_nodes
-from cilantro_ee.sockets.struct import _socket
+from cilantro.crypto.wallet import Wallet
+from cilantro.networking.network import discover_nodes
+from cilantro.sockets.struct import _socket
 from time import sleep
 
 TIME_UNIT = 0.01

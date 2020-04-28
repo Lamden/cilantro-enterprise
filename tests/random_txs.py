@@ -1,12 +1,12 @@
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.crypto.transaction import TransactionBuilder
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro.crypto.wallet import Wallet
+from cilantro.crypto.transaction import TransactionBuilder
+from cilantro.messages.capnp_impl import capnp_struct as schemas
 import os
 import capnp
 import secrets
-from cilantro_ee.crypto.merkle_tree import merklize
+from cilantro.crypto.merkle_tree import merklize
 import random
-from cilantro_ee.storage import BlockchainDriver
+from cilantro.storage import BlockchainDriver
 from contracting import config
 
 N = BlockchainDriver()

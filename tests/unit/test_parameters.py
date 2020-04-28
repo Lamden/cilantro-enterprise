@@ -1,12 +1,12 @@
-from cilantro_ee.networking.parameters import Parameters, ServiceType
+from cilantro.networking.parameters import Parameters, ServiceType
 from unittest import TestCase
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.sockets.struct import _socket
-from cilantro_ee.contracts import sync
-from cilantro_ee.storage.vkbook import VKBook
-from cilantro_ee.networking.network import Network
+from cilantro.crypto.wallet import Wallet
+from cilantro.sockets.struct import _socket
+from cilantro.contracts import sync
+from cilantro.storage.vkbook import VKBook
+from cilantro.networking.network import Network
 from contracting.client import ContractingClient
-import cilantro_ee
+import cilantro
 import zmq
 import zmq.asyncio
 import os
@@ -68,7 +68,7 @@ class TestParameters(TestCase):
 
     def test_remove_node(self):
         constitution = self.get_vkbook_args()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
@@ -89,7 +89,7 @@ class TestParameters(TestCase):
 
     def test_remove_node_doesnt_exist_does_nothing(self):
         constitution = self.get_vkbook_args()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
@@ -110,7 +110,7 @@ class TestParameters(TestCase):
     def test_get_masternode_sockets(self):
         constitution = self.get_vkbook_args()
 
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json')
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json')
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
@@ -164,7 +164,7 @@ class TestParameters(TestCase):
 
     def test_get_delegate_sockets(self):
         constitution = self.get_vkbook_args()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
@@ -219,7 +219,7 @@ class TestParameters(TestCase):
 
     def test_get_all_sockets(self):
         constitution = self.get_vkbook_args()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
@@ -271,7 +271,7 @@ class TestParameters(TestCase):
 
     def test_get_sockets_with_service(self):
         constitution = self.get_vkbook_args()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
@@ -327,7 +327,7 @@ class TestParameters(TestCase):
 
     def test_get_sockets_refresh_changes_get_again(self):
         constitution = self.get_vkbook_args()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],
@@ -383,7 +383,7 @@ class TestParameters(TestCase):
 
     def test_refresh_remove_old_nodes(self):
         constitution = self.get_vkbook_args()
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=constitution['masternodes'],
             boot_mns=constitution['masternode_min_quorum'],

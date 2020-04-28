@@ -1,13 +1,13 @@
 from unittest import TestCase
 
-from cilantro_ee.nodes.masternode.contender import BlockContender, SubBlockContender, PotentialSolution, Aggregator
+from cilantro.nodes.masternode.contender import BlockContender, SubBlockContender, PotentialSolution, Aggregator
 import zmq.asyncio
 import asyncio
-from cilantro_ee.sockets.struct import _socket
-from cilantro_ee.storage import BlockchainDriver
-from cilantro_ee.crypto import canonical
+from cilantro.sockets.struct import _socket
+from cilantro.storage import BlockchainDriver
+from cilantro.crypto import canonical
 import secrets
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.crypto.wallet import Wallet
 
 
 class MockContenders:

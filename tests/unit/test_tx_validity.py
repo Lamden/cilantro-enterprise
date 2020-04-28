@@ -1,9 +1,9 @@
 from unittest import TestCase
-from cilantro_ee.storage import BlockchainDriver
-from cilantro_ee.crypto.transaction import TransactionBuilder, transaction_is_valid
-from cilantro_ee.crypto import transaction
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro.storage import BlockchainDriver
+from cilantro.crypto.transaction import TransactionBuilder, transaction_is_valid
+from cilantro.crypto import transaction
+from cilantro.crypto.wallet import Wallet
+from cilantro.messages.capnp_impl import capnp_struct as schemas
 from contracting import config
 import secrets
 import os

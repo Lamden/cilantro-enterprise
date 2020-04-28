@@ -1,6 +1,6 @@
 from unittest import TestCase
-from cilantro_ee.storage.master import MasterStorage
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.storage.master import MasterStorage
+from cilantro.crypto.wallet import Wallet
 
 
 class TestMasterDatabase(TestCase):

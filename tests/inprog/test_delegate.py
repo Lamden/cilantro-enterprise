@@ -1,22 +1,22 @@
 from unittest import TestCase
-from cilantro_ee.nodes.delegate.delegate import Delegate
-from cilantro_ee.storage import BlockchainDriver
-from cilantro_ee.nodes.delegate import execution
+from cilantro.nodes.delegate.delegate import Delegate
+from cilantro.storage import BlockchainDriver
+from cilantro.nodes.delegate import execution
 from contracting.client import ContractingClient
 from contracting.stdlib.bridge.time import Datetime
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.crypto.transaction import TransactionBuilder
-from cilantro_ee.crypto import canonical
+from cilantro.crypto.wallet import Wallet
+from cilantro.crypto.transaction import TransactionBuilder
+from cilantro.crypto import canonical
 from contracting import config
 import time
-from cilantro_ee.crypto.transaction_batch import transaction_list_to_transaction_batch
+from cilantro.crypto.transaction_batch import transaction_list_to_transaction_batch
 import zmq.asyncio
 import datetime
 from tests.random_txs import random_block
 import os
 import capnp
 import asyncio
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro.messages.capnp_impl import capnp_struct as schemas
 block_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/blockdata.capnp')
 
 def make_ipc(p):

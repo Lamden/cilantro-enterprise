@@ -1,9 +1,9 @@
 from unittest import TestCase
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.messages.message import Message
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
-from cilantro_ee.messages.message_type import MessageType
-from cilantro_ee.messages.capnp_impl.capnp_impl import CapnpImpl
+from cilantro.crypto.wallet import Wallet
+from cilantro.messages.message import Message
+from cilantro.messages.capnp_impl import capnp_struct as schemas
+from cilantro.messages.message_type import MessageType
+from cilantro.messages.capnp_impl.capnp_impl import CapnpImpl
 
 import os
 import capnp

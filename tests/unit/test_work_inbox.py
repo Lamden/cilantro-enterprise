@@ -1,5 +1,5 @@
 from unittest import TestCase
-from cilantro_ee.nodes.delegate import work
+from cilantro.nodes.delegate import work
 import asyncio
 
 

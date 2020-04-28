@@ -1,11 +1,11 @@
 from unittest import TestCase
-from cilantro_ee.nodes.rewards import RewardManager
+from cilantro.nodes.rewards import RewardManager
 from tests import random_txs
 from contracting.client import ContractingClient
-from cilantro_ee.storage.vkbook import VKBook
-from cilantro_ee.contracts import sync
+from cilantro.storage.vkbook import VKBook
+from cilantro.contracts import sync
 from contracting.stdlib.bridge.decimal import ContractingDecimal
-import cilantro_ee
+import cilantro
 
 
 class TestRewards(TestCase):
@@ -15,7 +15,7 @@ class TestRewards(TestCase):
         self.driver = self.client.raw_driver
 
         # Sync contracts
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
+        sync.submit_from_genesis_json_file(cilantro.contracts.__path__[0] + '/genesis.json', client=self.client)
         sync.submit_node_election_contracts(
             initial_masternodes=['stu', 'raghu', 'steve'],
             boot_mns=2,

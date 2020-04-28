@@ -1,13 +1,13 @@
 from unittest import TestCase
-from cilantro_ee.nodes.delegate.delegate import Delegate
-from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.contracts import sync
+from cilantro.nodes.delegate.delegate import Delegate
+from cilantro.crypto.wallet import Wallet
+from cilantro.contracts import sync
 from contracting.client import ContractingClient
-from cilantro_ee.crypto.transaction_batch import transaction_list_to_transaction_batch
-from cilantro_ee.crypto.transaction import TransactionBuilder
+from cilantro.crypto.transaction_batch import transaction_list_to_transaction_batch
+from cilantro.crypto.transaction import TransactionBuilder
 import zmq.asyncio
 import asyncio
-import cilantro_ee
+import cilantro
 
 from contracting.stdlib.bridge.time import Datetime
 from datetime import datetime

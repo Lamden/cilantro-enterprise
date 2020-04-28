@@ -1,17 +1,17 @@
 import os
 from contracting.db.encoder import encode, decode
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro.crypto.wallet import Wallet
 import asyncio
 from copy import deepcopy
 from contracting.db.driver import ContractDriver, InMemDriver
-from cilantro_ee.nodes.delegate.delegate import Delegate
-from cilantro_ee.nodes.masternode.masternode import Masternode
+from cilantro.nodes.delegate.delegate import Delegate
+from cilantro.nodes.masternode.masternode import Masternode
 
-from cilantro_ee.storage import BlockchainDriver
-from cilantro_ee.crypto.transaction import TransactionBuilder
+from cilantro.storage import BlockchainDriver
+from cilantro.crypto.transaction import TransactionBuilder
 from contracting import config
 
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro.messages.capnp_impl import capnp_struct as schemas
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import capnp
 from collections import defaultdict

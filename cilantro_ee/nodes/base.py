@@ -265,7 +265,7 @@ class Node:
             # check for vote consensys
             vote_consensus = self.version_state.quick_read('upg_consensus')
             if vote_consensus:
-                self.log.info('Rebooting Node with new version')
+                self.log.error('Rebooting Node with new version')
                 version_reboot(bn=self.bootnodes, is_master=node_type)
             else:
                 self.log.info('{} waiting for vote on upgrade'.format(node_type))

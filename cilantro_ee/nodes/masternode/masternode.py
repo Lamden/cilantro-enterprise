@@ -260,8 +260,7 @@ class Masternode(Node):
             sends = await self.nbn_socket_book.send_to_peers(
                 msg=canonical.dict_to_msg_block(block)
             )
-            #self.version_check()
-
+            self.version_check()
 
             self.log.info(f'NBN SENDS {sends}')
 

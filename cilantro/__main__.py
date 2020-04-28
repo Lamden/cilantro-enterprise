@@ -14,7 +14,7 @@ def main(mode = False):
     # setup Env
 
     os.environ['PKG_PATH'] = Path(os.getcwd())
-    os.environ['CIL_ROOT'] = os.getenv('PKG_PATH') + 'cilantro_ee'
+    os.environ['CIL_ROOT'] = os.getenv('PKG_PATH') + 'cilantro'
 
     # make data dir
     os.environ['DATADIR'] = ''

@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 
-__version__ = '0.0.4'
+__version__ = '0.1.0'
 
 with open("README.md", "r") as fh:
     long_desc = fh.read()
 
 
 setup(
-    name='cilantro_ee',
+    name='cilantro',
     version=__version__,
     packages=find_packages(exclude=['docs', 'ops', 'docker', 'deprecated']),
 
@@ -35,13 +35,13 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'cil=cilantro_ee.cli.cmd:main'
+            'cil=cilantro.cli.cmd:main'
         ],
     },
     zip_safe=False,
     package_data={
         '': [],
-        'cilantro_ee': ['cilantro_ee.conf'],
+        'cilantro': ['cilantro.conf'],
     },
     description="Lamden Blockchain",
     long_description= long_desc,

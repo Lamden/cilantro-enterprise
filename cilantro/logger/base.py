@@ -26,7 +26,7 @@ def get_main_log_path():
     import cilantro
 
     root = cilantro.__file__
-    log_path = '/'.join(root.split('/')[:-2]) + '/logs/cilantro_ee.log'
+    log_path = '/'.join(root.split('/')[:-2]) + '/logs/cilantro.log'
 
     # Create log directory if it does not exist
     log_dir = os.path.dirname(log_path)

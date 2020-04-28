@@ -43,7 +43,7 @@ def pkg_ops(arg):
 if __name__ == '__main__':
     CURR_DIR = Path(os.getcwd())
     os.environ['PKG_ROOT'] = str(CURR_DIR.parent)
-    os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro_ee'
+    os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro'
 
     print(os.environ.get('CIL_PATH'))
 

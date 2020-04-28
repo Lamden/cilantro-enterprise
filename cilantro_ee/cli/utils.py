@@ -13,7 +13,6 @@ from checksumdir import dirhash
 from contracting.client import ContractingClient
 from cilantro_ee.storage.contract import BlockchainDriver
 from cilantro_ee.logger.base import get_logger
-from crontab import CronTab
 from cilantro_ee.crypto.wallet import Wallet
 
 

@@ -107,7 +107,7 @@ class Delegate(Node):
         if self.driver.latest_block_num == 0:
             nbn = await self.nbn_inbox.wait_for_next_nbn()
             self.process_block(nbn)
-            self.version_check()
+            #self.version_check()
 
         while self.running:
             await self.parameters.refresh()
@@ -135,8 +135,8 @@ class Delegate(Node):
             self.waiting_for_confirmation = True
 
             nbn = await self.nbn_inbox.wait_for_next_nbn()
-            self.process_nbn(nbn)
-            self.version_check()
+            self.process_block(nbn)
+            #self.version_check()
 
             self.waiting_for_confirmation = False
 

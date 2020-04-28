@@ -1,7 +1,7 @@
 import argparse
 from cilantro_ee.cli.utils import validate_ip, version_reboot
 from cilantro_ee.cli.start import start_node, setup_node, join_network
-from cilantro_ee.cli.update import verify_access, verify_pkg, trigger, vote, check_ready_quorum
+from cilantro_ee.cli.update import trigger, vote, check_ready_quorum, upgrade, abort_upgrade
 from cilantro_ee.storage import MasterStorage, BlockchainDriver
 
 
@@ -28,8 +28,8 @@ def setup_cilparser(parser):
 
     upd_parser = subparser.add_parser('update')
 
-    upd_parser.add_argument('-t', '--trigger', dest = 'pkg_hash', nargs = '?', type =str,
-                            help='str: Notify network of new update with given pkg_hash')
+    upd_parser.add_argument('-t', '--trigger', dest = 'pepper', nargs = '?', type =str,
+                            help='str: Notify network of new update with given pepper')
 
     upd_parser.parse_args('--trigger'.split())
 
@@ -39,8 +39,11 @@ def setup_cilparser(parser):
     upd_parser.add_argument('-c', '--check', action = 'store_true', default = False,
                             help='Bool : check current state of network')
 
-    upd_parser.add_argument('-n', '--now', action = 'store_true', default = False,
-                            help='Bool : reboot to new network')
+    # upd_parser.add_argument('-a', '--abort', action = 'store_true', default = False,
+    #                         help='Bool : abort existing upgrade')
+
+    # upd_parser.add_argument('-n', '--now', action = 'store_true', default = False,
+    #                         help='Bool : reboot to new network')
 
     upd_parser.add_argument('-i', '--ip', type=str, help='Master Node TX End points',
                             required=True)
@@ -104,14 +107,17 @@ def main():
         print(args)
         ip = validate_ip(address=args.ip)
 
-        if args.pkg_hash:
-            trigger(pkg=args.pkg_hash, iaddr=ip)
+        if args.pepper:
+            trigger(pkg=args.pepper, iaddr=ip)
 
         if args.vote:
             vote(iaddr=args.ip)
 
-        if args.now:
-            version_reboot()
+        # if args.now:
+        #     upgrade()
+
+        # if args.abort:
+        #     abort_upgrade(iaddr=args.ip)
 
         if args.check:
             check_ready_quorum(iaddr=args.ip)

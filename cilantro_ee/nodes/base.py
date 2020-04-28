@@ -6,6 +6,7 @@ from cilantro_ee.nodes.new_block_inbox import NBNInbox
 from cilantro_ee.storage import VKBook
 from cilantro_ee.contracts import sync
 from cilantro_ee.networking.parameters import Parameters, ServiceType, NetworkParameters
+from cilantro_ee.networking.peers import PeerServer
 import cilantro_ee
 import zmq.asyncio
 import asyncio
@@ -247,23 +248,28 @@ class Node:
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
 
-        self.get_update_state()
-
         if self.version_state:
             self.log.info('Waiting for Consensys on vote')
             self.log.info('num masters voted -> {}'.format(self.mn_votes))
             self.log.info('num delegates voted -> {}'.format(self.dl_votes))
 
+            # Given node is either master or delegate default assumes it to be valid
+            # delegate
+
+            node_type = False
+
+            for key in self.contacts.masternodes:
+                if self.wallet.verifying_key().hex() == key:
+                    self.log.info("Node Type : Master")
+                    node_type = True
+
             # check for vote consensys
             vote_consensus = self.version_state.quick_read('upg_consensus')
             if vote_consensus:
-                self.log.info('Rebooting Node with new verion')
-                version_reboot()
+                self.log.error('Rebooting Node with new version')
+                version_reboot(bn=self.bootnodes, is_master=node_type)
             else:
-                self.log.info('waiting for vote on upgrade')
-
-            # ready
-            #TODO we can merge it with vote - to be decided
+                self.log.info('{} waiting for vote on upgrade'.format(node_type))
 
     def get_update_state(self):
         self.active_upgrade = self.version_state.quick_read('upg_lock')

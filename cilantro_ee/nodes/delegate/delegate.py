@@ -132,6 +132,7 @@ class Delegate(Node):
 
             nbn = await self.nbn_inbox.wait_for_next_nbn()
             self.process_block(nbn)
+            self.version_check()
 
             self.waiting_for_confirmation = False
 

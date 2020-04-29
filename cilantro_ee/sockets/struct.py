@@ -64,8 +64,11 @@ class SocketStruct:
         end = _str.split(p_str)[1]
 
         if protocol == Protocols.TCP:
-            print(end)
-            _id, port = end.split(':')
+            comps = end.split(':')
+
+            _id = comps[0]
+            port = comps[1]
+
             port = int(port)
 
             return cls(protocol=protocol, id=_id, port=port)

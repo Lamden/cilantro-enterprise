@@ -16,7 +16,7 @@ controller = Variable()
 
 
 @construct
-def seed(policy='members', cost=100_000):
+def seed(policy: str='members', cost: int=100_000):
     controller.set(policy)
 
     member_cost.set(cost)
@@ -49,7 +49,7 @@ def unregister():
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # VOTE CANDIDATE
 @export
-def vote_candidate(address):
+def vote_candidate(address: str):
     assert candidate_state['registered', address]
 
     # Determine if caller can vote
@@ -89,7 +89,7 @@ def pop_top():
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # VOTE NO CONFIDENCE
 @export
-def vote_no_confidence(address):
+def vote_no_confidence(address: str):
     # Determine if caller can vote
     assert address in election_house.current_value_for_policy(controller.get()), \
         'Cannot vote against a non-committee member'
@@ -142,7 +142,7 @@ def pop_last():
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # REMOVE!!
 @export
-def force_removal(address):
+def force_removal(address: str):
     assert ctx.caller == controller.get(), 'Wrong smart contract caller.'
     candidate_state[
         'registered', address] = False  # Registration is lost when no confidence vote. AKA: Stake revoked.

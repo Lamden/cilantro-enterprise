@@ -37,7 +37,7 @@ def seed():
 
 
 @export
-def trigger_upgrade(pepper, initiator_vk):
+def trigger_upgrade(pepper: str, initiator_vk: str):
     if upg_lock.get() is True:
         assert_parallel_upg_check()
 
@@ -58,7 +58,7 @@ def trigger_upgrade(pepper, initiator_vk):
         tot_dl.set(dnum)
 
 @export
-def vote(vk):
+def vote(vk: str):
     if upg_lock.get() is True:
         if vk in election_house.current_value_for_policy('masternodes'):
             mn_vote.set(mn_vote.get() + 1)

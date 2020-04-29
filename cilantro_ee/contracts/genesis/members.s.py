@@ -13,7 +13,7 @@ minimum_nodes = Variable()
 candidate_contract = Variable()
 
 @construct
-def seed(initial_members, minimum=1, candidate='elect_members'):
+def seed(initial_members: list, minimum=1, candidate='elect_members'):
     S['members'] = initial_members
     minimum_nodes.set(minimum)
     candidate_contract.set(candidate)
@@ -38,7 +38,7 @@ def current_value():
 
 
 @export
-def vote(vk, obj):
+def vote(vk: int, obj: list):
     assert type(obj) == list, 'Pass a list!'
 
     arg = None
@@ -74,7 +74,7 @@ def vote(vk, obj):
             reset()
 
 
-def assert_vote_is_valid(vk, action, position, arg=None):
+def assert_vote_is_valid(vk: str, action: str, position: int, arg: Any=None):
     assert vk in S['members'], 'Not a member.'
 
     assert action in [INTRODUCE_MOTION, VOTE_ON_MOTION], 'Invalid action.'
@@ -89,7 +89,7 @@ def assert_vote_is_valid(vk, action, position, arg=None):
         assert type(position) == bool, 'Invalid position'
 
 
-def assert_vk_is_valid(vk):
+def assert_vk_is_valid(vk: str):
     assert vk is not None, 'No VK provided.'
     assert type(vk) == str, 'VK not a string.'
     assert len(vk) == 64, 'VK is not 64 characters.'
@@ -97,7 +97,7 @@ def assert_vk_is_valid(vk):
     int(vk, 16)
 
 
-def introduce_motion(position, arg):
+def introduce_motion(position: int, arg: Any):
     # If remove member, must be a member that already exists
     assert position <= REMOVE_SEAT, 'Invalid position.'
     if position == REMOVE_MEMBER:

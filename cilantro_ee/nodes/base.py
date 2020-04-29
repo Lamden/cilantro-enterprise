@@ -198,6 +198,8 @@ class Node:
         self.nbn_inbox.clean()
         self.nbn_inbox.update_signers()
 
+        self.version_check()
+
     async def start(self):
         await self.network.start()
 

@@ -1,6 +1,6 @@
 from contracting.execution.executor import Executor
 from contracting.stdlib.bridge.time import Datetime
-from contracting.db.encoder import decode
+from contracting.db.encoder import decode, safe_repr
 from contracting.db.driver import encode_kv
 from cilantro_ee.crypto.canonical import build_sbc_from_work_results, tx_hash_from_tx
 from cilantro_ee.logger.base import get_logger
@@ -31,9 +31,6 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
         auto_commit=False
     )
 
-    if debug:
-        log.error(output)
-
     deltas = []
     for k, v in output['writes'].items():
         key, value = encode_kv(k, v)
@@ -48,7 +45,8 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
         transaction=transaction,
         status=output['status_code'],
         state=deltas,
-        stampsUsed=output['stamps_used']
+        stampsUsed=output['stamps_used'],
+        result=safe_repr(output['result'])
     )
 
     executor.driver.pending_writes.clear() # add

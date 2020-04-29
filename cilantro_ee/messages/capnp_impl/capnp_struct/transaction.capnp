@@ -34,7 +34,8 @@ struct TransactionData {
     transaction @1 :NewTransaction;
     status @2: UInt8;
     state @3: List(Delta);
-    stampsUsed @4: UInt64;
+    result @4: Text;
+    stampsUsed @5: UInt64;
 }
 
 struct Transactions {

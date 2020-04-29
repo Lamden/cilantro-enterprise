@@ -64,6 +64,7 @@ class SocketStruct:
         end = _str.split(p_str)[1]
 
         if protocol == Protocols.TCP:
+            print(end)
             _id, port = end.split(':')
             port = int(port)
 

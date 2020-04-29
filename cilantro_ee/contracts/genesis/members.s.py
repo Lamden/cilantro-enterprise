@@ -1,6 +1,8 @@
+# Actions
 INTRODUCE_MOTION = 'introduce_motion'
 VOTE_ON_MOTION = 'vote_on_motion'
 
+# Motions
 NO_MOTION = 0
 REMOVE_MEMBER = 1
 ADD_SEAT = 2
@@ -13,7 +15,7 @@ minimum_nodes = Variable()
 candidate_contract = Variable()
 
 @construct
-def seed(initial_members: list, minimum=1, candidate='elect_members'):
+def seed(initial_members: list, minimum: int=1, candidate: str='elect_members'):
     S['members'] = initial_members
     minimum_nodes.set(minimum)
     candidate_contract.set(candidate)
@@ -38,7 +40,7 @@ def current_value():
 
 
 @export
-def vote(vk: int, obj: list):
+def vote(vk: str, obj: list):
     assert type(obj) == list, 'Pass a list!'
 
     arg = None
@@ -74,7 +76,7 @@ def vote(vk: int, obj: list):
             reset()
 
 
-def assert_vote_is_valid(vk: str, action: str, position: int, arg: Any=None):
+def assert_vote_is_valid(vk: str, action: str, position: bool, arg: Any=None):
     assert vk in S['members'], 'Not a member.'
 
     assert action in [INTRODUCE_MOTION, VOTE_ON_MOTION], 'Invalid action.'

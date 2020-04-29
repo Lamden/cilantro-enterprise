@@ -30,7 +30,7 @@ def current_value():
     return S['value']
 
 @export
-def vote(vk: int , obj: list):
+def vote(vk: str, obj: list):
     # Start a new election
     if S['election_start'] is None:
         total_nodes = len(election_house.current_value_for_policy(S['master_contract'])) + \

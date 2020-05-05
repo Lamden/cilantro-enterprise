@@ -152,16 +152,10 @@ class Node:
         if current == 0:
             current = 1
 
-        while current < latest:
-            block = await self.block_fetcher.get_block_from_master(current, mn_seed)
-            if block is not None:
-                try:
-                    block = block.to_dict()
-                    self.process_block(block)
-                    current = self.driver.get_latest_block_num()
-                except AttributeError:
-                    pass
-
+        for i in range(current, latest):
+            block = await self.block_fetcher.get_block_from_master(i, mn_seed)
+            block = block.to_dict()
+            self.process_block(block)
 
         while len(self.nbn_inbox.q) > 0:
             block = self.nbn_inbox.q.pop(0)

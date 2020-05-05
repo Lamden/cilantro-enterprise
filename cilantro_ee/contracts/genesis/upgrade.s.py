@@ -34,8 +34,6 @@ def seed():
     tot_dl.set(0)
 
 
-
-
 @export
 def trigger_upgrade(pepper: str, initiator_vk: str):
     if upg_lock.get() is True:
@@ -74,7 +72,6 @@ def vote(vk: str):
 
 
 def check_vote_state():
-
     all_nodes = tot_mn.get() + tot_dl.get()
     all_votes = mn_vote.get() + dl_vote.get()
 

@@ -70,11 +70,11 @@ class WorkInbox(SecureAsyncInbox):
             if msg_type != MessageType.TRANSACTION_BATCH:
                 raise NotTransactionBatchMessageType
 
-            transaction_batch_is_valid(
-                tx_batch=msg_blob,
-                current_masternodes=self.masternode_contract.quick_read('S', 'members'),
-                driver=self.driver
-            )
+            # transaction_batch_is_valid(
+            #     tx_batch=msg_blob,
+            #     current_masternodes=self.masternode_contract.quick_read('S', 'members'),
+            #     driver=self.driver
+            # )
 
             self.work[msg_blob.sender.hex()] = msg_blob
             self.log.info(msg_blob.sender.hex())

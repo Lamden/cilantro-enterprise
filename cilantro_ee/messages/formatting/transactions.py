@@ -1,60 +1,61 @@
 from .primatives import *
 
 
-def transaction_payload_is_valid(t: dict):
+def transaction_payload_is_formatted(t: dict):
     expected_keys = {'sender', 'processor', 'nonce', 'stamps_supplied', 'contract', 'function', 'kwargs'}
 
     if not dict_has_keys(t, expected_keys):
         return False
 
-    if not vk_is_valid(t['sender']):
+    if not vk_is_formatted(t['sender']):
         return False
 
-    if not vk_is_valid(t['processor']):
+    if not vk_is_formatted(t['processor']):
         return False
 
-    if not number_is_valid(t['nonce']):
+    if not number_is_formatted(t['nonce']):
         return False
 
-    if not number_is_valid(t['stamps_supplied']):
+    if not number_is_formatted(t['stamps_supplied']):
         return False
 
-    if not contract_name_is_valid(t['contract']):
+    if not contract_name_is_formatted(t['contract']):
         return False
 
-    if not identifier_is_valid(t['function']):
+    if not identifier_is_formatted(t['function']):
         return False
 
-    if not kwargs_are_valid(t['kwargs']):
+    if not kwargs_are_formatted(t['kwargs']):
         return False
 
     return True
 
 
-def transaction_metadata_is_valid(m: dict):
+def transaction_metadata_is_formatted(m: dict):
     expected_keys = {'signature', 'timestamp'}
 
     if not dict_has_keys(m, expected_keys):
         return False
 
-    if not signature_is_valid(m['signature']):
+    if not signature_is_formatted(m['signature']):
         return False
 
-    if not number_is_valid(m['timestamp']):
+    if not number_is_formatted(m['timestamp']):
         return False
 
     return True
 
-def transaction_is_valid(t: dict):
+
+def transaction_is_formatted(t: dict):
     expected_keys = {'metadata', 'payload'}
 
     if not dict_has_keys(t, expected_keys):
         return False
 
-    if not transaction_payload_is_valid(t['payload']):
+    if not transaction_payload_is_formatted(t['payload']):
         return False
 
-    if not transaction_metadata_is_valid(t['metadata']):
+    if not transaction_metadata_is_formatted(t['metadata']):
         return False
 
     return True

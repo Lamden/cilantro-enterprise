@@ -7,7 +7,7 @@ def dict_has_keys(d: dict, keys: set):
     return len(keys ^ key_set) == 0
 
 
-def identifier_is_valid(s: str):
+def identifier_is_formatted(s: str):
     try:
         iden = re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', s)
         if iden is None:
@@ -17,9 +17,9 @@ def identifier_is_valid(s: str):
         return False
 
 
-def contract_name_is_valid(s: str):
+def contract_name_is_formatted(s: str):
     try:
-        func = re.match(r'con_^[a-zA-Z][a-zA-Z0-9_]*$', s)
+        func = re.match(r'^con_[a-zA-Z][a-zA-Z0-9_]*$', s)
         if func is None:
             return False
         return True
@@ -27,7 +27,7 @@ def contract_name_is_valid(s: str):
         return False
 
 
-def vk_is_valid(s: str):
+def vk_is_formatted(s: str):
     try:
         int(s, 16)
         if len(s) != 64:
@@ -35,9 +35,11 @@ def vk_is_valid(s: str):
         return True
     except ValueError:
         return False
+    except TypeError:
+        return False
 
 
-def signature_is_valid(s: str):
+def signature_is_formatted(s: str):
     try:
         int(s, 16)
         if len(s) != 128:
@@ -45,9 +47,11 @@ def signature_is_valid(s: str):
         return True
     except ValueError:
         return False
+    except TypeError:
+        return False
 
 
-def number_is_valid(i: int):
+def number_is_formatted(i: int):
     if type(i) != int:
         return False
     if i < 0:
@@ -55,8 +59,8 @@ def number_is_valid(i: int):
     return True
 
 
-def kwargs_are_valid(k: dict):
+def kwargs_are_formatted(k: dict):
     for k in k.keys():
-        if not identifier_is_valid(k):
+        if not identifier_is_formatted(k):
             return False
     return True

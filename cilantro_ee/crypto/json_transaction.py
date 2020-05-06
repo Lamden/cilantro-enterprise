@@ -4,8 +4,8 @@ import time
 import os
 
 from contracting.db.encoder import encode, decode
-from cilantro_ee.messages.formatting.transactions import transaction_is_valid
-from cilantro_ee.messages.formatting.primatives import contract_name_is_valid
+from cilantro_ee.messages.formatting.transactions import transaction_is_formatted
+from cilantro_ee.messages.formatting.primatives import contract_name_is_formatted
 from cilantro_ee.crypto.canonical import format_dictionary
 
 
@@ -33,7 +33,7 @@ class TransactionBuilder:
 
         self.transaction = format_dictionary(self.transaction)
 
-        assert transaction_is_valid, 'Transaction not formatted correctly!'
+        assert transaction_is_formatted, 'Transaction not formatted correctly!'
 
     def sign(self, signing_key: bytes):
         signature = wallet._sign(signing_key, encode(self.payload))
@@ -117,7 +117,7 @@ def has_enough_stamps(balance, stamp_cost, stamps_supplied, contract, function, 
 
 
 def contract_name_is_valid(contract, function, name):
-    if contract == 'submission' and function == 'submit_contract' and not contract_name_is_valid(name):
+    if contract == 'submission' and function == 'submit_contract' and not contract_name_is_formatted(name):
         raise TransactionContractNameInvalid
 
 

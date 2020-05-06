@@ -128,7 +128,7 @@ class WebServer:
                                  driver=self.driver,
                                  strict=True)
 
-        # These exceptions are tested to work in the transaction_is_valid tests
+        # These exceptions are tested to work in the transaction_is_formatted tests
         except TransactionNonceInvalid:
             msg = {'error': 'Transaction nonce is invalid.'}
             error = True

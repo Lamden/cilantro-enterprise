@@ -1,10 +1,6 @@
 from .primatives import *
 
 
-class DictionaryKeyMismatch(Exception):
-    pass
-
-
 def transaction_payload_is_formatted(t: dict):
     expected_keys = {'sender', 'processor', 'nonce', 'stamps_supplied', 'contract', 'function', 'kwargs'}
 

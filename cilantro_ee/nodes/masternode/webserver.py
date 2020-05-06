@@ -4,12 +4,10 @@ from cilantro_ee.logger.base import get_logger
 # from sanic_cors import CORS
 import json as _json
 from contracting.client import ContractingClient
-from contracting.db.encoder import encode
+from contracting.db.encoder import encode, decode
 from cilantro_ee.storage import MasterStorage, BlockchainDriver
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
-from cilantro_ee.crypto.transaction import transaction_is_valid, \
-    TransactionNonceInvalid, TransactionProcessorInvalid, TransactionTooManyPendingException, \
-    TransactionSenderTooFewStamps, TransactionPOWProofInvalid, TransactionSignatureInvalid, TransactionStampsNegative
+from cilantro_ee.crypto.transaction import TransactionException
 
 from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
 import os
@@ -22,6 +20,8 @@ import asyncio
 log = get_logger("MN-WebServer")
 transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
 
+from .server import validator
+
 
 class ByteEncoder(_json.JSONEncoder):
     def default(self, o, *args):
@@ -32,7 +32,7 @@ class ByteEncoder(_json.JSONEncoder):
 
 
 class WebServer:
-    def __init__(self, contracting_client, driver, wallet, blocks, queue=[], port=8080, ssl_port=443, ssl_enabled=False,
+    def __init__(self, contracting_client: ContractingClient, driver: BlockchainDriver, wallet, blocks, queue=[], port=8080, ssl_port=443, ssl_enabled=False,
                  ssl_cert_file='~/.ssh/server.csr',
                  ssl_key_file='~/.ssh/server.key',
                  workers=2, debug=True, access_log=False,
@@ -109,56 +109,47 @@ class WebServer:
 
     # Main Endpoint to Submit TXs
     async def submit_transaction(self, request):
-        log.info(f'Got req:{request}')
+        # Reject TX if the queue is too large
         if len(self.queue) >= self.max_queue_len:
             return response.json({'error': "Queue full. Resubmit shortly."}, status=503)
 
-        # Try to deserialize transaction.
+        # Check that the payload is valid JSON
         try:
-            tx = transaction_capnp.NewTransaction.from_bytes_packed(request.body)
-
+            tx = decode(request.body)
         except Exception as e:
-            return response.json({'error': 'Malformed transaction.'.format(e)}, status=400)
+            return response.json({'error': 'Malformed request body.'})
 
-        error = False
-        msg = {'error': 'Unknown Error'}
+        # Check that the TX is correctly formatted
+        error = validator.check_tx_formatting(request.body, self.wallet.verifying_key().hex())
+        if error is not None:
+            return response.json(validator.EXCEPTION_MAP[error])
+
+        nonce, pending_nonce = validator.get_nonces(
+            sender=tx['payload']['sender'],
+            processor=tx['payload']['processor'],
+            driver=self.driver
+        )
+
+        # Calculate and set the 'pending nonce' which keeps track of what the sender's nonce will
+        # be if the block the tx is included in is successful.
         try:
-            transaction_is_valid(tx=tx,
-                                 expected_processor=self.wallet.verifying_key(),
-                                 driver=self.driver,
-                                 strict=True)
+            pending_nonce = validator.get_new_pending_nonce(
+                tx_nonce=tx['payload']['nonce'],
+                nonce=nonce,
+                pending_nonce=pending_nonce
+            )
+            self.driver.set_pending_nonce(
+                sender=tx['payload']['sender'],
+                processor=tx['payload']['processor'],
+                nonce=pending_nonce
+            )
+        except TransactionException as e:
+            return response.json(validator.EXCEPTION_MAP[e])
 
-        # These exceptions are tested to work in the transaction_is_formatted tests
-        except TransactionNonceInvalid:
-            msg = {'error': 'Transaction nonce is invalid.'}
-            error = True
-        except TransactionProcessorInvalid:
-            msg = {'error': 'Transaction processor does not match expected processor.'}
-            error = True
-        except TransactionTooManyPendingException:
-            msg = {'error': 'Too many pending transactions currently in the block.'}
-            error = True
-        except TransactionSenderTooFewStamps:
-            msg = {'error': 'Transaction sender has too few stamps for this transaction.'}
-            error = True
-        except TransactionPOWProofInvalid:
-            msg = {'error': 'Transaction proof of work is invalid.'}
-            error = True
-        except TransactionSignatureInvalid:
-            msg = {'error': 'Transaction is not signed by the sender.'}
-            error = True
-        except TransactionStampsNegative:
-            msg = {'error': 'Transaction has negative stamps supplied.'}
-            error = True
-
-        if error:
-            log.error(msg)
-            return response.json(msg)
-
-        # Put it in the rate limiter queue.
-        log.info('Q TIME')
+        # Add TX to the processing queue
         self.queue.append(tx)
 
+        # Return the TX hash to the user so they can track it
         tx_hash = tx_hash_from_tx(tx)
 
         return response.json({'success': 'Transaction successfully submitted to the network.',

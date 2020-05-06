@@ -1,5 +1,6 @@
 from unittest import TestCase
 from cilantro_ee.messages.formatting import primatives
+from cilantro_ee.messages.formatting import transactions
 
 
 class TestFormatting(TestCase):
@@ -104,3 +105,302 @@ class TestFormatting(TestCase):
         }
 
         self.assertFalse(primatives.kwargs_are_formatted(d))
+
+    def test_transaction_payload_formatted_passes(self):
+        t = {
+            'sender': 'a' * 64,
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertTrue(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_keys_unexpected(self):
+        t = {
+            'bad': 'key',
+            'sender': 'a' * 64,
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_keys_missing(self):
+        t = {
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_vk_sender_bad(self):
+        t = {
+            'sender': 'a' * 65,
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_vk_processor_bad(self):
+        t = {
+            'sender': 'a' * 64,
+            'processor': 'b' * 65,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_stamps_bad(self):
+        t = {
+            'sender': 'a' * 64,
+            'processor': 'b' * 64,
+            'stamps_supplied': -123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_nonce_bad(self):
+        t = {
+            'sender': 'a' * 64,
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': -10,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_contract_bad(self):
+        t = {
+            'sender': 'a' * 64,
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 123,
+            'function': 'transfer',
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_function(self):
+        t = {
+            'sender': 'a' * 64,
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 123,
+            'kwargs': {
+                'amount': 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_payload_fails_kwargs_bad(self):
+        t = {
+            'sender': 'a' * 64,
+            'processor': 'b' * 64,
+            'stamps_supplied': 123,
+            'nonce': 0,
+            'contract': 'currency',
+            'function': 'transfer',
+            'kwargs': {
+                True: 123,
+                'to': 'jeff'
+            }
+        }
+
+        self.assertFalse(transactions.transaction_payload_is_formatted(t))
+
+    def test_tx_metadata_passes(self):
+        t = {
+            'signature': 'a' * 128,
+            'timestamp': 123
+        }
+
+        self.assertTrue(transactions.transaction_metadata_is_formatted(t))
+
+    def test_tx_metadata_missing_key_fails(self):
+        t = {
+            'signature': 'a' * 128,
+        }
+
+        self.assertFalse(transactions.transaction_metadata_is_formatted(t))
+
+    def test_tx_metadata_extra_key_fails(self):
+        t = {
+            'signature': 'a' * 128,
+            'timestamp': 123,
+            'bad': 'key'
+        }
+
+        self.assertFalse(transactions.transaction_metadata_is_formatted(t))
+
+    def test_tx_metadata_timestamp_fails(self):
+        t = {
+            'signature': 'a' * 128,
+            'timestamp': 'abc'
+        }
+
+        self.assertFalse(transactions.transaction_metadata_is_formatted(t))
+
+    def test_tx_passes(self):
+        t = {
+            'payload': {
+                'sender': 'a' * 64,
+                'processor': 'b' * 64,
+                'stamps_supplied': 123,
+                'nonce': 0,
+                'contract': 'currency',
+                'function': 'transfer',
+                'kwargs': {
+                    'amount': 123,
+                    'to': 'jeff'
+                }
+            },
+            'metadata': {
+                'signature': 'a' * 128,
+                'timestamp': 123
+            }
+        }
+
+        self.assertTrue(transactions.transaction_is_formatted(t))
+
+    def test_tx_fails_extra_key(self):
+        t = {
+            'bad': 'key',
+            'payload': {
+                'sender': 'a' * 64,
+                'processor': 'b' * 64,
+                'stamps_supplied': 123,
+                'nonce': 0,
+                'contract': 'currency',
+                'function': 'transfer',
+                'kwargs': {
+                    'amount': 123,
+                    'to': 'jeff'
+                }
+            },
+            'metadata': {
+                'signature': 'a' * 128,
+                'timestamp': 123
+            }
+        }
+
+        self.assertFalse(transactions.transaction_is_formatted(t))
+
+    def test_tx_missing_key_fails(self):
+        t = {
+            'payload': {
+                'sender': 'a' * 64,
+                'processor': 'b' * 64,
+                'stamps_supplied': 123,
+                'nonce': 0,
+                'contract': 'currency',
+                'function': 'transfer',
+                'kwargs': {
+                    'amount': 123,
+                    'to': 'jeff'
+                }
+            }
+        }
+
+        self.assertFalse(transactions.transaction_is_formatted(t))
+
+    def test_tx_fails_tx_payload(self):
+        t = {
+            'payload': {
+                'sender': 'a' * 65,
+                'processor': 'b' * 64,
+                'stamps_supplied': 123,
+                'nonce': 0,
+                'contract': 'currency',
+                'function': 'transfer',
+                'kwargs': {
+                    'amount': 123,
+                    'to': 'jeff'
+                }
+            },
+            'metadata': {
+                'signature': 'a' * 128,
+                'timestamp': 123
+            }
+        }
+
+        self.assertFalse(transactions.transaction_is_formatted(t))
+
+    def test_tx_fails_tx_metadata(self):
+        t = {
+            'payload': {
+                'sender': 'a' * 64,
+                'processor': 'b' * 64,
+                'stamps_supplied': 123,
+                'nonce': 0,
+                'contract': 'currency',
+                'function': 'transfer',
+                'kwargs': {
+                    'amount': 123,
+                    'to': 'jeff'
+                }
+            },
+            'metadata': {
+                'signature': 'a' * 129,
+                'timestamp': 123
+            }
+        }
+
+        self.assertFalse(transactions.transaction_is_formatted(t))

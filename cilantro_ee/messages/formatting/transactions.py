@@ -1,6 +1,10 @@
 from .primatives import *
 
 
+class DictionaryKeyMismatch(Exception):
+    pass
+
+
 def transaction_payload_is_formatted(t: dict):
     expected_keys = {'sender', 'processor', 'nonce', 'stamps_supplied', 'contract', 'function', 'kwargs'}
 
@@ -19,7 +23,7 @@ def transaction_payload_is_formatted(t: dict):
     if not number_is_formatted(t['stamps_supplied']):
         return False
 
-    if not contract_name_is_formatted(t['contract']):
+    if not identifier_is_formatted(t['contract']):
         return False
 
     if not identifier_is_formatted(t['function']):

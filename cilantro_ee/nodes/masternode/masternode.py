@@ -141,9 +141,9 @@ class Masternode(Node):
         self.nbn_socket_book.sync_sockets()
         self.delegate_work_socket_book.sync_sockets()
 
-        while self.wallet.verifying_key().hex() not in self.masternode_contract.quick_read("S", "members"):
-            block = await self.nbn_inbox.wait_for_next_nbn()
+        block = await self.nbn_inbox.wait_for_next_nbn()
 
+        while self.wallet.verifying_key().hex() not in self.masternode_contract.quick_read("S", "members"):
             # if block number does not equal one more than the current block number
             # ask for the blocks before it
             if block['blockNum'] > self.driver.latest_block_num + 1:
@@ -161,11 +161,13 @@ class Masternode(Node):
 
             print(self.contacts.masternodes)
 
+            block = await self.nbn_inbox.wait_for_next_nbn()
+
         await self.parameters.refresh()
         self.nbn_socket_book.sync_sockets()
         self.delegate_work_socket_book.sync_sockets()
 
-        #await self.send_work()
+        await self.wait_for_work(block)
 
         await self.process_blocks()
 

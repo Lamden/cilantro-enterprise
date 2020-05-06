@@ -74,5 +74,5 @@ Ctrl+X, save the file.
 
 ### Start your node
 ```
-cil <masternode | delegate> -k <sk in hex format> -bn <list of ip addresses that are currently online>
+cil start <masternode | delegate> -k <sk in hex format> -bn <list of ip addresses that are currently online>
 ```

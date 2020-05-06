@@ -72,7 +72,12 @@ nano ~/constitution.json
 Ctrl+X, save the file.
 ```
 
-### Start your node
+### Start your node (if you are starting a new network from scratch)
 ```
 cil start <masternode | delegate> -k <sk in hex format> -bn <list of ip addresses that are currently online>
+```
+
+### Join your node (if you are trying to join an existing running network)
+```
+cil join <masternode | delegate> -k <sk in hex format> -mn <list of any masternode currently online>
 ```

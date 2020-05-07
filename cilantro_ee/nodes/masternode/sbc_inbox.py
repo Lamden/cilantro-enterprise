@@ -3,9 +3,10 @@ import asyncio
 from cilantro_ee.crypto.merkle_tree import merklize
 from cilantro_ee.crypto.wallet import _verify
 from cilantro_ee.logger.base import get_logger
-from cilantro_ee.messages import Message, MessageType
 from cilantro_ee.sockets.inbox import SecureAsyncInbox
 from cilantro_ee.storage import BlockchainDriver
+from contracting.db.encoder import encode
+import json
 
 
 class SBCInbox(SecureAsyncInbox):
@@ -18,64 +19,49 @@ class SBCInbox(SecureAsyncInbox):
         super().__init__(*args, **kwargs)
 
     async def handle_msg(self, _id, msg):
-        msg_type, msg_blob, _, _, _ = Message.unpack_message_2(msg)
-
-        self.log.info(f'Got message on SBCInbox')
+        msg = json.loads(msg)
 
         # Ignore bad message types
-        if msg_type != MessageType.SUBBLOCK_CONTENDERS:
-            self.log.error('Wrong SBC message type. Tossing.')
-            return
-
-        if len(msg_blob.contenders) != self.expected_subblocks:
-            self.log.error('Contender does not have enough subblocks. Tossing.')
-            return
-
+        # Ignore if not enough subblocks
         # Make sure all the contenders are valid
         all_valid = True
-        for i in range(len(msg_blob.contenders)):
+        for i in range(len(msg['contenders'])):
             try:
-                self.sbc_is_valid(msg_blob.contenders[i], i)
+                self.sbc_is_valid(msg['contenders'], i)
             except SBCException as e:
                 self.log.error(type(e))
                 all_valid = False
 
         # Add the whole contender
         if all_valid:
-            self.q.append(msg_blob.contenders)
+            self.q.append(msg['contenders'])
             self.log.info('Added new SBC')
 
     def sbc_is_valid(self, sbc, sb_idx=0):
-        if sbc.subBlockNum != sb_idx:
+        if sbc['subBlockNum'] != sb_idx:
             raise SBCIndexMismatchError
 
         # Make sure signer is in the delegates
-        if len(sbc.transactions) == 0:
-            msg = bytes.fromhex(sbc.inputHash)
+        if len(sbc['transactions']) == 0:
+            msg = bytes.fromhex(sbc['inputHash'])
         else:
-            msg = sbc.merkleTree.leaves[0]
+            msg = sbc['merkle_tree']['leaves'][0]
 
         valid_sig = _verify(
-            vk=sbc.signer,
-            msg=msg,
-            signature=sbc.merkleTree.signature
+            vk=bytes.fromhex(sbc['signer']),
+            msg=bytes.fromhex(msg),
+            signature=bytes.fromhex(sbc['merkle_tree']['signature'])
         )
 
         if not valid_sig:
             raise SBCInvalidSignatureError
 
-        # if sbc.prevBlockHash != self.driver.latest_block_hash:
-        #     self.log.info(sbc.prevBlockHash)
-        #     self.log.info(self.driver.latest_block_hash)
-        #     raise SBCBlockHashMismatchError
-
-        # idk
-        if len(sbc.merkleTree.leaves) > 0:
-            txs = [tx.as_builder().to_bytes_packed() for tx in sbc.transactions]
+        if len(sbc['merkleTree']['leaves']) > 0:
+            txs = [encode(tx).encode() for tx in sbc['transactions']]
             expected_tree = merklize(txs)
 
             for i in range(len(expected_tree)):
-                if expected_tree[i] != sbc.merkleTree.leaves[i]:
+                if expected_tree[i] != sbc['merkle_tree']['leaves'][i]:
                     raise SBCMerkleLeafVerificationError
 
     def has_sbc(self):

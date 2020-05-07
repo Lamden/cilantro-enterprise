@@ -1,53 +1,44 @@
 from contracting.execution.executor import Executor
 from contracting.stdlib.bridge.time import Datetime
-from contracting.db.encoder import decode, safe_repr
-from contracting.db.driver import encode_kv
-from cilantro_ee.crypto.canonical import build_sbc_from_work_results, tx_hash_from_tx
+from contracting.db.encoder import encode, decode, safe_repr
+from cilantro_ee.crypto.canonical import tx_hash_from_tx, format_dictionary
+from cilantro_ee.crypto.merkle_tree import merklize
 from cilantro_ee.logger.base import get_logger
-import os
-import capnp
 from datetime import datetime
 import hashlib
 import heapq
-import cilantro_ee.messages.capnp_impl.capnp_struct as schemas
 
-transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
 
 log = get_logger('EXE')
 
 
-def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}, debug=True):
+def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}):
     # Deserialize Kwargs. Kwargs should be serialized JSON moving into the future for DX.
     kwargs = decode(transaction.payload.kwargs)
 
     output = executor.execute(
-        sender=transaction.payload.sender.hex(),
-        contract_name=transaction.payload.contractName,
-        function_name=transaction.payload.functionName,
-        stamps=transaction.payload.stampsSupplied,
+        sender=transaction['payload']['sender'],
+        contract_name=transaction['payload']['contract'],
+        function_name=transaction['payload']['function'],
+        stamps=transaction['payload']['stamps_supplied'],
         stamp_cost=stamp_cost,
         kwargs=kwargs,
         environment=environment,
         auto_commit=False
     )
 
-    deltas = []
-    for k, v in output['writes'].items():
-        key, value = encode_kv(k, v)
-        d = transaction_capnp.Delta.new_message(key=key, value=value)
-        deltas.append(d)
-
     tx_hash = tx_hash_from_tx(transaction)
 
-    # Encode deltas into a Capnp struct
-    tx_output = transaction_capnp.TransactionData.new_message(
-        hash=tx_hash,
-        transaction=transaction,
-        status=output['status_code'],
-        state=deltas,
-        stampsUsed=output['stamps_used'],
-        result=safe_repr(output['result'])
-    )
+    tx_output = {
+        'hash': tx_hash,
+        'transaction': transaction,
+        'status': output['status_code'],
+        'state': output['writes'],
+        'stamps_used': output['stamps_used'],
+        'result': safe_repr(output['result'])
+    }
+
+    tx_output = format_dictionary(tx_output)
 
     executor.driver.pending_writes.clear() # add
 
@@ -72,7 +63,7 @@ def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost)
 
     # Each TX Batch is basically a subblock from this point of view and probably for the near future
     tx_data = []
-    for transaction in batch.transactions:
+    for transaction in batch['transactions']:
         tx_data.append(execute_tx(executor=executor,
                                   transaction=transaction,
                                   environment=environment,
@@ -94,18 +85,31 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
             executor=executor,
             driver=driver,
             batch=tx_batch,
-            timestamp=tx_batch.timestamp,
-            input_hash=tx_batch.inputHash,
+            timestamp=tx_batch['timestamp'],
+            input_hash=tx_batch['input_hash'],
             stamp_cost=stamp_cost
         )
 
-        sbc = build_sbc_from_work_results(
-            input_hash=tx_batch.inputHash,
-            results=results,
-            sb_num=i % parallelism,
-            wallet=wallet,
-            previous_block_hash=previous_block_hash
-        )
+        if len(results) > 0:
+            merkle = merklize([encode(r).encode() for r in results])
+            proof = wallet.sign(merkle[0])
+        else:
+            merkle = merklize([bytes.fromhex(tx_batch['input_hash'])])
+            proof = wallet.sign(bytes.fromhex(tx_batch['input_hash']))
+
+        merkle_tree = {
+            'leaves': merkle,
+            'signature': proof.hex()
+        }
+
+        sbc = {
+            'input_hash': tx_batch['input_hash'],
+            'transactions': results,
+            'merkle_tree': merkle_tree,
+            'signer': wallet.verifying_key().hex(),
+            'subblock': i % parallelism,
+            'previous_block_hash': previous_block_hash
+        }
 
         subblocks.append(sbc)
         i += 1

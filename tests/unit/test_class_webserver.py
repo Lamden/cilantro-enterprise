@@ -16,49 +16,6 @@ transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction
 n = BlockchainDriver()
 
 
-def make_good_tx(processor):
-    w = Wallet()
-    balances_key = '{}{}{}{}{}'.format('currency',
-                                       config.INDEX_SEPARATOR,
-                                       'balances',
-                                       config.DELIMITER,
-                                       w.verifying_key().hex())
-    n.set(balances_key, 500000)
-    tx = TransactionBuilder(w.verifying_key(),
-                            contract='currency',
-                            function='transfer',
-                            kwargs={'amount': 10, 'to': 'jeff'},
-                            stamps=500000,
-                            processor=processor,
-                            nonce=0)
-
-    tx.sign(w.signing_key())
-    tx_bytes = tx.serialize()
-    return tx_bytes
-
-
-def make_bad_tx():
-    w = Wallet()
-    balances_key = '{}{}{}{}{}'.format('currency',
-                                       config.INDEX_SEPARATOR,
-                                       'balances',
-                                       config.DELIMITER,
-                                       w.verifying_key().hex())
-    n.set(balances_key, 500000)
-    tx = TransactionBuilder(w.verifying_key(),
-                            contract='currency',
-                            function='transfer',
-                            kwargs={'amount': 10, 'to': 'jeff'},
-                            stamps=500000,
-                            processor=b'\x00' * 32,
-                            nonce=0)
-
-    tx.sign(w.signing_key())
-    tx_bytes = tx.serialize()
-    #tx_struct = transaction_capnp.Transaction.from_bytes_packed(tx_bytes)
-    return tx_bytes
-
-
 class TestClassWebserver(TestCase):
     def setUp(self):
         self.w = Wallet()

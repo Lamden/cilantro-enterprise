@@ -20,7 +20,7 @@ import asyncio
 log = get_logger("MN-WebServer")
 transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
 
-from .server import validator
+from cilantro_ee.nodes.masternode.server import tx_validator
 
 
 class ByteEncoder(_json.JSONEncoder):
@@ -120,11 +120,11 @@ class WebServer:
             return response.json({'error': 'Malformed request body.'})
 
         # Check that the TX is correctly formatted
-        error = validator.check_tx_formatting(tx, self.wallet.verifying_key().hex())
+        error = tx_validator.check_tx_formatting(tx, self.wallet.verifying_key().hex())
         if error is not None:
-            return response.json(validator.EXCEPTION_MAP[error])
+            return response.json(tx_validator.EXCEPTION_MAP[error])
 
-        nonce, pending_nonce = validator.get_nonces(
+        nonce, pending_nonce = tx_validator.get_nonces(
             sender=tx['payload']['sender'],
             processor=tx['payload']['processor'],
             driver=self.driver
@@ -133,7 +133,7 @@ class WebServer:
         # Calculate and set the 'pending nonce' which keeps track of what the sender's nonce will
         # be if the block the tx is included in is successful.
         try:
-            pending_nonce = validator.get_new_pending_nonce(
+            pending_nonce = tx_validator.get_new_pending_nonce(
                 tx_nonce=tx['payload']['nonce'],
                 nonce=nonce,
                 pending_nonce=pending_nonce
@@ -144,7 +144,7 @@ class WebServer:
                 nonce=pending_nonce
             )
         except TransactionException as e:
-            return response.json(validator.EXCEPTION_MAP[e])
+            return response.json(tx_validator.EXCEPTION_MAP[e])
 
         # Add TX to the processing queue
         self.queue.append(tx)
@@ -165,26 +165,15 @@ class WebServer:
 
     # Get the Nonce of a VK
     async def get_nonce(self, request, vk):
-        # Might have to change this sucker from hex to bytes.
-        pending_nonce = self.driver.get_pending_nonce(processor=self.wallet.verifying_key(), sender=bytes.fromhex(vk))
+        nonce, pending_nonce = tx_validator.get_nonces(
+            processor=self.wallet.verifying_key().hex(),
+            sender=vk,
+            driver=self.driver
+        )
 
-        log.info('Pending nonce: {}'.format(pending_nonce))
+        nonce_to_return = max(nonce, pending_nonce)
 
-        if pending_nonce is None:
-            nonce = self.driver.get_nonce(processor=self.wallet.verifying_key(), sender=bytes.fromhex(vk))
-            log.info('Pending nonce was none so got nonce which is {}'.format(nonce))
-            if nonce is None:
-                pending_nonce = 0
-                log.info('Nonce was now so pending nonce is now zero.')
-            else:
-                pending_nonce = nonce
-                log.info('Nonce was not none so setting pending nonce to it.')
-
-        # nonce = self.driver.get_nonce(self.wallet.verifying_key(), bytes.fromhex(vk)) or 0
-        #
-        # pending_nonce = self.driver.get_pending_nonce(self.wallet.verifying_key(), bytes.fromhex(vk)) or nonce
-
-        return response.json({'nonce': pending_nonce, 'processor': self.wallet.verifying_key().hex(), 'sender': vk})
+        return response.json({'nonce': nonce_to_return, 'processor': self.wallet.verifying_key().hex(), 'sender': vk})
 
     # Get all Contracts in State (list of names)
     async def get_contracts(self, request):

@@ -1,12 +1,11 @@
 from unittest import TestCase
 
-from cilantro_ee.nodes.masternode.webserver import WebServer
+from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.crypto.wallet import Wallet
 from contracting.client import ContractingClient
 from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.storage import CilantroStorageDriver
 from cilantro_ee.crypto.json_transaction import build_transaction
-from contracting import config
 from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
 import os
 import capnp

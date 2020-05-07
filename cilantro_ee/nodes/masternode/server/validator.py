@@ -1,4 +1,5 @@
 from cilantro_ee.messages.formatting.transactions import transaction_is_formatted
+from cilantro_ee.messages.formatting.primatives import contract_name_is_formatted
 from contracting.db.encoder import encode, decode
 from cilantro_ee.crypto import wallet
 from cilantro_ee.storage import BlockchainDriver
@@ -61,9 +62,9 @@ def check_tx_formatting(tx: dict, expected_processor: str):
         return TransactionFormattingError
 
     if not wallet._verify(
-            tx['payload']['sender'],
-            encode(tx['payload']['payload']),
-            tx['metadata']['signature']
+            bytes.fromhex(tx['payload']['sender']),
+            encode(tx['payload']).encode(),
+            bytes.fromhex(tx['metadata']['signature'])
     ):
         return TransactionSignatureInvalid
 
@@ -72,11 +73,17 @@ def check_tx_formatting(tx: dict, expected_processor: str):
 
 
 def get_nonces(sender, processor, driver: BlockchainDriver):
-    nonce = driver.get_nonce(processor, sender)
+    nonce = driver.get_nonce(
+        processor=bytes.fromhex(processor),
+        sender=bytes.fromhex(sender)
+    )
     if nonce is None:
         nonce = 0
 
-    pending_nonce = driver.get_nonce(processor, sender)
+    pending_nonce = driver.get_pending_nonce(
+        processor=bytes.fromhex(processor),
+        sender=bytes.fromhex(sender)
+    )
     if pending_nonce is None:
         pending_nonce = 0
 
@@ -101,15 +108,15 @@ def get_new_pending_nonce(tx_nonce, nonce, pending_nonce, strict=True, tx_per_bl
     return pending_nonce
 
 
-def has_enough_stamps(balance, stamp_cost, stamps_supplied, contract, function, amount):
-    if balance * stamp_cost < stamps_supplied:
+def has_enough_stamps(balance, stamp_per_balance, stamps_supplied, contract=None, function=None, amount=0):
+    if balance * stamp_per_balance < stamps_supplied:
         raise TransactionSenderTooFewStamps
 
     # Prevent people from sending their entire balances for free by checking if that is what they are doing.
     if contract == 'currency' and function == 'transfer':
 
         # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
-        if ((balance - amount) * stamp_cost) / 3000 < 2:
+        if ((balance - amount) * stamp_per_balance) / 6000 < 2:
             raise TransactionSenderTooFewStamps
 
 

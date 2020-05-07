@@ -120,7 +120,7 @@ class WebServer:
             return response.json({'error': 'Malformed request body.'})
 
         # Check that the TX is correctly formatted
-        error = validator.check_tx_formatting(request.body, self.wallet.verifying_key().hex())
+        error = validator.check_tx_formatting(tx, self.wallet.verifying_key().hex())
         if error is not None:
             return response.json(validator.EXCEPTION_MAP[error])
 

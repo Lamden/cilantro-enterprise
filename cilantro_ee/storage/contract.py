@@ -70,7 +70,13 @@ class BlockchainDriver(ContractDriver):
 
     @staticmethod
     def n_key(key, processor, sender):
-        return ':'.join([key, processor.hex(), sender.hex()])
+        if type(processor) == bytes:
+            processor = processor.hex()
+
+        if type(sender) == bytes:
+            sender = sender.hex()
+
+        return ':'.join([key, processor, sender])
 
     # Nonce methods
     def get_pending_nonce(self, processor: bytes, sender: bytes):

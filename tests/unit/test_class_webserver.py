@@ -5,7 +5,7 @@ from cilantro_ee.crypto.wallet import Wallet
 from contracting.client import ContractingClient
 from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.storage import CilantroStorageDriver
-from cilantro_ee.crypto.transaction import TransactionBuilder
+from cilantro_ee.crypto.json_transaction import build_transaction
 from contracting import config
 from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
 import os
@@ -325,19 +325,58 @@ def get():
         self.assertDictEqual(response.json, {'error': 'No number or hash provided.'})
 
     def test_bad_transaction_returns_a_TransactionException(self):
-        _, response = self.ws.app.test_client.post('/', data=make_bad_tx())
+        tx = build_transaction(
+            wallet=Wallet(),
+            processor='b' * 64,
+            stamps=123,
+            nonce=0,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 123,
+                'to': 'jeff'
+            }
+        )
+        _, response = self.ws.app.test_client.post('/', data=tx)
         self.assertDictEqual(response.json, {'error': 'Transaction processor does not match expected processor.'})
 
     def test_good_transaction_is_put_into_queue(self):
         self.assertEqual(len(self.ws.queue), 0)
 
-        _, response = self.ws.app.test_client.post('/', data=make_good_tx(self.w.verifying_key()))
+        tx = build_transaction(
+            wallet=Wallet(),
+            processor=self.ws.wallet.verifying_key().hex(),
+            stamps=123,
+            nonce=0,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 123,
+                'to': 'jeff'
+            }
+        )
+
+        _, response = self.ws.app.test_client.post('/', data=tx)
 
         self.assertEqual(len(self.ws.queue), 1)
 
     def test_submit_transaction_error_if_queue_full(self):
         self.ws.queue.extend(range(10_000))
-        _, response = self.ws.app.test_client.post('/', data=make_good_tx(self.w.verifying_key()))
+
+        tx = build_transaction(
+            wallet=Wallet(),
+            processor=self.ws.wallet.verifying_key().hex(),
+            stamps=123,
+            nonce=0,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 123,
+                'to': 'jeff'
+            }
+        )
+
+        _, response = self.ws.app.test_client.post('/', data=tx)
 
         self.assertDictEqual(response.json, {'error': 'Queue full. Resubmit shortly.'})
 

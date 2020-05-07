@@ -151,7 +151,7 @@ def build_sbc_from_work_results(results, wallet, previous_block_hash, input_hash
 
 def tx_hash_from_tx(tx):
     h = hashlib.sha3_256()
-    tx_dict = format_dictionary(tx.to_dict())
+    tx_dict = format_dictionary(tx)
     encoded_tx = bson.BSON.encode(tx_dict)
     h.update(encoded_tx)
     return h.digest()

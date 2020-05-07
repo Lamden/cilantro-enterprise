@@ -97,8 +97,32 @@ class TestClassWebserver(TestCase):
     def test_get_contract_methods_returns_all_methods(self):
         _, response = self.ws.app.test_client.get('/contracts/submission/methods')
 
-        self.assertDictEqual(response.json, {'methods': [{'name': 'submit_contract', 'arguments':
-            ['name', 'code', 'owner', 'constructor_args']}]})
+        self.assertDictEqual(response.json,
+            {
+                'methods': [
+                    {
+                        'name': 'submit_contract',
+                        'arguments': [
+                            {
+                                'name': 'name',
+                                'type': 'str'
+                            },
+                            {
+                                'name': 'code',
+                                'type': 'str'
+                            },
+                            {
+                                'name': 'owner',
+                                'type': 'Any'
+                            },
+                            {
+                                'name':'constructor_args',
+                                'type': 'dict'
+                            }
+                        ]
+                    }
+                ]
+            })
 
     def test_get_contract_method_returns_error_if_does_not_exist(self):
         _, response = self.ws.app.test_client.get('/contracts/blah/methods')

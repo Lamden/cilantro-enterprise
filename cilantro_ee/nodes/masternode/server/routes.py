@@ -5,6 +5,7 @@ from cilantro_ee.logger.base import get_logger
 import json as _json
 from contracting.client import ContractingClient
 from contracting.db.encoder import encode, decode
+from contracting.compilation import parser
 from cilantro_ee.storage import MasterStorage, BlockchainDriver
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
 from cilantro_ee.crypto.transaction import TransactionException
@@ -101,11 +102,26 @@ class WebServer:
     async def start(self):
         # Start server with SSL enabled or not
         if self.ssl_enabled:
-            asyncio.ensure_future(self.app.create_server(host='0.0.0.0', port=self.ssl_port, debug=self.debug,
-                                  access_log=self.access_log, ssl=self.context, return_asyncio_server=True))
+            asyncio.ensure_future(
+                self.app.create_server(
+                    host='0.0.0.0',
+                    port=self.ssl_port,
+                    debug=self.debug,
+                    access_log=self.access_log,
+                    ssl=self.context,
+                    return_asyncio_server=True
+                )
+            )
         else:
-            asyncio.ensure_future(self.app.create_server(host='0.0.0.0', port=self.port, debug=self.debug,
-                                  access_log=self.access_log, return_asyncio_server=True))
+            asyncio.ensure_future(
+                self.app.create_server(
+                    host='0.0.0.0',
+                    port=self.port,
+                    debug=self.debug,
+                    access_log=self.access_log,
+                    return_asyncio_server=True
+                )
+            )
 
     # Main Endpoint to Submit TXs
     async def submit_transaction(self, request):
@@ -152,8 +168,10 @@ class WebServer:
         # Return the TX hash to the user so they can track it
         tx_hash = tx_hash_from_tx(tx)
 
-        return response.json({'success': 'Transaction successfully submitted to the network.',
-                              'hash': tx_hash.hex()})
+        return response.json({
+            'success': 'Transaction successfully submitted to the network.',
+            'hash': tx_hash.hex()
+        })
 
     # Network Status
     async def ping(self, request):
@@ -173,7 +191,11 @@ class WebServer:
 
         nonce_to_return = max(nonce, pending_nonce)
 
-        return response.json({'nonce': nonce_to_return, 'processor': self.wallet.verifying_key().hex(), 'sender': vk})
+        return response.json({
+            'nonce': nonce_to_return,
+            'processor': self.wallet.verifying_key().hex(),
+            'sender': vk
+        })
 
     # Get all Contracts in State (list of names)
     async def get_contracts(self, request):
@@ -194,16 +216,7 @@ class WebServer:
         if contract_code is None:
             return response.json({'error': '{} does not exist'.format(contract)}, status=404)
 
-        tree = ast.parse(contract_code)
-
-        function_defs = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
-
-        funcs = []
-        for definition in function_defs:
-            func_name = definition.name
-            kwargs = [arg.arg for arg in definition.args.args]
-
-            funcs.append({'name': func_name, 'arguments': kwargs})
+        funcs = parser.methods_for_contract(contract_code)
 
         return response.json({'methods': funcs}, status=200)
 
@@ -213,24 +226,9 @@ class WebServer:
         if contract_code is None:
             return response.json({'error': '{} does not exist'.format(contract)}, status=404)
 
-        tree = ast.parse(contract_code)
+        variables = parser.variables_for_contract(contract_code)
 
-        assigns = [n for n in ast.walk(tree) if isinstance(n, ast.Assign)]
-
-        variables = []
-        hashes = []
-
-        for assign in assigns:
-            if type(assign.value) == ast.Call:
-                if assign.value.func.id == 'Variable':
-                    variables.append(assign.targets[0].id.lstrip('__'))
-                elif assign.value.func.id == 'Hash':
-                    hashes.append(assign.targets[0].id.lstrip('__'))
-
-        return response.json({
-            'variables': variables,
-            'hashes': hashes
-        })
+        return response.json(variables)
 
     async def get_variable(self, request, contract, variable):
         contract_code = self.client.raw_driver.get_contract(contract)

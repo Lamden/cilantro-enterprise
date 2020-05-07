@@ -4,11 +4,10 @@ import asyncio
 from contracting.client import ContractingClient
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.nodes.masternode.masternode import Masternode
-from cilantro_ee.messages import Message
+from cilantro_ee.messages import Message, capnp_struct as schemas
 from contracting import config
 import os
 import capnp
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from contracting.db.driver import ContractDriver
 import time

@@ -111,6 +111,8 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
             'previous_block_hash': previous_block_hash
         }
 
+        sbc = format_dictionary(sbc)
+
         subblocks.append(sbc)
         i += 1
 

@@ -10,7 +10,7 @@ from cilantro_ee.storage import MasterStorage, BlockchainDriver
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
 from cilantro_ee.crypto.transaction import TransactionException
 
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 import os
 import capnp
 

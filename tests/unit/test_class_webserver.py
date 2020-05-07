@@ -6,7 +6,7 @@ from contracting.client import ContractingClient
 from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.storage import CilantroStorageDriver
 from cilantro_ee.crypto.json_transaction import build_transaction
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 import os
 import capnp
 

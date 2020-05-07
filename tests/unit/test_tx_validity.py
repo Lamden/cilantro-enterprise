@@ -3,7 +3,7 @@ from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.crypto.transaction import TransactionBuilder, transaction_is_valid
 from cilantro_ee.crypto import transaction
 from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 from contracting import config
 import secrets
 import os

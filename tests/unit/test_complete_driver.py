@@ -5,7 +5,7 @@ import os
 import capnp
 from tests import random_txs
 
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 from cilantro_ee.storage.contract import PENDING_NONCE_KEY, NONCE_KEY
 
 blockdata_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/blockdata.capnp')

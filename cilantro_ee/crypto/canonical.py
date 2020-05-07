@@ -32,9 +32,6 @@ def block_from_subblocks(subblocks, previous_hash: bytes, block_num: int) -> dic
         if subblock is None:
             continue
 
-        if type(subblock) != dict:
-            subblock = subblock.to_dict()
-
         sb = format_dictionary(subblock)
         deserialized_subblocks.append(sb)
 

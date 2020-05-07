@@ -2,7 +2,7 @@ from cilantro_ee.crypto.transaction import TransactionBuilder, verify_packed_tx
 from unittest import TestCase
 from cilantro_ee.crypto.wallet import Wallet
 import os
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 
 import capnp
 transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')

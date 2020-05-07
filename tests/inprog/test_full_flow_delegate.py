@@ -13,7 +13,7 @@ import asyncio
 from contracting import config
 import os
 import capnp
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 from cilantro_ee.crypto.transaction import TransactionBuilder
 
 from contracting.db.driver import ContractDriver

@@ -59,3 +59,29 @@ def transaction_is_formatted(t: dict):
         return False
 
     return True
+
+
+def transaction_output_is_formatted(t: dict):
+    expected_keys = {'hash', 'result', 'stamps_used', 'state', 'status', 'transaction'}
+    if not dict_has_keys(t, expected_keys):
+        return False
+
+    if not vk_is_formatted(t['hash']):
+        return False
+
+    if not type(t['result']):
+        return False
+
+    if not number_is_formatted(t['stamps_used']):
+        return False
+
+    if not number_is_formatted(t['status']):
+        return False
+
+    if not kwargs_are_formatted(t['state']):
+        return False
+
+    if not transaction_is_formatted(t['transaction']):
+        return False
+
+    return True

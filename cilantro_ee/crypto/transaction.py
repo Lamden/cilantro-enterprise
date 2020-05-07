@@ -1,7 +1,7 @@
 from cilantro_ee.crypto import wallet
 from contracting import config
 from cilantro_ee.storage import BlockchainDriver
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 import time
 import os
 import capnp

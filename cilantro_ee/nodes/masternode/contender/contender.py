@@ -1,4 +1,4 @@
-from cilantro_ee.nodes.masternode.sbc_inbox import SBCInbox
+from cilantro_ee.nodes.masternode.contender.sbc_inbox import SBCInbox
 from cilantro_ee.logger.base import get_logger
 from cilantro_ee.crypto import canonical
 
@@ -121,16 +121,16 @@ class BlockContender:
     def add_sbcs(self, sbcs):
         for sbc in sbcs:
             # If it's out of range, ignore
-            if sbc.subBlockNum > self.total_subblocks - 1:
+            if sbc['subblock'] > self.total_subblocks - 1:
                 continue
 
             # If it's the first contender, create a new object and store it
-            if self.subblock_contenders[sbc.subBlockNum] is None:
-                s = SubBlockContender(input_hash=sbc.inputHash, index=sbc.subBlockNum, total_contacts=self.total_contacts)
-                self.subblock_contenders[sbc.subBlockNum] = s
+            if self.subblock_contenders[sbc['subblock']] is None:
+                s = SubBlockContender(input_hash=sbc['input_hash'], index=sbc['subblock'], total_contacts=self.total_contacts)
+                self.subblock_contenders[sbc['subblock']] = s
 
             # Access the object at the SB index and add a potential solution
-            s = self.subblock_contenders[sbc.subBlockNum]
+            s = self.subblock_contenders[sbc['subblock']]
             s.add_potential_solution(sbc)
 
     def current_responded_sbcs(self):

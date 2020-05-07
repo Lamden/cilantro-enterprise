@@ -11,7 +11,7 @@ from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from contracting import config
 
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
+from cilantro_ee.messages import capnp_struct as schemas
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import capnp
 from collections import defaultdict

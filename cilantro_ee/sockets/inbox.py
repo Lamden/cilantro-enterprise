@@ -31,8 +31,7 @@ class AsyncInbox:
             try:
                 event = await self.socket.poll(timeout=self.poll_timeout, flags=zmq.POLLIN)
                 if event:
-                    _id = await self.socket.recv()
-                    msg = await self.socket.recv()
+                    _id, msg = await self.recieve_message()
                     asyncio.ensure_future(self.handle_msg(_id, msg))
 
             except zmq.error.ZMQError as e:
@@ -40,6 +39,12 @@ class AsyncInbox:
                 self.setup_socket()
 
         self.socket.close()
+
+    async def recieve_message(self):
+        _id = await self.socket.recv()
+        msg = await self.socket.recv()
+
+        return _id, msg
 
     async def handle_msg(self, _id, msg):
         await self.return_msg(_id, msg)

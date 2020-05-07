@@ -1,18 +1,11 @@
-import os
-import capnp
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
 import bson
 import hashlib
-from cilantro_ee.crypto.merkle_tree import merklize
-from cilantro_ee.messages import Message, MessageType
 from copy import deepcopy
 
 from cilantro_ee.logger.base import get_logger
 
 log = get_logger('CANON')
 
-subblock_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/subblock.capnp')
-block_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/blockdata.capnp')
 
 GENESIS_HASH = b'\x00' * 32
 
@@ -110,43 +103,6 @@ def block_is_failed(block, previous_hash: bytes, block_num: int):
 
 def message_blob_to_dict_block(block):
     pass
-
-
-def capnp_to_dict_block(block):
-    return block_capnp.BlockData.to_dict(block)
-
-
-def dict_to_capnp_block(block):
-    return block_capnp.BlockData.from_dict(block)
-
-
-def dict_to_msg_block(block):
-    return Message.get_message_packed_2(MessageType.BLOCK_DATA, **block)
-
-
-def build_sbc_from_work_results(results, wallet, previous_block_hash, input_hash, sb_num=0):
-    if len(results) > 0:
-        merkle = merklize([r.to_bytes_packed() for r in results])
-        proof = wallet.sign(merkle[0])
-    else:
-        merkle = merklize([bytes.fromhex(input_hash)])
-        proof = wallet.sign(bytes.fromhex(input_hash))
-
-    merkle_tree = subblock_capnp.MerkleTree.new_message(
-        leaves=[leaf for leaf in merkle],
-        signature=proof
-    )
-
-    sbc = subblock_capnp.SubBlockContender.new_message(
-        inputHash=input_hash,
-        transactions=[r for r in results],
-        merkleTree=merkle_tree,
-        signer=wallet.verifying_key(),
-        subBlockNum=sb_num,
-        prevBlockHash=previous_block_hash
-    )
-
-    return sbc
 
 
 def tx_hash_from_tx(tx):

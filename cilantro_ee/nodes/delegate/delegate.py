@@ -1,9 +1,6 @@
 from cilantro_ee.nodes.work_inbox import WorkInbox
 from cilantro_ee.networking.parameters import ServiceType
 
-from cilantro_ee.messages.message import Message
-from cilantro_ee.messages.message_type import MessageType
-
 from cilantro_ee.nodes.delegate import execution
 from cilantro_ee.nodes.delegate.work import gather_transaction_batches, pad_work, filter_work
 from cilantro_ee.sockets.outbox import Peers, MN
@@ -13,7 +10,7 @@ from cilantro_ee.logger.base import get_logger
 import asyncio
 
 from contracting.execution.executor import Executor
-
+import json
 
 class Delegate(Node):
     def __init__(self, parallelism=4, *args, **kwargs):
@@ -94,11 +91,7 @@ class Delegate(Node):
             stamp_cost=self.reward_manager.stamps_per_tau
         )
 
-        # Send out the contenders to masternodes
-        return Message.get_message_packed_2(
-            msg_type=MessageType.SUBBLOCK_CONTENDERS,
-            contenders=[sb for sb in results]
-        )
+        return results
 
     async def run(self):
         # If first block, just wait for masters to send the genesis NBN
@@ -120,10 +113,17 @@ class Delegate(Node):
                 block = self.nbn_inbox.q.pop(0)
                 self.process_block(block)
 
-            sbc_msg = self.process_work(filtered_work)
+            results = execution.execute_work(
+                executor=self.executor,
+                driver=self.driver,
+                work=filtered_work,
+                wallet=self.wallet,
+                previous_block_hash=self.driver.latest_block_hash,
+                stamp_cost=self.reward_manager.stamps_per_tau
+            )
 
             await self.masternode_socket_book.send_to_peers(
-                msg=sbc_msg
+                msg=json.dumps(results)
             )
 
             self.driver.clear_pending_state() # Add

@@ -1,15 +1,11 @@
 from contracting.client import ContractingClient
 from contracting.db.driver import ContractDriver
-import capnp
-import os
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
 from cilantro_ee.logger.base import get_logger
 
 from decimal import Decimal
 import decimal
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 
-blockdata_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/blockdata.capnp')
 
 PENDING_REWARDS_KEY = '__rewards'
 

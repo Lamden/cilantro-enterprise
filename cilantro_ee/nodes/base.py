@@ -112,9 +112,7 @@ class Node:
 
         # Should have a function to get the current NBN
         self.block_fetcher = BlockFetcher(
-            wallet=self.wallet,
             ctx=self.ctx,
-            parameters=self.parameters,
         )
 
         self.network = Network(
@@ -195,7 +193,6 @@ class Node:
 
         self.driver.cache.clear()
         self.nbn_inbox.clean()
-        self.nbn_inbox.update_signers()
 
         self.version_check()
 

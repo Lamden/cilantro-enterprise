@@ -1,12 +1,7 @@
 import asyncio
 from copy import deepcopy
-import capnp
-import os
 import time
 import heapq
-from cilantro_ee.messages.capnp_impl import capnp_struct as schemas
-
-transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
 
 
 async def gather_transaction_batches(queue: dict, expected_batches: int, timeout=5):
@@ -31,13 +26,13 @@ def pad_work(work: list, expected_masters: list):
             expected_masters.remove(task.sender.hex())
 
     for missing_master in expected_masters:
-        shim = transaction_capnp.TransactionBatch.new_message(
-            transactions=[],
-            timestamp=time.time(),
-            signature=b'\x00' * 64,
-            inputHash=missing_master,
-            sender=bytes.fromhex(missing_master)
-        )
+        shim = {
+            'transactions': [],
+            'timestamp': int(round(time.time() * 1000)),
+            'signature': '0' * 128,
+            'input_hash': missing_master,
+            'sender': missing_master
+        }
         work.append(shim)
 
 

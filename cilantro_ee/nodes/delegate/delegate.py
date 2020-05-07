@@ -12,6 +12,7 @@ import asyncio
 from contracting.execution.executor import Executor
 import json
 
+
 class Delegate(Node):
     def __init__(self, parallelism=4, *args, **kwargs):
 

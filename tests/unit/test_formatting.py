@@ -1,6 +1,6 @@
 from unittest import TestCase
-from cilantro_ee.messages.formatting import primatives
-from cilantro_ee.messages.formatting import transactions
+from cilantro_ee.formatting import primatives
+from cilantro_ee.formatting.rules import transactions
 
 
 class TestFormatting(TestCase):

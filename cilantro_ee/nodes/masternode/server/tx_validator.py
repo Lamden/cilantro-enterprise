@@ -1,6 +1,6 @@
-from cilantro_ee.messages.formatting.transactions import transaction_is_formatted
-from cilantro_ee.messages.formatting.primatives import contract_name_is_formatted
-from contracting.db.encoder import encode, decode
+from cilantro_ee.formatting import abstract_validator
+from cilantro_ee.formatting.rules import transactions
+from contracting.db.encoder import encode
 from cilantro_ee.crypto import wallet
 from cilantro_ee.storage import BlockchainDriver
 
@@ -58,7 +58,7 @@ EXCEPTION_MAP = {
 
 
 def check_tx_formatting(tx: dict, expected_processor: str):
-    if not transaction_is_formatted(tx):
+    if not abstract_validator(tx, transactions.TRANSACTION_RULES):
         return TransactionFormattingError
 
     if not wallet._verify(

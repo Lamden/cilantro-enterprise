@@ -1,5 +1,29 @@
 import re
-# Functions to validate Python data objects. All data must be Encoded and Decoded with the encoder in Contracting
+
+
+# Recursive engine to process rules on validation. Define base rules here and reference other rule sets to make
+# object like things.
+def abstract_validator(d: dict, rule: dict):
+    expected_keys = set(rule.keys())
+
+    if not dict_has_keys(d, expected_keys):
+        return False
+
+    for key, subrule in rule.keys():
+        arg = d[key]
+
+        if type(arg) == dict:
+            abstract_validator(arg, subrule)
+
+        if type(arg) == list:
+            for a in arg:
+                if not subrule(a):
+                    return False
+
+        if not subrule(arg):
+            return False
+
+    return True
 
 
 def dict_has_keys(d: dict, keys: set):
@@ -64,3 +88,8 @@ def kwargs_are_formatted(k: dict):
         if not identifier_is_formatted(k):
             return False
     return True
+
+
+def is_string(s: str):
+    return type(s) == str
+

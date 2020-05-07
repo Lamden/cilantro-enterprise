@@ -2,7 +2,7 @@ from cilantro_ee.crypto.wallet import _sign
 import time
 
 from contracting.db.encoder import encode
-from cilantro_ee.messages.formatting.transactions import transaction_payload_is_formatted
+from cilantro_ee.formatting.rules.transactions import transaction_payload_is_formatted
 from cilantro_ee.crypto.canonical import format_dictionary
 
 

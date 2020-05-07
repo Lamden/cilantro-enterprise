@@ -5,8 +5,7 @@ from cilantro_ee.storage import CilantroStorageDriver, BlockchainDriver
 import zmq.asyncio
 import json
 
-from cilantro_ee.messages.formatting import primatives
-
+from cilantro_ee.formatting import primatives
 
 GET_BLOCK = 'get_block'
 GET_HEIGHT = 'get_height'

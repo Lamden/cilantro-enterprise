@@ -106,7 +106,12 @@ class BlockContender:
 
             # If it's the first contender, create a new object and store it
             if self.subblock_contenders[sbc['subblock']] is None:
-                s = SubBlockContender(input_hash=sbc['input_hash'], index=sbc['subblock'], total_contacts=self.total_contacts)
+                self.log.info('First block. Making a new solution object.')
+                s = SubBlockContender(
+                    input_hash=sbc['input_hash'],
+                    index=sbc['subblock'],
+                    total_contacts=self.total_contacts
+                )
                 self.subblock_contenders[sbc['subblock']] = s
 
             # Access the object at the SB index and add a potential solution
@@ -196,6 +201,7 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
 
             if self.sbc_inbox.has_sbc():
                 sbcs = await self.sbc_inbox.receive_sbc() # Can probably make this raw sync code
+                self.log.info('Pop it in there.')
                 contenders.add_sbcs(sbcs)
             await asyncio.sleep(0)
 

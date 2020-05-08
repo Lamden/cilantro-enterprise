@@ -10,8 +10,7 @@ from cilantro_ee.logger.base import get_logger
 import asyncio
 
 from contracting.execution.executor import Executor
-import json
-
+from contracting.db.encoder import encode
 
 class Delegate(Node):
     def __init__(self, parallelism=4, *args, **kwargs):
@@ -121,8 +120,10 @@ class Delegate(Node):
                 stamp_cost=self.reward_manager.stamps_per_tau
             )
 
+            print(results)
+
             await self.masternode_socket_book.send_to_peers(
-                msg=json.dumps(results)
+                msg=encode(results).encode()
             )
 
             self.driver.clear_pending_state() # Add

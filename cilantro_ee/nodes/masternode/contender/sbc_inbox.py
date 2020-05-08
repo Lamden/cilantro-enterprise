@@ -5,7 +5,7 @@ from cilantro_ee.crypto.wallet import verify
 from cilantro_ee.logger.base import get_logger
 from cilantro_ee.sockets.inbox import SecureAsyncInbox
 from cilantro_ee.storage import BlockchainDriver
-from contracting.db.encoder import encode
+from contracting.db.encoder import encode, decode
 import json
 
 
@@ -19,44 +19,44 @@ class SBCInbox(SecureAsyncInbox):
         super().__init__(*args, **kwargs)
 
     async def handle_msg(self, _id, msg):
-        msg = json.loads(msg)
+        msg = decode(msg.decode())
 
         # Ignore bad message types
         # Ignore if not enough subblocks
         # Make sure all the contenders are valid
         all_valid = True
-        for i in range(len(msg['contenders'])):
+        for i in range(len(msg)):
             try:
-                self.sbc_is_valid(msg['contenders'], i)
+                self.sbc_is_valid(msg[i], i)
             except SBCException as e:
                 self.log.error(type(e))
                 all_valid = False
 
         # Add the whole contender
         if all_valid:
-            self.q.append(msg['contenders'])
+            self.q.append(msg)
             self.log.info('Added new SBC')
 
     def sbc_is_valid(self, sbc, sb_idx=0):
-        if sbc['subBlockNum'] != sb_idx:
+        if sbc['subblock'] != sb_idx:
             raise SBCIndexMismatchError
 
         # Make sure signer is in the delegates
         if len(sbc['transactions']) == 0:
-            msg = bytes.fromhex(sbc['inputHash'])
+            msg = sbc['input_hash']
         else:
             msg = sbc['merkle_tree']['leaves'][0]
 
         valid_sig = verify(
-            vk=bytes.fromhex(sbc['signer']),
-            msg=bytes.fromhex(msg),
-            signature=bytes.fromhex(sbc['merkle_tree']['signature'])
+            vk=sbc['signer'],
+            msg=msg,
+            signature=sbc['merkle_tree']['signature']
         )
 
         if not valid_sig:
             raise SBCInvalidSignatureError
 
-        if len(sbc['merkleTree']['leaves']) > 0:
+        if len(sbc['merkle_tree']['leaves']) > 0:
             txs = [encode(tx).encode() for tx in sbc['transactions']]
             expected_tree = merklize(txs)
 

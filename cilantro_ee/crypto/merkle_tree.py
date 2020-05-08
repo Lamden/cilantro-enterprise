@@ -19,7 +19,7 @@ def merklize(leaves):
         nodes[true_i] = h.digest()
 
     # Return the list
-    return nodes
+    return [n.hex() for n in nodes]
 
 
 def verify_merkle_tree(leaves, expected_root):

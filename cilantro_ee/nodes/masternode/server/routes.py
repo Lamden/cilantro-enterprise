@@ -164,7 +164,7 @@ class WebServer:
 
         return response.json({
             'success': 'Transaction successfully submitted to the network.',
-            'hash': tx_hash.hex()
+            'hash': tx_hash
         })
 
     # Network Status

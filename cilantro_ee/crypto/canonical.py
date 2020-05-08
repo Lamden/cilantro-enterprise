@@ -99,4 +99,4 @@ def tx_hash_from_tx(tx):
     tx_dict = format_dictionary(tx)
     encoded_tx = bson.BSON.encode(tx_dict)
     h.update(encoded_tx)
-    return h.digest()
+    return h.hexdigest()

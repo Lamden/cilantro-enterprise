@@ -15,26 +15,6 @@ class PotentialSolution:
     def votes(self):
         return len(self.signatures)
 
-    def struct_to_dict(self):
-        subblock = {
-            'inputHash': self.struct.inputHash,
-            'transactions': [tx.to_dict() for tx in self.struct.transactions],
-            'merkleLeaves': [leaf for leaf in self.struct.merkleTree.leaves],
-            'subBlockNum': self.struct.subBlockNum,
-            'prevBlockHash': self.struct.prevBlockHash,
-            'signatures': []
-        }
-
-        for sig in self.signatures:
-            subblock['signatures'].append({
-                'signature': sig[0],
-                'signer': sig[1]
-            })
-
-        subblock['signatures'].sort(key=lambda i: i['signer'])
-
-        return subblock
-
 
 class SubBlockContender:
     def __init__(self, input_hash, index, total_contacts, required_consensus=0.66, adequate_consensus=0.51):
@@ -51,7 +31,7 @@ class SubBlockContender:
         self.adequate_consensus = adequate_consensus
 
     def add_potential_solution(self, sbc):
-        result_hash = sbc.merkleTree.leaves[0]
+        result_hash = sbc['merkle_tree']['leaves'][0]
 
         # Create a new potential solution if it is a new result hash
         if self.potential_solutions.get(result_hash) is None:
@@ -59,7 +39,7 @@ class SubBlockContender:
 
         # Add the signature to the potential solution
         p = self.potential_solutions.get(result_hash)
-        p.signatures.append((sbc.merkleTree.signature, sbc.signer))
+        p.signatures.append((sbc['merkle_tree']['signature'], sbc['signer']))
 
         # Update the best solution if the current potential solution now has more votes
         if self.best_solution is None or p.votes > self.best_solution.votes:
@@ -100,7 +80,7 @@ class SubBlockContender:
         if self.failed:
             return None
 
-        return self.best_solution.struct_to_dict()
+        return self.best_solution.struct
 
 
 class BlockContender:

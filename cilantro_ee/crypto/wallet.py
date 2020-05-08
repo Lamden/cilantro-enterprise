@@ -13,13 +13,21 @@ def sign(sk: bytes, msg: bytes):
 
 
 def verify(vk: bytes, msg: bytes, signature: bytes):
+    if type(vk) == str:
+        vk = bytes.fromhex(vk)
+
+    if type(msg) == str:
+        msg = bytes.fromhex(msg)
+
+    if type(signature) == str:
+        signature = bytes.fromhex(signature)
+
     vk = nacl.signing.VerifyKey(vk)
     try:
         vk.verify(msg, signature)
     except nacl.exceptions.BadSignatureError:
         return False
     return True
-
 
 class Wallet:
     def __init__(self, seed=None):
@@ -56,7 +64,8 @@ class Wallet:
         return self.format_key(self.vk, as_hex=as_hex)
 
     def sign(self, msg: bytes, as_hex=False):
-        assert isinstance(msg, bytes), 'Message must be byte string.'
+        if type(msg) == str:
+            msg = bytes.fromhex(msg)
 
         sig = self.sk.sign(msg)
         if as_hex:

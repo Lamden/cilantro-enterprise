@@ -4,7 +4,7 @@ import cilantro_ee.sockets.reqrep
 import cilantro_ee.sockets.struct
 from cilantro_ee.sockets.inbox import SecureAsyncInbox, AsyncInbox
 from cilantro_ee.logger.base import get_logger
-from cilantro_ee.crypto.wallet import Wallet, _verify
+from cilantro_ee.crypto.wallet import Wallet, verify
 from cilantro_ee.sockets import services
 import asyncio
 log = get_logger('DiscoveryService')
@@ -38,7 +38,7 @@ def verify_vk_pepper(msg: bytes, pepper: bytes):
         return False
 
     vk, signed_pepper = unpack_pepper_msg(msg)
-    return _verify(vk, pepper, signed_pepper)
+    return verify(vk, pepper, signed_pepper)
 
 
 def unpack_pepper_msg(msg: bytes):

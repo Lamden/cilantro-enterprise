@@ -27,7 +27,7 @@ class TransactionBatcher:
             'timestamp': timestamp,
             'signature': signature.hex(),
             'sender': self.wallet.verifying_key().hex(),
-            'input_hash': input_hash
+            'input_hash': input_hash.hex()
         }
 
         return batch

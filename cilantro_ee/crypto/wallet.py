@@ -6,13 +6,13 @@ import secrets
 from . import zbase
 
 
-def _sign(sk: bytes, msg: bytes):
+def sign(sk: bytes, msg: bytes):
     key = nacl.signing.SigningKey(seed=sk)
     sig = key.sign(msg)
     return sig.signature
 
 
-def _verify(vk: bytes, msg: bytes, signature: bytes):
+def verify(vk: bytes, msg: bytes, signature: bytes):
     vk = nacl.signing.VerifyKey(vk)
     try:
         vk.verify(msg, signature)

@@ -24,9 +24,7 @@ class Delegate(Node):
 
         self.work_inbox = WorkInbox(
             socket_id=self.network_parameters.resolve(self.socket_base, ServiceType.INCOMING_WORK, bind=True),
-            driver=self.driver,
             ctx=self.ctx,
-            client=self.client,
             wallet=self.wallet
         )
 

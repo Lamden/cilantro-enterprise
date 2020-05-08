@@ -135,7 +135,6 @@ class Node:
                 bind=True),
             ctx=self.ctx,
             driver=self.driver,
-            contacts=self.contacts,
             wallet=wallet
         )
 

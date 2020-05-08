@@ -1,7 +1,7 @@
 from unittest import TestCase
 from cilantro_ee.nodes.masternode.server import tx_validator
-from cilantro_ee.crypto.json_transaction import build_transaction
-from cilantro_ee.crypto.wallet import Wallet, _verify
+from cilantro_ee.crypto.transaction import build_transaction
+from cilantro_ee.crypto.wallet import Wallet, verify
 from contracting.db.encoder import encode, decode
 from cilantro_ee.storage import BlockchainDriver
 
@@ -54,7 +54,7 @@ class TestTransactionBuilder(TestCase):
 
         decoded = decode(tx)
 
-        res = _verify(
+        res = verify(
             w.verifying_key(),
             encode(decoded['payload']).encode(),
             bytes.fromhex(decoded['metadata']['signature'])

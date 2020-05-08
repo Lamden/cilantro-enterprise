@@ -2,25 +2,25 @@ import asyncio
 from cilantro_ee.nodes.catchup import BlockServer
 from cilantro_ee.sockets.outbox import Peers, DEL, ALL
 from cilantro_ee.nodes.masternode.transaction_batcher import TransactionBatcher
-from cilantro_ee.nodes.masternode.server.webserver import WebServer
-from cilantro_ee.nodes.masternode.contender import Aggregator
+from cilantro_ee.nodes.masternode.server.routes import WebServer
+from cilantro_ee.nodes.masternode.contender.contender import Aggregator
 from cilantro_ee.networking.parameters import ServiceType
 from cilantro_ee.crypto import canonical
 from cilantro_ee.storage.contract import BlockchainDriver
 
 
 from cilantro_ee.nodes.base import Node
-
+from contracting.db.encoder import encode
 
 class Masternode(Node):
     def __init__(self, webserver_port=8080, *args, **kwargs):
         super().__init__(store=True, *args, **kwargs)
         # Services
         self.block_server = BlockServer(
-            wallet=self.wallet,
-            socket_base=self.socket_base,
-            network_parameters=self.network_parameters,
-            blocks=self.blocks
+            blocks=self.blocks,
+            driver=self.driver,
+            ctx=self.ctx,
+            socket_id=self.network_parameters.resolve(self.socket_base, ServiceType.BLOCK_SERVER, bind=True)
         )
 
         self.block_fetcher.blocks = self.blocks
@@ -118,11 +118,11 @@ class Masternode(Node):
             await asyncio.sleep(0)
 
         if len(self.tx_batcher.queue) > 0:
-            msg = canonical.dict_to_msg_block(canonical.get_genesis_block())
+            msg = canonical.get_genesis_block()
 
             ## SEND OUT VIA SOCKETS CLASS
             sends = await self.nbn_socket_book.send_to_peers(
-                msg=msg
+                msg=encode(msg).encode()
             )
 
             self.log.info(f'{sends}')
@@ -197,7 +197,7 @@ class Masternode(Node):
             return
 
         return await self.delegate_work_socket_book.send_to_peers(
-               msg=tx_batch
+               msg=encode(tx_batch).encode()
            )
 
         ## SEND OUT VIA SOCKETS CLASS

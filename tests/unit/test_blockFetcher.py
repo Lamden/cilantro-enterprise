@@ -10,7 +10,6 @@ from cilantro_ee.storage.master import CilantroStorageDriver
 import zmq.asyncio
 import zmq
 import asyncio
-from tests import random_txs
 import os
 
 

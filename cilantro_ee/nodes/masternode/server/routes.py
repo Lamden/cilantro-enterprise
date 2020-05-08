@@ -8,18 +8,12 @@ from contracting.db.encoder import encode, decode
 from contracting.compilation import parser
 from cilantro_ee.storage import MasterStorage, BlockchainDriver
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
-from cilantro_ee.crypto.transaction import TransactionException
+from cilantro_ee.nodes.masternode.server.tx_validator import TransactionException
 
-from cilantro_ee.messages import capnp_struct as schemas
-import os
-import capnp
-
-import ast
 import ssl
 import asyncio
 
 log = get_logger("MN-WebServer")
-transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
 
 from cilantro_ee.nodes.masternode.server import tx_validator
 

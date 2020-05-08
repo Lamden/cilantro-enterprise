@@ -90,16 +90,8 @@ def get_genesis_block():
     return block
 
 
-def block_is_genesis(block):
-    return block == get_genesis_block()
-
-
 def block_is_failed(block, previous_hash: bytes, block_num: int):
     return block == get_failed_block(previous_hash, block_num)
-
-
-def message_blob_to_dict_block(block):
-    pass
 
 
 def tx_hash_from_tx(tx):

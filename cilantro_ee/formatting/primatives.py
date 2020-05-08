@@ -3,27 +3,36 @@ import re
 
 # Recursive engine to process rules on validation. Define base rules here and reference other rule sets to make
 # object like things.
-def abstract_validator(d: dict, rule: dict):
+def recurse_rules(d: dict, rule: dict):
+    if callable(rule):
+        return rule(d)
+
+    for key, subrule in rule.items():
+        arg = d[key]
+
+        if type(arg) == dict:
+            if not recurse_rules(arg, subrule):
+                return False
+
+        if type(arg) == list:
+            for a in arg:
+                if not recurse_rules(a, subrule):
+                    return False
+
+        if callable(subrule):
+            if not subrule(arg):
+                return False
+
+    return True
+
+
+def check_format(d: dict, rule: dict):
     expected_keys = set(rule.keys())
 
     if not dict_has_keys(d, expected_keys):
         return False
 
-    for key, subrule in rule.keys():
-        arg = d[key]
-
-        if type(arg) == dict:
-            abstract_validator(arg, subrule)
-
-        if type(arg) == list:
-            for a in arg:
-                if not subrule(a):
-                    return False
-
-        if not subrule(arg):
-            return False
-
-    return True
+    return recurse_rules(d, rule)
 
 
 def dict_has_keys(d: dict, keys: set):

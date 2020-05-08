@@ -14,7 +14,6 @@ log = get_logger('EXE')
 
 def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}):
     # Deserialize Kwargs. Kwargs should be serialized JSON moving into the future for DX.
-    kwargs = decode(transaction.payload.kwargs)
 
     output = executor.execute(
         sender=transaction['payload']['sender'],
@@ -22,7 +21,7 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
         function_name=transaction['payload']['function'],
         stamps=transaction['payload']['stamps_supplied'],
         stamp_cost=stamp_cost,
-        kwargs=kwargs,
+        kwargs=transaction['payload']['kwargs'],
         environment=environment,
         auto_commit=False
     )
@@ -47,7 +46,7 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
 
 def generate_environment(driver, timestamp, input_hash):
     now = Datetime._from_datetime(
-        datetime.utcfromtimestamp(timestamp)
+        datetime.utcfromtimestamp(timestamp/1000)
     )
 
     return {

@@ -1,7 +1,7 @@
 import asyncio
 
 from cilantro_ee.crypto.merkle_tree import merklize
-from cilantro_ee.crypto.wallet import _verify
+from cilantro_ee.crypto.wallet import verify
 from cilantro_ee.logger.base import get_logger
 from cilantro_ee.sockets.inbox import SecureAsyncInbox
 from cilantro_ee.storage import BlockchainDriver
@@ -47,7 +47,7 @@ class SBCInbox(SecureAsyncInbox):
         else:
             msg = sbc['merkle_tree']['leaves'][0]
 
-        valid_sig = _verify(
+        valid_sig = verify(
             vk=bytes.fromhex(sbc['signer']),
             msg=bytes.fromhex(msg),
             signature=bytes.fromhex(sbc['merkle_tree']['signature'])

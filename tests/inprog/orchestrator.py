@@ -8,16 +8,13 @@ from cilantro_ee.nodes.delegate.delegate import Delegate
 from cilantro_ee.nodes.masternode.masternode import Masternode
 
 from cilantro_ee.storage import BlockchainDriver
-from cilantro_ee.crypto.transaction import TransactionBuilder
+from cilantro_ee.crypto.transaction import build_transaction
 from contracting import config
 
-from cilantro_ee.messages import capnp_struct as schemas
 from contracting.stdlib.bridge.decimal import ContractingDecimal
-import capnp
 from collections import defaultdict
 import random
 
-transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
 
 import aiohttp
 
@@ -99,8 +96,8 @@ def make_start_awaitable(mns, dls):
 
 
 def make_tx_packed(processor, contract_name, function_name, sender=Wallet(), kwargs={}, drivers=[], stamps=10_000, nonce=0):
-    batch = TransactionBuilder(
-        sender=sender.verifying_key(),
+    batch = build_transaction(
+        wallet=sender,
         contract=contract_name,
         function=function_name,
         kwargs=kwargs,
@@ -108,9 +105,6 @@ def make_tx_packed(processor, contract_name, function_name, sender=Wallet(), kwa
         processor=processor,
         nonce=nonce
     )
-
-    batch.sign(sender.signing_key())
-    b = batch.serialize()
 
     currency_contract = 'currency'
     balances_hash = 'balances'
@@ -125,7 +119,7 @@ def make_tx_packed(processor, contract_name, function_name, sender=Wallet(), kwa
         driver.set(balances_key, 1_000_000)
         driver.commit()
 
-    return b
+    return batch
 
 
 async def send_tx(masternode: Masternode, nodes, contract, function, sender=Wallet(), kwargs={}, sleep=2):
@@ -181,25 +175,22 @@ class Orchestrator:
     def make_tx(self, contract, function, sender, kwargs={}, stamps=1_000_000, pidx=0):
         processor = self.masternodes[pidx]
 
-        batch = TransactionBuilder(
-            sender=sender.verifying_key(),
+        batch = build_transaction(
+            wallet=sender,
             contract=contract,
             function=function,
             kwargs=kwargs,
             stamps=stamps,
-            processor=processor.wallet.verifying_key(),
+            processor=processor.wallet.verifying_key().hex(),
             nonce=self.nonces[sender.verifying_key() + processor.wallet.verifying_key()]
         )
-
-        batch.sign(sender.signing_key())
-        b = batch.serialize()
 
         self.nonces[sender.verifying_key() + processor.wallet.verifying_key()] += 1
 
         if sender.verifying_key() not in self.minted:
             self.mint(1_000_000, sender)
 
-        return b
+        return batch
 
     def mint(self, amount, to):
         currency_contract = 'currency'

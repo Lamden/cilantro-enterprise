@@ -14,7 +14,7 @@ class NBNInbox(SecureAsyncInbox):
         super().__init__(*args, **kwargs)
 
     async def handle_msg(self, _id, msg):
-        self.q.append(decode(msg).decode())
+        self.q.append(decode(msg.decode()))
         await super().handle_msg(_id, b'OK')
 
     async def wait_for_next_nbn(self):

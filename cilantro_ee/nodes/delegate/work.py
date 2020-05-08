@@ -22,8 +22,8 @@ async def gather_transaction_batches(queue: dict, expected_batches: int, timeout
 
 def pad_work(work: list, expected_masters: list):
     for task in work:
-        if task.sender.hex() in expected_masters:
-            expected_masters.remove(task.sender.hex())
+        if task['sender'] in expected_masters:
+            expected_masters.remove(task['sender'])
 
     for missing_master in expected_masters:
         shim = {
@@ -44,6 +44,6 @@ def filter_work(work):
             continue
 
         # Add the rest to a priority queue based on their timestamp
-        heapq.heappush(filtered_work, (tx_batch.timestamp, tx_batch))
+        heapq.heappush(filtered_work, (tx_batch['timestamp'], tx_batch))
 
     return filtered_work

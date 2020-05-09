@@ -45,7 +45,7 @@ def block_from_subblocks(subblocks, previous_hash: bytes, block_num: int) -> dic
         'hash': block_hasher.digest().hex(),
         'blockNum': block_num,
         'previous': previous_hash,
-        'subBlocks': deserialized_subblocks
+        'subblocks': deserialized_subblocks
     }
 
     return block
@@ -57,10 +57,10 @@ def verify_block(subblocks, previous_hash: bytes, proposed_hash: bytes, block_nu
 
 
 def block_is_skip_block(block: dict):
-    if len(block['subBlocks']) == 0:
+    if len(block['subblocks']) == 0:
         return False
 
-    for subblock in block['subBlocks']:
+    for subblock in block['subblocks']:
         if len(subblock['transactions']):
             return False
 
@@ -75,7 +75,7 @@ def get_failed_block(previous_hash: bytes, block_num: int) -> dict:
         'hash': block_hasher.digest().hex(),
         'blockNum': block_num,
         'previous': previous_hash,
-        'subBlocks': []
+        'subblocks': []
     }
     return block
 
@@ -85,7 +85,7 @@ def get_genesis_block():
         'hash': (b'\x00' * 32).hex(),
         'blockNum': 1,
         'previous': (b'\x00' * 32).hex(),
-        'subBlocks': []
+        'subblocks': []
     }
     return block
 

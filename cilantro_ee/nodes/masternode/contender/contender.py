@@ -15,6 +15,26 @@ class PotentialSolution:
     def votes(self):
         return len(self.signatures)
 
+    def struct_to_dict(self):
+        subblock = {
+            'input_hash': self.struct['input_hash'],
+            'transactions': self.struct['transactions'],
+            'merkle_leaves': self.struct['merkle_tree']['leaves'],
+            'subblock': self.struct['subblock'],
+            'previous': self.struct['previous'],
+            'signatures': []
+        }
+
+        for sig in self.signatures:
+            subblock['signatures'].append({
+                'signature': sig[0],
+                'signer': sig[1]
+            })
+
+        subblock['signatures'].sort(key=lambda i: i['signer'])
+
+        return subblock
+
 
 class SubBlockContender:
     def __init__(self, input_hash, index, total_contacts, required_consensus=0.66, adequate_consensus=0.51):
@@ -80,7 +100,7 @@ class SubBlockContender:
         if self.failed:
             return None
 
-        return self.best_solution.struct
+        return self.best_solution.struct_to_dict()
 
 
 class BlockContender:

@@ -48,7 +48,9 @@ class MockSBC:
             'input_hash': self.inputHash,
             'merkle_tree': self.merkleTree.to_dict(),
             'subblock': self.subBlockNum,
-            'signer': self.signer
+            'signer': self.signer,
+            'transactions': [],
+            'previous': secrets.token_hex(8)
         }
 
 
@@ -300,10 +302,10 @@ class TestAggregator(TestCase):
 
         res = self.loop.run_until_complete(a.gather_subblocks(4))
 
-        self.assertEqual(res['subBlocks'][0]['merkleLeaves'][0], 'res_1')
-        self.assertEqual(res['subBlocks'][1]['merkleLeaves'][0], 'res_2')
-        self.assertEqual(res['subBlocks'][2]['merkleLeaves'][0], 'res_3')
-        self.assertEqual(res['subBlocks'][3]['merkleLeaves'][0], 'res_4')
+        self.assertEqual(res['subblocks'][0]['merkle_leaves'][0], 'res_1')
+        self.assertEqual(res['subblocks'][1]['merkle_leaves'][0], 'res_2')
+        self.assertEqual(res['subblocks'][2]['merkle_leaves'][0], 'res_3')
+        self.assertEqual(res['subblocks'][3]['merkle_leaves'][0], 'res_4')
 
     def test_mixed_results_still_makes_quorum(self):
         a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=BlockchainDriver())
@@ -332,12 +334,12 @@ class TestAggregator(TestCase):
 
         res = self.loop.run_until_complete(a.gather_subblocks(4))
 
-        self.assertEqual(res['subBlocks'][0]['merkleLeaves'][0], 'res_1')
-        self.assertEqual(res['subBlocks'][1]['merkleLeaves'][0], 'res_2')
-        self.assertEqual(res['subBlocks'][2]['merkleLeaves'][0], 'res_3')
-        self.assertEqual(res['subBlocks'][3]['merkleLeaves'][0], 'res_4')
+        self.assertEqual(res['subblocks'][0]['merkle_leaves'][0], 'res_1')
+        self.assertEqual(res['subblocks'][1]['merkle_leaves'][0], 'res_2')
+        self.assertEqual(res['subblocks'][2]['merkle_leaves'][0], 'res_3')
+        self.assertEqual(res['subblocks'][3]['merkle_leaves'][0], 'res_4')
 
-    def test_failed_block_on_one_returns_failed_block(self):
+    def test_failed_block_on_one_removes_subblock_from_block(self):
         a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=BlockchainDriver())
 
         c1 = [MockSBC('input_1', 'res_X', 0).to_dict(),
@@ -364,9 +366,7 @@ class TestAggregator(TestCase):
 
         res = self.loop.run_until_complete(a.gather_subblocks(4))
 
-        print(res)
-
-        self.assertTrue(canonical.block_is_failed(res, '0' * 64, 1))
+        self.assertTrue(len(res['subblocks']) == 3)
 
     def test_block_never_received_goes_through_adequate_consensus(self):
         a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=BlockchainDriver())
@@ -390,6 +390,5 @@ class TestAggregator(TestCase):
 
         res = self.loop.run_until_complete(a.gather_subblocks(4, adequate_ratio=0.3))
 
-        print(res)
 
         self.assertFalse(canonical.block_is_failed(res, '0' * 32, 1))

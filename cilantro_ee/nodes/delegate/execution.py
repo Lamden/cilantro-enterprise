@@ -28,11 +28,13 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
 
     tx_hash = tx_hash_from_tx(transaction)
 
+    writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
+
     tx_output = {
         'hash': tx_hash,
         'transaction': transaction,
         'status': output['status_code'],
-        'state': output['writes'],
+        'state': writes,
         'stamps_used': output['stamps_used'],
         'result': safe_repr(output['result'])
     }
@@ -107,7 +109,7 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
             'merkle_tree': merkle_tree,
             'signer': wallet.verifying_key().hex(),
             'subblock': i % parallelism,
-            'previous_block_hash': previous_block_hash
+            'previous': previous_block_hash
         }
 
         sbc = format_dictionary(sbc)

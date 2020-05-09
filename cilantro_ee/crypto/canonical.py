@@ -1,7 +1,8 @@
 import bson
 import hashlib
 from copy import deepcopy
-
+from contracting.db.encoder import encode
+import json
 from cilantro_ee.logger.base import get_logger
 
 log = get_logger('CANON')
@@ -38,8 +39,12 @@ def block_from_subblocks(subblocks, previous_hash: bytes, block_num: int) -> dic
         sb_without_sigs = deepcopy(sb)
         del sb_without_sigs['signatures']
 
-        encoded_sb = bson.BSON.encode(sb_without_sigs)
-        block_hasher.update(encoded_sb)
+        encoded_sb = encode(sb_without_sigs)
+        e = json.loads(encoded_sb)
+
+        b = bson.BSON.encode(e)
+
+        block_hasher.update(b)
 
     block = {
         'hash': block_hasher.digest().hex(),

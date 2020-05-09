@@ -142,7 +142,7 @@ class MasterStorage:
         self.store_txs(block)
 
     def store_txs(self, block):
-        for subblock in block['subBlocks']:
+        for subblock in block['subblocks']:
             for tx in subblock['transactions']:
                 self.put(tx, MasterStorage.TX)
                 del tx['_id']

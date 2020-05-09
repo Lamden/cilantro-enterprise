@@ -8,6 +8,7 @@ from cilantro_ee.networking.parameters import ServiceType
 from cilantro_ee.crypto import canonical
 from cilantro_ee.storage.contract import BlockchainDriver
 
+import json
 
 from cilantro_ee.nodes.base import Node
 from contracting.db.encoder import encode
@@ -252,12 +253,16 @@ class Masternode(Node):
                 expected_subblocks=len(self.masternode_contract.quick_read("S", "members"))
             )
 
-            self.process_block(block)
+            encoded_block = encode(block)
+            encoded_block = json.loads(encoded_block)
+            print(encoded_block)
+
+            self.process_block(encoded_block)
 
             await self.parameters.refresh()
             self.nbn_socket_book.sync_sockets()
 
-            await self.wait_for_work(block)
+            await self.wait_for_work(encoded_block)
 
             sends = await self.nbn_socket_book.send_to_peers(
                 msg=encode(block).encode()

@@ -113,9 +113,9 @@ class RewardManager:
     def stamps_in_block(block):
         total = 0
 
-        for sb in block['subBlocks']:
+        for sb in block['subblocks']:
             for tx in sb['transactions']:
-                total += tx['stampsUsed']
+                total += tx['stamps_used']
 
         return total
 
@@ -127,7 +127,7 @@ class RewardManager:
         total = 0
 
         for tx in subblock['transactions']:
-            total += tx['stampsUsed']
+            total += tx['stamps_used']
 
         return total
 

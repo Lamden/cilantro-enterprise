@@ -1,5 +1,4 @@
 from zmq.auth.asyncio import AsyncioAuthenticator
-from zmq.error import ZMQBaseError
 from zmq.auth.certs import _write_key_file, _cert_public_banner
 from zmq.utils import z85
 import shutil
@@ -30,15 +29,9 @@ class SocketAuthenticator:
         self.log = get_logger('zmq.auth')
         self.log.propagate = debug
 
-        # This should throw an exception if the socket already exist
-        try:
-            self.authenticator = AsyncioAuthenticator(context=self.ctx, loop=self.loop)
-            self.authenticator.start()
-            self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
-
-        except ZMQBaseError:
-            pass
-            #raise Exception('AsyncioAuthenicator could not be started. Is it already running?')
+        self.authenticator = AsyncioAuthenticator(context=self.ctx, loop=self.loop)
+        self.authenticator.start()
+        self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
 
     def add_governance_sockets(self, masternode_list, on_deck_masternode, delegate_list, on_deck_delegate):
         self.flush_all_keys()
@@ -57,20 +50,18 @@ class SocketAuthenticator:
 
         self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
 
-    def add_verifying_key(self, vk: bytes):
+    def add_verifying_key(self, vk: str):
         # Convert to bytes if hex string
-        if isinstance(vk, str):
-            vk = bytes.fromhex(vk)
+        bvk = bytes.fromhex(vk)
 
         try:
-            pk = crypto_sign_ed25519_pk_to_curve25519(vk)
+            pk = crypto_sign_ed25519_pk_to_curve25519(bvk)
         # Error is thrown if the VK is not within the possibility space of the ED25519 algorithm
         except RuntimeError:
-            print('no go')
             return
 
         zvk = z85.encode(pk).decode('utf-8')
-        _write_key_file(self.cert_dir / f'{vk.hex()}.key', banner=_cert_public_banner, public_key=zvk)
+        _write_key_file(self.cert_dir / f'{vk}.key', banner=_cert_public_banner, public_key=zvk)
 
     def flush_all_keys(self):
         shutil.rmtree(str(self.cert_dir))

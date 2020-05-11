@@ -33,34 +33,35 @@ class TestAuthenticator(TestCase):
 
         self.c.flush()
 
-    def test_double_init(self):
-        w = Wallet()
-
-        with self.assertRaises(Exception):
-            b = SocketAuthenticator(ctx=self.ctx)
-
-    def test_add_verifying_key_as_bytes(self):
+    def test_add_verifying_key_writes_file(self):
         sk = SigningKey.generate()
 
-        self.s.add_verifying_key(sk.verify_key.encode())
+        self.s.add_verifying_key(sk.verify_key.encode().hex())
 
         self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{sk.verify_key.encode().hex()}.key')))
 
-    def test_sync_certs_creates_files(self):
-        self.s.sync_certs()
+    def test_add_verifying_key_invalid_does_nothing(self):
+        sk = b'\x00' * 32
 
-        for m in self.s.contacts.masternodes:
-            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{m}.key')))
+        self.s.add_verifying_key(sk.hex())
 
-        for d in self.s.contacts.delegates:
-            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{d}.key')))
+        self.assertFalse(os.path.exists(os.path.join(self.s.cert_dir, f'{sk.hex()}.key')))
 
     def test_add_governance_sockets_all_creates_files(self):
-        fake_mns = [Wallet().verifying_key(), Wallet().verifying_key(), Wallet().verifying_key()]
-        fake_od_m = Wallet().verifying_key()
+        fake_mns = [
+            Wallet().verifying_key().hex(),
+            Wallet().verifying_key().hex(),
+            Wallet().verifying_key().hex()
+        ]
 
-        fake_dels = [Wallet().verifying_key(), Wallet().verifying_key()]
-        fake_od_d = Wallet().verifying_key()
+        fake_od_m = Wallet().verifying_key().hex()
+
+        fake_dels = [
+            Wallet().verifying_key().hex(),
+            Wallet().verifying_key().hex()
+        ]
+
+        fake_od_d = Wallet().verifying_key().hex()
 
         self.s.add_governance_sockets(masternode_list=fake_mns,
                                       on_deck_masternode=fake_od_m,
@@ -69,70 +70,10 @@ class TestAuthenticator(TestCase):
                                       )
 
         for m in fake_mns:
-            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{m.hex()}.key')))
+            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{m}.key')))
 
         for d in fake_dels:
-            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{d.hex()}.key')))
+            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{d}.key')))
 
-        self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{fake_od_m.hex()}.key')))
-        self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{fake_od_d.hex()}.key')))
-
-    # def test_make_client_works(self):
-    #     w = Wallet()
-    #
-    #     pub = self.ctx.socket(zmq.PUB)
-    #     pub.curve_secretkey = w.curve_sk
-    #     pub.curve_publickey = w.curve_vk
-    #
-    #     pub.curve_server = True
-    #     pub.setsockopt(zmq.LINGER, 1000)
-    #     pub.bind('inproc://test1')
-    #
-    #     self.s.add_verifying_key(w.verifying_key())
-    #
-    #     sub = self.s.make_client(zmq.SUB, w.verifying_key())
-    #
-    #     sub.setsockopt(zmq.SUBSCRIBE, b'')
-    #     sub.connect('inproc://test1')
-    #
-    #     async def get():
-    #         msg = await sub.recv()
-    #         return msg
-    #
-    #     tasks = asyncio.gather(
-    #         pub.send(b'hi'),
-    #         get()
-    #     )
-    #
-    #     loop = asyncio.get_event_loop()
-    #     _, msg = loop.run_until_complete(tasks)
-    #
-    #     self.assertEqual(msg, b'hi')
-    #
-    # def test_make_server_works(self):
-    #     w = Wallet()
-    #
-    #     pub = self.s.make_server(zmq.PUB)
-    #     pub.setsockopt(zmq.LINGER, 1000)
-    #     pub.bind('inproc://test1')
-    #
-    #     self.s.add_verifying_key(w.verifying_key())
-    #
-    #     sub = self.s.make_client(zmq.SUB, w.verifying_key())
-    #
-    #     sub.setsockopt(zmq.SUBSCRIBE, b'')
-    #     sub.connect('inproc://test1')
-    #
-    #     async def get():
-    #         msg = await sub.recv()
-    #         return msg
-    #
-    #     tasks = asyncio.gather(
-    #         pub.send(b'hi'),
-    #         get()
-    #     )
-    #
-    #     loop = asyncio.get_event_loop()
-    #     _, msg = loop.run_until_complete(tasks)
-    #
-    #     self.assertEqual(msg, b'hi')
+        self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{fake_od_m}.key')))
+        self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{fake_od_d}.key')))

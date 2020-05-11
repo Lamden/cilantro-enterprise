@@ -85,14 +85,6 @@ class Masternode(Node):
         asyncio.ensure_future(self.aggregator.start())
         asyncio.ensure_future(self.run())
 
-    ## DELETE
-    def delegate_work_sockets(self):
-        return list(self.parameters.get_delegate_sockets(service=ServiceType.INCOMING_WORK).values())
-
-    ## DELETE
-    def nbn_sockets(self):
-        return list(self.parameters.get_all_sockets(service=ServiceType.BLOCK_NOTIFICATIONS).values())
-
     def dl_wk_sks(self):
         return list(self.parameters.get_delegate_sockets(service=ServiceType.INCOMING_WORK).items())
 

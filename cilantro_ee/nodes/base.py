@@ -231,6 +231,7 @@ class Node:
         masternodes = self.masternode_contract.quick_read('S', 'members')
         delegates = self.delegate_contract.quick_read('S', 'members')
 
+        # These are hex strings so only accept hex strings
         self.socket_authenticator.add_governance_sockets(
             masternode_list=masternodes,
             delegate_list=delegates,

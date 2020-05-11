@@ -1,5 +1,5 @@
 from unittest import TestCase
-from cilantro_ee.formatting import primatives, transactions
+from cilantro_ee.formatting import primatives, rules
 
 
 class TestFormatting(TestCase):
@@ -119,7 +119,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertTrue(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertTrue(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_keys_unexpected(self):
         t = {
@@ -136,7 +136,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_keys_missing(self):
         t = {
@@ -151,7 +151,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_vk_sender_bad(self):
         t = {
@@ -167,7 +167,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_vk_processor_bad(self):
         t = {
@@ -183,7 +183,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_stamps_bad(self):
         t = {
@@ -199,7 +199,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_nonce_bad(self):
         t = {
@@ -215,7 +215,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_contract_bad(self):
         t = {
@@ -231,7 +231,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_function(self):
         t = {
@@ -247,7 +247,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_payload_fails_kwargs_bad(self):
         t = {
@@ -263,7 +263,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_PAYLOAD_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_PAYLOAD_RULES))
 
     def test_tx_metadata_passes(self):
         t = {
@@ -271,14 +271,14 @@ class TestFormatting(TestCase):
             'timestamp': 123
         }
 
-        self.assertTrue(primatives.check_format(t, transactions.TRANSACTION_METADATA_RULES))
+        self.assertTrue(primatives.check_format(t, rules.TRANSACTION_METADATA_RULES))
 
     def test_tx_metadata_missing_key_fails(self):
         t = {
             'signature': 'a' * 128,
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_METADATA_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_METADATA_RULES))
 
     def test_tx_metadata_extra_key_fails(self):
         t = {
@@ -287,7 +287,7 @@ class TestFormatting(TestCase):
             'bad': 'key'
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_METADATA_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_METADATA_RULES))
 
     def test_tx_metadata_timestamp_fails(self):
         t = {
@@ -295,7 +295,7 @@ class TestFormatting(TestCase):
             'timestamp': 'abc'
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_METADATA_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_METADATA_RULES))
 
     def test_tx_passes(self):
         t = {
@@ -317,7 +317,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertTrue(primatives.check_format(t, transactions.TRANSACTION_RULES))
+        self.assertTrue(primatives.check_format(t, rules.TRANSACTION_RULES))
 
     def test_tx_fails_extra_key(self):
         t = {
@@ -340,7 +340,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_RULES))
 
     def test_tx_missing_key_fails(self):
         t = {
@@ -358,7 +358,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_RULES))
 
     def test_tx_fails_tx_payload(self):
         t = {
@@ -380,7 +380,7 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_RULES))
 
     def test_tx_fails_tx_metadata(self):
         t = {
@@ -402,4 +402,4 @@ class TestFormatting(TestCase):
             }
         }
 
-        self.assertFalse(primatives.check_format(t, transactions.TRANSACTION_RULES))
+        self.assertFalse(primatives.check_format(t, rules.TRANSACTION_RULES))

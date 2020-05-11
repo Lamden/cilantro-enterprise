@@ -369,7 +369,13 @@ class TestAggregator(TestCase):
         self.assertTrue(len(res['subblocks']) == 3)
 
     def test_block_never_received_goes_through_adequate_consensus(self):
-        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=BlockchainDriver())
+        a = Aggregator(
+            wallet=Wallet(),
+            socket_id=_socket('tcp://127.0.0.1:8888'),
+            ctx=zmq.asyncio.Context(),
+            driver=BlockchainDriver(),
+            seconds_to_timeout=0.5
+        )
 
         c1 = [MockSBC('input_1', 'res_1', 0).to_dict(),
                              MockSBC('input_2', 'res_2', 1).to_dict(),

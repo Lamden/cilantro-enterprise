@@ -1,7 +1,7 @@
 from cilantro_ee.sockets.services import get
 from cilantro_ee.sockets.inbox import AsyncInbox
 from cilantro_ee.logger.base import get_logger
-from cilantro_ee.storage import CilantroStorageDriver, BlockchainDriver
+from cilantro_ee.storage import MasterStorage, BlockchainDriver
 import zmq.asyncio
 import json
 
@@ -12,7 +12,7 @@ GET_HEIGHT = 'get_height'
 
 
 class BlockServer(AsyncInbox):
-    def __init__(self, blocks: CilantroStorageDriver=None, driver=BlockchainDriver(), *args, **kwargs):
+    def __init__(self, blocks: MasterStorage=None, driver=BlockchainDriver(), *args, **kwargs):
         self.blocks = blocks
         self.driver = driver
         super().__init__(*args, **kwargs)

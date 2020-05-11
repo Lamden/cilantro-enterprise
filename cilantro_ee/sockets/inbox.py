@@ -3,10 +3,10 @@ import asyncio
 import zmq
 
 from cilantro_ee.sockets.struct import SocketStruct, Protocols
-
+from contracting.db.encoder import encode, decode
 
 class AsyncInbox:
-    def __init__(self, socket_id: SocketStruct, ctx: zmq.Context, wallet=None, linger=1000, poll_timeout=500):
+    def __init__(self, socket_id: SocketStruct, ctx: zmq.Context, wallet=None, linger=1000, poll_timeout=50):
         if socket_id.protocol == Protocols.TCP:
             socket_id.id = '*'
 
@@ -31,7 +31,7 @@ class AsyncInbox:
             try:
                 event = await self.socket.poll(timeout=self.poll_timeout, flags=zmq.POLLIN)
                 if event:
-                    _id, msg = await self.recieve_message()
+                    _id, msg = await self.receive_message()
                     asyncio.ensure_future(self.handle_msg(_id, msg))
 
             except zmq.error.ZMQError as e:
@@ -40,7 +40,7 @@ class AsyncInbox:
 
         self.socket.close()
 
-    async def recieve_message(self):
+    async def receive_message(self):
         _id = await self.socket.recv()
         msg = await self.socket.recv()
 
@@ -79,3 +79,15 @@ class SecureAsyncInbox(AsyncInbox):
 
         self.socket.setsockopt(zmq.LINGER, self.linger)
         self.socket.bind(self.address)
+
+
+class JSONAsyncInbox(AsyncInbox):
+    async def receive_message(self):
+        _id = await self.socket.recv()
+        msg = await self.socket.recv()
+
+        return _id, decode(msg)
+
+    async def return_msg(self, _id, msg):
+        msg = encode(msg).encode()
+        await super().return_msg(_id, msg)

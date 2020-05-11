@@ -5,6 +5,7 @@ from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.logger.base import get_logger
 from contracting.db.encoder import decode
 
+from cilantro_ee.nodes.router import Processor
 
 class NBNInbox(SecureAsyncInbox):
     def __init__(self, driver: BlockchainDriver=BlockchainDriver(), *args, **kwargs):
@@ -30,3 +31,25 @@ class NBNInbox(SecureAsyncInbox):
     def clean(self):
         self.q = [nbn for nbn in self.q if nbn['blockNum'] >= self.driver.latest_block_num]
 
+
+class NewBlock(Processor):
+    def __init__(self, driver: BlockchainDriver=BlockchainDriver()):
+        self.q = []
+        self.driver = driver
+        self.log = get_logger('NBN')
+
+    async def process_message(self, msg):
+        self.q.append(msg)
+
+    async def wait_for_next_nbn(self):
+        while len(self.q) <= 0:
+            await asyncio.sleep(0)
+
+        nbn = self.q.pop(0)
+
+        self.q.clear()
+
+        return nbn
+
+    def clean(self):
+        self.q = [nbn for nbn in self.q if nbn['blockNum'] >= self.driver.latest_block_num]

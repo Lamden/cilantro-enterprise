@@ -1,11 +1,10 @@
 import zmq.asyncio
 
-import cilantro_ee.sockets.reqrep
-import cilantro_ee.sockets.struct
-from cilantro_ee.sockets.inbox import SecureAsyncInbox, AsyncInbox
+import cilantro_ee.struct
+from cilantro_ee.inbox import AsyncInbox
 from cilantro_ee.logger.base import get_logger
-from cilantro_ee.crypto.wallet import Wallet, verify
-from cilantro_ee.sockets import services
+from cilantro_ee.crypto.wallet import verify
+from cilantro_ee import services
 import asyncio
 log = get_logger('DiscoveryService')
 
@@ -45,7 +44,7 @@ def unpack_pepper_msg(msg: bytes):
     return msg[:32], msg[32:]
 
 
-async def ping(socket_id: cilantro_ee.sockets.struct.SocketStruct, pepper: bytes, ctx: zmq.Context, timeout, debug=False):
+async def ping(socket_id: cilantro_ee.struct.SocketStruct, pepper: bytes, ctx: zmq.Context, timeout, debug=False):
     log = get_logger('Pinger')
     log.propagate = debug
     log.info(f'Pinging: {socket_id.zmq_url()}')

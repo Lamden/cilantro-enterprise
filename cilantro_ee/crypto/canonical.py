@@ -1,8 +1,5 @@
 import bson
 import hashlib
-from copy import deepcopy
-from contracting.db.encoder import encode
-import json
 from cilantro_ee.logger.base import get_logger
 
 log = get_logger('CANON')
@@ -23,85 +20,38 @@ def format_dictionary(d: dict) -> dict:
     return {k: v for k, v in sorted(d.items())}
 
 
-def block_from_subblocks(subblocks, previous_hash: bytes, block_num: int) -> dict:
-    block_hasher = hashlib.sha3_256()
-    block_hasher.update(bytes.fromhex(previous_hash))
-
-    deserialized_subblocks = []
-
-    for subblock in subblocks:
-        if subblock is None:
-            continue
-
-        sb = format_dictionary(subblock)
-        deserialized_subblocks.append(sb)
-
-        sb_without_sigs = deepcopy(sb)
-        del sb_without_sigs['signatures']
-
-        encoded_sb = encode(sb_without_sigs)
-        e = json.loads(encoded_sb)
-
-        b = bson.BSON.encode(e)
-
-        block_hasher.update(b)
-
-    block = {
-        'hash': block_hasher.digest().hex(),
-        'blockNum': block_num,
-        'previous': previous_hash,
-        'subblocks': deserialized_subblocks
-    }
-
-    return block
-
-
-def verify_block(subblocks, previous_hash: bytes, proposed_hash: bytes, block_num=0):
-    block = block_from_subblocks(subblocks, previous_hash, block_num)
-    return block['hash'] == proposed_hash
-
-
-def block_is_skip_block(block: dict):
-    if len(block['subblocks']) == 0:
-        return False
-
-    for subblock in block['subblocks']:
-        if len(subblock['transactions']):
-            return False
-
-    return True
-
-
-def get_failed_block(previous_hash: bytes, block_num: int) -> dict:
-    block_hasher = hashlib.sha3_256()
-    block_hasher.update(bytes.fromhex(previous_hash))
-
-    block = {
-        'hash': block_hasher.digest().hex(),
-        'blockNum': block_num,
-        'previous': previous_hash,
-        'subblocks': []
-    }
-    return block
-
-
-def get_genesis_block():
-    block = {
-        'hash': (b'\x00' * 32).hex(),
-        'blockNum': 1,
-        'previous': (b'\x00' * 32).hex(),
-        'subblocks': []
-    }
-    return block
-
-
-def block_is_failed(block, previous_hash: bytes, block_num: int):
-    return block == get_failed_block(previous_hash, block_num)
-
-
 def tx_hash_from_tx(tx):
     h = hashlib.sha3_256()
     tx_dict = format_dictionary(tx)
     encoded_tx = bson.BSON.encode(tx_dict)
     h.update(encoded_tx)
     return h.hexdigest()
+
+
+def merklize(leaves):
+    # Make space for the parent hashes
+    nodes = [None for _ in range(len(leaves) - 1)]
+
+    # Hash all leaves so that all data is same length
+    for l in leaves:
+        h = hashlib.sha3_256()
+        h.update(l)
+        nodes.append(h.digest())
+
+    # Hash each pair of leaves together and set the hash to their parent in the list
+    for i in range((len(leaves) * 2) - 1 - len(leaves), 0, -1):
+        h = hashlib.sha3_256()
+        h.update(nodes[2 * i - 1] + nodes[2 * i])
+        true_i = i - 1
+        nodes[true_i] = h.digest()
+
+    # Return the list
+    return [n.hex() for n in nodes]
+
+
+def verify_merkle_tree(leaves, expected_root):
+    tree = merklize(leaves)
+
+    if tree[0] == expected_root:
+        return True
+    return False

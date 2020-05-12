@@ -1,6 +1,6 @@
 import asyncio
 import zmq
-from cilantro_ee.sockets.struct import SocketStruct
+from cilantro_ee.struct import SocketStruct
 
 
 class SubscriptionService:

@@ -1,11 +1,11 @@
 from unittest import TestCase
-from cilantro_ee.sockets.struct import _socket
+from cilantro_ee.struct import _socket
 from cilantro_ee.networking.discovery import *
 from cilantro_ee.networking.network import Network
 from cilantro_ee.networking.parameters import NetworkParameters, PEPPER
 from cilantro_ee.networking.peers import PeerServer
 from cilantro_ee.networking.discovery import DiscoveryServer
-from cilantro_ee.sockets import services
+from cilantro_ee import services
 import zmq
 import zmq.asyncio
 from cilantro_ee.crypto.wallet import Wallet

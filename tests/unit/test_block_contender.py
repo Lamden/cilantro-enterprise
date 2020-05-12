@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from cilantro_ee.nodes.masternode.contender.contender import BlockContender, SubBlockContender, PotentialSolution, Aggregator
+from cilantro_ee.nodes.masternode.contender.contender import BlockContender, Aggregator
 import zmq.asyncio
 import asyncio
-from cilantro_ee.sockets.struct import _socket
+from cilantro_ee.struct import _socket
 from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.crypto import canonical
 import secrets

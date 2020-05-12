@@ -2,7 +2,7 @@ import asyncio
 
 import zmq
 
-from cilantro_ee.sockets.struct import SocketStruct, Protocols
+from cilantro_ee.struct import SocketStruct, Protocols
 from contracting.db.encoder import encode, decode
 
 class AsyncInbox:

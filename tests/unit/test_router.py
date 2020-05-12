@@ -1,8 +1,8 @@
 from unittest import TestCase
-from cilantro_ee.nodes.router import Router, QueueProcessor, OK, Processor
+from cilantro_ee.router import Router, QueueProcessor, OK, Processor
 import zmq.asyncio
 import asyncio
-from cilantro_ee.sockets.struct import _socket
+from cilantro_ee.struct import _socket
 from contracting.db.encoder import encode, decode
 
 
@@ -79,7 +79,7 @@ class TestRouter(TestCase):
             return resp
 
         bad_message = {
-            'inbox': 'hello',
+            'service': 'hello',
             'blah': 123
         }
 
@@ -112,7 +112,7 @@ class TestRouter(TestCase):
             return resp
 
         bad_message = {
-            'inbox': 'hello',
+            'service': 'hello',
             'msg': {
                 'hello': 123
             }
@@ -150,7 +150,7 @@ class TestRouter(TestCase):
             return resp
 
         message = {
-            'inbox': 'test',
+            'service': 'test',
             'msg': {
                 'howdy': 'there'
             }
@@ -200,7 +200,7 @@ class TestRouter(TestCase):
             return resp
 
         message = {
-            'inbox': 'test',
+            'service': 'test',
             'msg': {
                 'howdy': 'there'
             }

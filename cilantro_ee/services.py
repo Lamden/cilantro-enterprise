@@ -1,7 +1,7 @@
 from cilantro_ee.logger.base import get_logger
 import zmq
 
-from cilantro_ee.sockets.struct import SocketStruct
+from cilantro_ee.struct import SocketStruct
 
 log = get_logger("BaseServices")
 

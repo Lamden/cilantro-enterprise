@@ -1,6 +1,6 @@
-import cilantro_ee.sockets.struct
+import cilantro_ee.struct
 from cilantro_ee.storage import VKBook
-from cilantro_ee.sockets.services import get
+from cilantro_ee.services import get
 
 import json
 import zmq.asyncio
@@ -70,7 +70,7 @@ class NetworkParameters:
 
     def resolve(self, socket_base, service_type, bind=False):
         port, ipc = self.params[service_type]
-        return cilantro_ee.sockets.struct.resolve_tcp_or_ipc_base(socket_base, port, ipc, bind=bind)
+        return cilantro_ee.struct.resolve_tcp_or_ipc_base(socket_base, port, ipc, bind=bind)
 
 
 class Parameters:

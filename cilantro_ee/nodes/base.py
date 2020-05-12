@@ -10,7 +10,7 @@ import cilantro_ee
 import zmq.asyncio
 import asyncio
 
-from cilantro_ee.sockets.authentication import SocketAuthenticator
+from cilantro_ee.authentication import SocketAuthenticator
 from cilantro_ee.storage.contract import BlockchainDriver
 from contracting.client import ContractingClient
 

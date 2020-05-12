@@ -1,12 +1,11 @@
 import asyncio
 
-from cilantro_ee.crypto.merkle_tree import merklize
+from cilantro_ee.crypto.canonical import merklize
 from cilantro_ee.crypto.wallet import verify
 from cilantro_ee.logger.base import get_logger
-from cilantro_ee.sockets.inbox import SecureAsyncInbox
+from cilantro_ee.inbox import SecureAsyncInbox
 from cilantro_ee.storage import BlockchainDriver
 from contracting.db.encoder import encode, decode
-import json
 
 
 class SBCInbox(SecureAsyncInbox):

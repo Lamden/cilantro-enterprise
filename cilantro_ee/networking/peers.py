@@ -3,10 +3,8 @@ import json
 
 import zmq
 
-from cilantro_ee.sockets.inbox import AsyncInbox
-from cilantro_ee.sockets import pubsub
-from cilantro_ee.sockets import reqrep
-from cilantro_ee.sockets import struct
+from cilantro_ee.inbox import AsyncInbox
+from cilantro_ee import struct, pubsub
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.networking import discovery, parameters
 

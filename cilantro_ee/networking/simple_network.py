@@ -1,7 +1,7 @@
 from cilantro_ee.crypto.wallet import Wallet
 import zmq.asyncio
 from copy import deepcopy
-from cilantro_ee.sockets import services, struct
+from cilantro_ee import struct, services
 import asyncio
 
 

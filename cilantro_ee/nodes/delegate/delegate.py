@@ -3,7 +3,7 @@ from cilantro_ee.networking.parameters import ServiceType
 
 from cilantro_ee.nodes.delegate import execution
 from cilantro_ee.nodes.delegate.work import gather_transaction_batches, pad_work, filter_work
-from cilantro_ee.sockets.outbox import Peers, MN
+from cilantro_ee.outbox import Peers, MN
 
 from cilantro_ee.nodes.base import Node
 from cilantro_ee.logger.base import get_logger

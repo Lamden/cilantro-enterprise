@@ -1,4 +1,4 @@
-from cilantro_ee.sockets.inbox import JSONAsyncInbox
+from cilantro_ee.inbox import JSONAsyncInbox
 
 # new block
 # work
@@ -13,12 +13,12 @@ OK = {
     'response': 'ok'
 }
 
-EXAMPLE_MESSAGE = {
-    'inbox': 'some_id',
-    'msg': {
 
+def build_message(service, message):
+    return {
+        'service': service,
+        'msg': message
     }
-}
 
 
 class Processor:
@@ -34,6 +34,17 @@ class QueueProcessor(Processor):
         self.q.append(msg)
 
 
+'''
+Router takes messages in the following format:
+{
+    'service': <name of service as string>,
+    'msg': {
+        <any JSON payload here>
+    }
+}
+It then sends the msg to the registered 'processor' and returns
+a message to the requester.
+'''
 class Router(JSONAsyncInbox):
     def __init__(self, *args, **kwargs):
         self.services = {}

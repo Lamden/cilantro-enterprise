@@ -1,7 +1,7 @@
-from cilantro_ee.networking.parameters import ServiceType, NetworkParameters, DHT_PORT, PEPPER
+from cilantro_ee.networking.parameters import ServiceType, NetworkParameters, PEPPER
 from cilantro_ee.networking.peers import PeerServer
 from cilantro_ee.networking import discovery
-from cilantro_ee.sockets import services, struct
+from cilantro_ee import struct, services
 
 from copy import deepcopy
 import asyncio

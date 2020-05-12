@@ -1,4 +1,6 @@
 from unittest import TestCase
+
+import cilantro_ee.nodes.masternode.masternode
 from cilantro_ee.nodes.delegate.delegate import Delegate
 from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.nodes.delegate import execution
@@ -461,7 +463,7 @@ class TestDelegate(TestCase):
         b = Delegate(socket_base='ipc:///tmp/n2', wallet=Wallet(), ctx=self.ctx, bootnodes=bootnodes,
                      constitution=constitution)
 
-        gb = canonical.get_genesis_block()
+        gb = cilantro_ee.nodes.masternode.masternode.get_genesis_block()
         gb = canonical.dict_to_capnp_block(gb)
 
         # Put the genesis block in here so we start immediately

@@ -1,3 +1,4 @@
+import cilantro_ee.nodes.masternode.masternode
 from cilantro_ee.nodes.masternode.masternode import Masternode
 from unittest import TestCase
 from cilantro_ee.networking.discovery import *
@@ -10,7 +11,7 @@ from cilantro_ee.crypto import canonical
 from contracting.client import ContractingClient
 from cilantro_ee.nodes.work_inbox import WorkInbox
 from cilantro_ee.nodes.new_block_inbox import NBNInbox
-from cilantro_ee.sockets.struct import _socket
+from cilantro_ee.struct import _socket
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from cilantro_ee.crypto.transaction_batch import transaction_list_to_transaction_batch
 from cilantro_ee.storage import BlockchainDriver
@@ -982,7 +983,7 @@ class TestNewMasternode(TestCase):
 
         _, _, msg = self.loop.run_until_complete(tasks)
 
-        self.assertEqual(msg, canonical.dict_to_msg_block(canonical.get_genesis_block()))
+        self.assertEqual(msg, canonical.dict_to_msg_block(cilantro_ee.nodes.masternode.masternode.get_genesis_block()))
 
     def test_join_quorum_updates_with_block_if_nbn_has_block(self):
         m = Masternode(

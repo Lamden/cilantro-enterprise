@@ -1,6 +1,6 @@
 import asyncio
 from cilantro_ee.nodes.catchup import BlockServer
-from cilantro_ee.sockets.outbox import Peers, DEL, ALL
+from cilantro_ee.outbox import Peers, DEL, ALL
 from cilantro_ee.nodes.masternode.transaction_batcher import TransactionBatcher
 from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.nodes.masternode.contender.contender import Aggregator
@@ -35,7 +35,7 @@ class Masternode(Node):
         )
 
         self.tx_batcher = TransactionBatcher(wallet=self.wallet, queue=[])
-        self.current_nbn = canonical.get_genesis_block()
+        self.current_nbn = get_genesis_block()
 
         self.aggregator = Aggregator(
             socket_id=self.network_parameters.resolve(
@@ -111,7 +111,7 @@ class Masternode(Node):
             await asyncio.sleep(0)
 
         if len(self.tx_batcher.queue) > 0:
-            msg = canonical.get_genesis_block()
+            msg = get_genesis_block()
 
             ## SEND OUT VIA SOCKETS CLASS
             sends = await self.nbn_socket_book.send_to_peers(
@@ -204,7 +204,7 @@ class Masternode(Node):
         # return await multicast(self.ctx, tx_batch, self.delegate_work_sockets())  # Works
 
     async def wait_for_work(self, block):
-        is_skip_block = canonical.block_is_skip_block(block)
+        is_skip_block = block_is_skip_block(block)
 
         if is_skip_block:
             self.log.info('SKIP. Going to hang now...')
@@ -269,3 +269,24 @@ class Masternode(Node):
         super().stop()
         self.block_server.stop()
         self.webserver.app.stop()
+
+
+def block_is_skip_block(block: dict):
+    if len(block['subblocks']) == 0:
+        return False
+
+    for subblock in block['subblocks']:
+        if len(subblock['transactions']):
+            return False
+
+    return True
+
+
+def get_genesis_block():
+    block = {
+        'hash': (b'\x00' * 32).hex(),
+        'blockNum': 1,
+        'previous': (b'\x00' * 32).hex(),
+        'subblocks': []
+    }
+    return block

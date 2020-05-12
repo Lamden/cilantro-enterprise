@@ -1,8 +1,7 @@
 from contracting.execution.executor import Executor
 from contracting.stdlib.bridge.time import Datetime
 from contracting.db.encoder import encode, decode, safe_repr
-from cilantro_ee.crypto.canonical import tx_hash_from_tx, format_dictionary
-from cilantro_ee.crypto.merkle_tree import merklize
+from cilantro_ee.crypto.canonical import tx_hash_from_tx, format_dictionary, merklize
 from cilantro_ee.logger.base import get_logger
 from datetime import datetime
 import hashlib

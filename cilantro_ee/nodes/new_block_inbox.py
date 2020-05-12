@@ -1,11 +1,11 @@
 import asyncio
 
-from cilantro_ee.sockets.inbox import SecureAsyncInbox
+from cilantro_ee.inbox import SecureAsyncInbox
 from cilantro_ee.storage import BlockchainDriver
 from cilantro_ee.logger.base import get_logger
 from contracting.db.encoder import decode
 
-from cilantro_ee.nodes.router import Processor
+from cilantro_ee.router import Processor
 
 class NBNInbox(SecureAsyncInbox):
     def __init__(self, driver: BlockchainDriver=BlockchainDriver(), *args, **kwargs):

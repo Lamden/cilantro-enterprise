@@ -98,15 +98,6 @@ class JoinProcessor:
             )
 
 
-class PeerProcessor:
-    def __init__(self):
-        self.masternodes = {}
-        self.delegates = {}
-
-    async def process_msg(self, msg):
-        pass
-
-
 class Network:
     def __init__(self, wallet: Wallet, socket_base: str, ctx: zmq.asyncio.Context, pepper: str):
         self.wallet = wallet
@@ -160,5 +151,9 @@ class Network:
     def verify_join(self, msg):
         if msg.get('peers') is None:
             return False
+
+        # for peer in peers,
+        # check if the contents adhere to JOIN_MESSAGE_RULES
+        # also add if not in join
 
         return True

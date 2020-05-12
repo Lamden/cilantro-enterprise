@@ -1,7 +1,7 @@
 from cilantro_ee.inbox import JSONAsyncInbox
 import zmq.asyncio
 from contracting.db.encoder import encode
-
+from zmq.error import ZMQBaseError
 # new block
 # work
 # sub block contenders
@@ -11,6 +11,7 @@ from contracting.db.encoder import encode
 # join should send messages to other people if they are not in the peer list
 # ping returns pepper for id verification
 
+DEFAULT_PORT = 11777
 OK = {
     'response': 'ok'
 }
@@ -89,7 +90,11 @@ async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Con
     socket = ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.LINGER, linger)
     socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-    socket.connect(socket_str)
+
+    try:
+        socket.connect(socket_str)
+    except ZMQBaseError:
+        return None
 
     message = {
         'service': service,

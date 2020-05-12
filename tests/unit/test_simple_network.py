@@ -84,3 +84,17 @@ class TestProcessors(TestCase):
 
         self.assertIsNone(res)
 
+    def test_join_processor_good_message_offline_returns_none(self):
+        msg = {
+            'vk': '0' * 64,
+            'ip': 'tcp://127.0.0.1'
+        }
+
+        j = JoinProcessor(
+            ctx=self.ctx,
+            peers={}
+        )
+
+        res = self.loop.run_until_complete(j.process_msg(msg))
+        self.assertIsNone(res)
+

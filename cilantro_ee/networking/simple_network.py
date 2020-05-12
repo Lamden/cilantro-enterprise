@@ -1,16 +1,57 @@
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro_ee.crypto.wallet import Wallet, verify
 import zmq.asyncio
 from copy import deepcopy
 from cilantro_ee import struct, services
 import asyncio
+from contracting.db.encoder import encode
+import time
+import hashlib
+
+PROOF_EXPIRY = 15
+
+
+def verify_proof(proof, pepper):
+    # Proofs expire after a minute
+    if int(time.time()) - proof['timestamp'] > PROOF_EXPIRY:
+        return False
+
+    message = [pepper, proof['ip'], proof['timestamp']]
+    message_bytes = encode(message).encode()
+
+    h = hashlib.sha3_256()
+    h.update(message_bytes)
+
+    return verify(proof['vk'], h.digest().hex(), proof['proof'])
 
 
 class IdentityProcessor:
-    def __init__(self, wallet: Wallet, pepper: str):
-        self.response = wallet.sign(pepper)
+    def __init__(self, wallet: Wallet, pepper: str, ip_string: str):
+        self.pepper = pepper
+        self.wallet = wallet
+        self.ip_string = ip_string
 
     async def process_msg(self, msg):
-        return self.response
+        return self.create_proof()
+
+    def create_proof(self):
+        now = int(time.time())
+        message = [self.pepper, self.ip_string, now]
+
+        message_bytes = encode(message).encode()
+
+        h = hashlib.sha3_256()
+        h.update(message_bytes)
+
+        signature = self.wallet.sign(h.digest())
+
+        proof = {
+            'proof': signature.hex(),
+            'vk': self.wallet.verifying_key().hex(),
+            'timestamp': now,
+            'ip': self.ip_string
+        }
+
+        return proof
 
 
 EXAMPLE_MESSAGE = {

@@ -58,3 +58,21 @@ BLOCK_RULES = {
     'previous': vk_is_formatted,
     'subblocks': SUBBLOCK_RULES
 }
+
+ROUTER_MESSAGE_RULES = {
+    'service': is_string,
+    'msg': is_dict
+}
+
+JOIN_MESSAGE_RULES = {
+    'vk': vk_is_formatted,
+    'ip': is_tcp_or_ipc_string
+}
+
+# proof = sign (hash (pepper + ip + timestamp), vk)
+PROOF_MESSAGE_RULES = {
+    'proof': signature_is_formatted,
+    'vk': vk_is_formatted,
+    'timestamp': number_is_formatted
+}
+

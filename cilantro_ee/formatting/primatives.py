@@ -102,3 +102,10 @@ def kwargs_are_formatted(k: dict):
 def is_string(s: str):
     return type(s) == str
 
+
+def is_dict(d: dict):
+    return type(d) == dict
+
+
+def is_tcp_or_ipc_string(s):
+    return True

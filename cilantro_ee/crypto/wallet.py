@@ -29,6 +29,7 @@ def verify(vk: bytes, msg: bytes, signature: bytes):
         return False
     return True
 
+
 class Wallet:
     def __init__(self, seed=None):
         if isinstance(seed, str):

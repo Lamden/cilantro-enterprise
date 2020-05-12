@@ -78,6 +78,57 @@ class TestFormatting(TestCase):
     def test_non_number_fails(self):
         self.assertFalse(primatives.number_is_formatted('1'))
 
+    def test_is_string(self):
+        self.assertTrue(primatives.is_string('123'))
+
+    def test_is_string_fail(self):
+        self.assertFalse(primatives.is_string(1))
+
+    def test_is_dict(self):
+        self.assertTrue(primatives.is_dict({}))
+
+    def test_is_dict_fails(self):
+        self.assertFalse(primatives.is_dict(123))
+
+    def test_is_ip(self):
+        self.assertTrue(primatives.is_ip('127.0.0.1'))
+
+    def test_is_ip_not_string(self):
+        self.assertFalse(primatives.is_ip(123))
+
+    def test_is_ip_more_than_4_comps(self):
+        self.assertFalse(primatives.is_ip('127.0.0.1.8'))
+
+    def test_is_ip_non_numerics(self):
+        self.assertFalse(primatives.is_ip('127.0.X.1'))
+
+    def test_is_ip_greater_than_255(self):
+        self.assertFalse(primatives.is_ip('127.999.0.1'))
+
+    def test_is_ip_less_than_0(self):
+        self.assertFalse(primatives.is_ip('-127.0.0.1'))
+
+    def test_is_file_path(self):
+        self.assertTrue(primatives.is_file_path('/tmp/feeds/0'))
+
+    def test_is_file_path_not_string(self):
+        self.assertFalse(primatives.is_file_path(123))
+
+    def test_if_file_more_than_16_parts(self):
+        self.assertFalse(primatives.is_file_path('/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a'))
+
+    def test_if_file_not_alpha_num(self):
+        self.assertFalse(primatives.is_file_path('/a/%!/a/'))
+
+    def test_is_tcp_returns_true(self):
+        self.assertTrue(primatives.is_tcp_or_ipc_string('tcp://127.0.0.1'))
+
+    def test_is_ipc_returns_true(self):
+        self.assertTrue(primatives.is_tcp_or_ipc_string('ipc:///tmp/123'))
+
+    def test_is_unsupported_returns_false(self):
+        self.assertFalse(primatives.is_tcp_or_ipc_string('xxx://123.123.123'))
+
     def test_kwargs_formatted_passes(self):
         d = {
             'asdf': 12,

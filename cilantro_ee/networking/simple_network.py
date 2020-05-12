@@ -7,6 +7,8 @@ from contracting.db.encoder import encode
 import time
 import hashlib
 
+from cilantro_ee.formatting import rules, primatives
+
 PROOF_EXPIRY = 15
 PEPPER = 'cilantroV1'
 
@@ -63,10 +65,7 @@ class JoinProcessor:
     async def process_msg(self, msg):
         # Send ping to peer server to verify
 
-        if msg.get('ip') is None:
-            return
-
-        if msg.get('vk') is None:
+        if not primatives.check_format(msg, rules.JOIN_MESSAGE_RULES):
             return
 
         response = await request(socket_str=msg.get('ip'), service='identity', msg={}, ctx=self.ctx)

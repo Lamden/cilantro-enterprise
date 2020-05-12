@@ -3,9 +3,19 @@ from cilantro_ee.networking.simple_network import *
 from cilantro_ee.crypto.wallet import Wallet
 
 import asyncio
+import zmq.asyncio
 
 
 class TestProcessors(TestCase):
+    def setUp(self):
+        self.ctx = zmq.asyncio.Context()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.ctx.destroy()
+        self.loop.close()
+
     def test_identity_processor_create_proof(self):
         w = Wallet()
         i = IdentityProcessor(
@@ -58,4 +68,19 @@ class TestProcessors(TestCase):
         proof = loop.run_until_complete(i.process_msg({}))
 
         self.assertTrue(verify_proof(proof, 'test'))
+
+    def test_join_processor_returns_none_if_message_not_formatted(self):
+        msg = {
+            'vk': 'bad',
+            'ip': 'bad'
+        }
+
+        j = JoinProcessor(
+            ctx=self.ctx,
+            peers={}
+        )
+
+        res = self.loop.run_until_complete(j.process_msg(msg))
+
+        self.assertIsNone(res)
 

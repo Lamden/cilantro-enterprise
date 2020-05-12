@@ -1,5 +1,8 @@
 import re
 
+TCP = 'tcp://'
+IPC = 'ipc://'
+
 
 # Recursive engine to process rules on validation. Define base rules here and reference other rule sets to make
 # object like things.
@@ -107,5 +110,52 @@ def is_dict(d: dict):
     return type(d) == dict
 
 
-def is_tcp_or_ipc_string(s):
+def is_ip(s):
+    if not is_string(s):
+        return False
+
+    a = s.split('.')
+
+    if len(a) != 4:
+        return False
+
+    for x in a:
+        if not x.isdigit():
+            return False
+
+        i = int(x)
+        if i < 0 or i > 255:
+            return False
+
     return True
+
+
+def is_file_path(s):
+    if not is_string(s):
+        return False
+
+    a = s.split('/')
+
+    if len(a) > 16:
+        return False
+
+    for comp in a:
+        if len(comp) == 0:
+            continue
+
+        if not comp.isalnum():
+            return False
+
+    return True
+
+
+def is_tcp_or_ipc_string(s: str):
+    if s.startswith(TCP):
+        sub = s[len(TCP):]
+        return is_ip(sub)
+
+    elif s.startswith(IPC):
+        sub = s[len(IPC):]
+        return is_file_path(sub)
+
+    return False

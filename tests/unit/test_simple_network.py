@@ -24,10 +24,12 @@ class TestProcessors(TestCase):
         i = IdentityProcessor(
             wallet=w,
             pepper='test',
-            ip_string='tcp://127.0.0.1'
+            ip_string='tcp://127.0.0.1:9999'
         )
 
         proof = i.create_proof()
+
+        print(proof)
 
         self.assertTrue(verify_proof(proof, 'test'))
 
@@ -36,7 +38,7 @@ class TestProcessors(TestCase):
         i = IdentityProcessor(
             wallet=w,
             pepper='test',
-            ip_string='tcp://127.0.0.1'
+            ip_string='tcp://127.0.0.1:9999'
         )
 
         proof = i.create_proof()
@@ -50,7 +52,7 @@ class TestProcessors(TestCase):
         i = IdentityProcessor(
             wallet=w,
             pepper='test',
-            ip_string='tcp://127.0.0.1'
+            ip_string='tcp://127.0.0.1:9999'
         )
 
         proof = i.create_proof()
@@ -64,7 +66,7 @@ class TestProcessors(TestCase):
         i = IdentityProcessor(
             wallet=w,
             pepper='test',
-            ip_string='tcp://127.0.0.1'
+            ip_string='tcp://127.0.0.1:9999'
         )
 
         loop = asyncio.get_event_loop()

@@ -71,7 +71,7 @@ JOIN_MESSAGE_RULES = {
 
 # proof = signed hash of proof tuple
 PROOF_MESSAGE_RULES = {
-    'proof': signature_is_formatted,
+    'signature': signature_is_formatted,
     'vk': vk_is_formatted,
     'timestamp': number_is_formatted,
     'ip': is_tcp_or_ipc_string

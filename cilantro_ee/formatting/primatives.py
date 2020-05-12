@@ -110,9 +110,34 @@ def is_dict(d: dict):
     return type(d) == dict
 
 
+def _has_port(s):
+    a = s.split(':')
+    if len(a) != 2:
+        return False
+
+    port = a[1]
+
+    if not port.isdigit():
+        return False
+
+    i = int(port)
+
+    if i < 1024 or i > 65535:
+        return False
+
+    return True
+
+
 def is_ip(s):
     if not is_string(s):
         return False
+
+    # Check if it has a port
+    if not _has_port(s):
+        return False
+
+    # Discard port information
+    s = s.split(':')[0]
 
     a = s.split('.')
 

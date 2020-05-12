@@ -2,6 +2,9 @@ from unittest import TestCase
 from cilantro_ee.networking.simple_network import *
 from cilantro_ee.crypto.wallet import Wallet
 
+from cilantro_ee.inbox import JSONAsyncInbox
+from cilantro_ee.struct import _socket
+
 import asyncio
 import zmq.asyncio
 
@@ -87,7 +90,7 @@ class TestProcessors(TestCase):
     def test_join_processor_good_message_offline_returns_none(self):
         msg = {
             'vk': '0' * 64,
-            'ip': 'tcp://127.0.0.1'
+            'ip': 'tcp://127.0.0.1:18000'
         }
 
         j = JoinProcessor(
@@ -98,3 +101,34 @@ class TestProcessors(TestCase):
         res = self.loop.run_until_complete(j.process_msg(msg))
         self.assertIsNone(res)
 
+    def test_join_processor_good_message_bad_proof_returns_none(self):
+        msg = {
+            'vk': '0' * 64,
+            'ip': 'tcp://127.0.0.1:18000'
+        }
+
+        j = JoinProcessor(
+            ctx=self.ctx,
+            peers={}
+        )
+
+        async def get():
+            socket = self.ctx.socket(zmq.ROUTER)
+            socket.bind('tcp://127.0.0.1:18000')
+
+            res = await socket.recv_multipart()
+            msg = b'{"howdy": 123}'
+            await socket.send_multipart(
+                [res[0], msg]
+            )
+
+            return res
+
+        tasks = asyncio.gather(
+            get(),
+            j.process_msg(msg)
+        )
+
+        res = self.loop.run_until_complete(tasks)
+
+        self.assertIsNone(res[1])

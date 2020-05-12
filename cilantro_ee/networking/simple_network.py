@@ -15,6 +15,9 @@ PEPPER = 'cilantroV1'
 
 def verify_proof(proof, pepper):
     # Proofs expire after a minute
+    if not primatives.check_format(proof, rules.PROOF_MESSAGE_RULES):
+        return False
+
     if int(time.time()) - proof['timestamp'] > PROOF_EXPIRY:
         return False
 

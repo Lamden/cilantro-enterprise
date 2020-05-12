@@ -2,6 +2,7 @@ from cilantro_ee.inbox import JSONAsyncInbox
 import zmq.asyncio
 from contracting.db.encoder import encode
 from zmq.error import ZMQBaseError
+from contracting.db.encoder import decode
 # new block
 # work
 # sub block contenders
@@ -110,6 +111,8 @@ async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Con
     if event:
         response = await socket.recv()
 
+        msg = decode(response)
+
         socket.close()
 
-    return response
+    return msg

@@ -107,7 +107,7 @@ async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Con
     await socket.send(payload)
 
     event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
-    response = None
+    msg = None
     if event:
         response = await socket.recv()
 

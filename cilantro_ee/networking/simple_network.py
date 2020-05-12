@@ -79,8 +79,8 @@ class JoinProcessor:
         if not verify_proof(response, PEPPER):
             return
 
-        if response not in self.peers:
-            await self.forward_to_peers(response)
+        if msg.get('vk') not in self.peers:
+            await self.forward_to_peers(msg)
 
         self.peers[msg.get('vk')] = msg.get('ip')
 
@@ -89,7 +89,7 @@ class JoinProcessor:
         }
 
     async def forward_to_peers(self, msg):
-        for peer in self.peers:
+        for peer in self.peers.values():
             asyncio.ensure_future(
                 request(
                     socket_str=peer,

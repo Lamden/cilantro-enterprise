@@ -8,7 +8,7 @@ import time
 import hashlib
 
 PROOF_EXPIRY = 15
-PEPPER = b'cilantroV1'
+PEPPER = 'cilantroV1'
 
 
 def verify_proof(proof, pepper):
@@ -22,7 +22,7 @@ def verify_proof(proof, pepper):
     h = hashlib.sha3_256()
     h.update(message_bytes)
 
-    return verify(proof['vk'], h.digest().hex(), proof['proof'])
+    return verify(proof['vk'], h.digest().hex(), proof['signature'])
 
 
 class IdentityProcessor:
@@ -46,7 +46,7 @@ class IdentityProcessor:
         signature = self.wallet.sign(h.digest())
 
         proof = {
-            'proof': signature.hex(),
+            'signature': signature.hex(),
             'vk': self.wallet.verifying_key().hex(),
             'timestamp': now,
             'ip': self.ip_string

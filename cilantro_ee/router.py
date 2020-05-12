@@ -1,4 +1,6 @@
 from cilantro_ee.inbox import JSONAsyncInbox
+import zmq.asyncio
+from contracting.db.encoder import encode
 
 # new block
 # work
@@ -79,3 +81,28 @@ class Router(JSONAsyncInbox):
 
     def add_service(self, name: str, processor: Processor):
         self.services[name] = processor
+
+
+async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Context, timeout=1000, linger=500):
+    socket = ctx.socket(zmq.DEALER)
+    socket.setsockopt(zmq.LINGER, linger)
+    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
+    socket.connect(socket_str)
+
+    message = {
+        'service': service,
+        'msg': msg
+    }
+
+    payload = encode(message).encode()
+
+    await socket.send(payload)
+
+    event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
+    response = None
+    if event:
+        response = await socket.recv()
+
+        socket.close()
+
+    return response

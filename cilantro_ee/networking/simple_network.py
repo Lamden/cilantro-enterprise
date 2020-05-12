@@ -1,13 +1,14 @@
 from cilantro_ee.crypto.wallet import Wallet, verify
 import zmq.asyncio
 from copy import deepcopy
-from cilantro_ee import struct, services
+from cilantro_ee.router import request
 import asyncio
 from contracting.db.encoder import encode
 import time
 import hashlib
 
 PROOF_EXPIRY = 15
+PEPPER = b'cilantroV1'
 
 
 def verify_proof(proof, pepper):
@@ -54,12 +55,6 @@ class IdentityProcessor:
         return proof
 
 
-EXAMPLE_MESSAGE = {
-    'ip': '127.0.0.1',
-    'vk': 'asdfasdfasdf'
-}
-
-
 class JoinProcessor:
     def __init__(self, ctx, peers):
         self.ctx = ctx
@@ -74,20 +69,12 @@ class JoinProcessor:
         if msg.get('vk') is None:
             return
 
-        socket = struct._socket(msg.get('ip'))
-
-        request = {
-            'service': 'identity',
-            'msg': {
-            }
-        }
-
-        response = await services.get(socket_id=socket, msg=request, ctx=self.ctx, timeout=1000)
+        response = await request(socket_str=msg.get('ip'), service='identity', msg={}, ctx=self.ctx)
 
         if response is None:
             return
 
-        if not self.verify_ping(response):
+        if not verify_proof(response, PEPPER):
             return
 
         if response not in self.peers:
@@ -96,14 +83,19 @@ class JoinProcessor:
         self.peers[msg.get('vk')] = msg.get('ip')
 
         return {
-            'response': 'accepted'
+            'peers': self.peers
         }
 
-    def verify_ping(self, ping):
-        pass
-
     async def forward_to_peers(self, msg):
-        pass
+        for peer in self.peers:
+            asyncio.ensure_future(
+                request(
+                    socket_str=peer,
+                    service='join',
+                    msg=msg,
+                    ctx=self.ctx
+                )
+            )
 
 
 class PeerProcessor:
@@ -127,7 +119,7 @@ class Network:
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers)
 
         self.join_msg = {
-            'service': 'identity',
+            'service': 'join',
             'msg': {
                 'ip': self.socket_base,
                 'vk': self.wallet.verifying_key().hex()
@@ -141,7 +133,12 @@ class Network:
 
         while len(to_contact) > 0:
             coroutines = [
-                services.get(socket_id=node, msg=self.join_msg, ctx=self.ctx, timeout=1000) for node in bootnodes
+                request(
+                    socket_str=node,
+                    service='join',
+                    msg=self.join_msg,
+                    ctx=self.ctx
+                ) for node in bootnodes
             ]
 
             results = await asyncio.gather(*coroutines)
@@ -153,23 +150,15 @@ class Network:
                 if not self.verify_join(result):
                     continue
 
-                self.add_peer(result)
+                self.peers.update(result['peers'])
+
                 results.remove(result)
-
-
-        pass
-
-    def add_peer(self, result):
-        pass
 
     def join(self, seednode):
         pass
 
     def verify_join(self, msg):
-        if msg.get('response') is None:
-            return False
-
-        if msg.get('response') != 'accepted':
+        if msg.get('peers') is None:
             return False
 
         return True

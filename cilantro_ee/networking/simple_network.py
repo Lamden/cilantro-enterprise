@@ -8,6 +8,7 @@ import time
 import hashlib
 
 from cilantro_ee.formatting import rules, primatives
+from cilantro_ee.router import Processor
 
 PROOF_EXPIRY = 15
 PEPPER = 'cilantroV1'
@@ -30,13 +31,13 @@ def verify_proof(proof, pepper):
     return verify(proof['vk'], h.digest().hex(), proof['signature'])
 
 
-class IdentityProcessor:
-    def __init__(self, wallet: Wallet, pepper: str, ip_string: str):
+class IdentityProcessor(Processor):
+    def __init__(self, wallet: Wallet, ip_string: str, pepper: str=PEPPER):
         self.pepper = pepper
         self.wallet = wallet
         self.ip_string = ip_string
 
-    async def process_msg(self, msg):
+    async def process_message(self, msg):
         return self.create_proof()
 
     def create_proof(self):
@@ -60,14 +61,13 @@ class IdentityProcessor:
         return proof
 
 
-class JoinProcessor:
+class JoinProcessor(Processor):
     def __init__(self, ctx, peers):
         self.ctx = ctx
         self.peers = peers
 
-    async def process_msg(self, msg):
+    async def process_message(self, msg):
         # Send ping to peer server to verify
-
         if not primatives.check_format(msg, rules.JOIN_MESSAGE_RULES):
             return
 
@@ -113,37 +113,25 @@ class Network:
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers)
 
         self.join_msg = {
-            'service': 'join',
-            'msg': {
-                'ip': ip_string,
-                'vk': self.wallet.verifying_key().hex()
-            }
+            'ip': ip_string,
+            'vk': self.wallet.verifying_key().hex()
         }
 
     async def start(self, bootnodes, vks):
         # Join all bootnodes
         while not self.all_vks_found(vks):
-            coroutines = [
-                request(
-                    socket_str=node,
-                    service='join',
-                    msg=self.join_msg,
-                    ctx=self.ctx
-                ) for node in bootnodes
-            ]
+            coroutines = [request(socket_str=node, service='join', msg=self.join_msg, ctx=self.ctx)
+                          for node in bootnodes]
 
             results = await asyncio.gather(*coroutines)
 
             for result in results:
-                if result is None:
+                if result is None or result == {'response': 'ok'}:
                     continue
 
                 for peer in result['peers']:
-                    self.peers.update(
-                        {
-                            peer['vk']: peer['ip']
-                        }
-                    )
+                    if self.peers.get(peer['vk']) is None:
+                        self.peers[peer['vk']] = peer['ip']
 
     def all_vks_found(self, vks):
         for vk in vks:

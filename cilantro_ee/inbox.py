@@ -5,6 +5,7 @@ import zmq
 from cilantro_ee.struct import SocketStruct, Protocols
 from contracting.db.encoder import encode, decode
 
+
 class AsyncInbox:
     def __init__(self, socket_id: SocketStruct, ctx: zmq.Context, wallet=None, linger=1000, poll_timeout=50):
         if socket_id.protocol == Protocols.TCP:

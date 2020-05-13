@@ -3,6 +3,8 @@ from cilantro_ee.networking.simple_network import *
 from cilantro_ee.crypto.wallet import Wallet
 
 from contracting.db.encoder import encode, decode
+from cilantro_ee.router import Router
+from cilantro_ee.struct import _socket
 
 import asyncio
 import zmq.asyncio
@@ -67,7 +69,7 @@ class TestProcessors(TestCase):
         )
 
         loop = asyncio.get_event_loop()
-        proof = loop.run_until_complete(i.process_msg({}))
+        proof = loop.run_until_complete(i.process_message({}))
 
         self.assertTrue(verify_proof(proof, 'test'))
 
@@ -82,7 +84,7 @@ class TestProcessors(TestCase):
             peers={}
         )
 
-        res = self.loop.run_until_complete(j.process_msg(msg))
+        res = self.loop.run_until_complete(j.process_message(msg))
 
         self.assertIsNone(res)
 
@@ -97,7 +99,7 @@ class TestProcessors(TestCase):
             peers={}
         )
 
-        res = self.loop.run_until_complete(j.process_msg(msg))
+        res = self.loop.run_until_complete(j.process_message(msg))
         self.assertIsNone(res)
 
     def test_join_processor_good_message_bad_proof_returns_none(self):
@@ -125,7 +127,7 @@ class TestProcessors(TestCase):
 
         tasks = asyncio.gather(
             get(),
-            j.process_msg(msg)
+            j.process_message(msg)
         )
 
         res = self.loop.run_until_complete(tasks)
@@ -168,7 +170,7 @@ class TestProcessors(TestCase):
 
         tasks = asyncio.gather(
             get(),
-            j.process_msg(msg)
+            j.process_message(msg)
         )
 
         self.loop.run_until_complete(tasks)
@@ -224,7 +226,7 @@ class TestProcessors(TestCase):
 
         tasks = asyncio.gather(
             get(),
-            j.process_msg(msg),
+            j.process_message(msg),
             reply()
         )
 
@@ -306,3 +308,81 @@ class TestNetwork(TestCase):
 
         self.assertDictEqual(n.peers, expected)
 
+    def test_mock_multiple_networks(self):
+        bootnodes = ['tcp://127.0.0.1:18001',
+                     'tcp://127.0.0.1:18002',
+                     'tcp://127.0.0.1:18003']
+
+        w1 = Wallet()
+        n1 = Network(
+            wallet=w1,
+            ip_string=bootnodes[0],
+            ctx=self.ctx
+        )
+        r1 = Router(
+            socket_id=_socket(bootnodes[0]),
+            ctx=self.ctx,
+            wallet=w1
+        )
+        r1.add_service('identity', IdentityProcessor(wallet=w1, ip_string=bootnodes[0]))
+        r1.add_service('join', JoinProcessor(self.ctx, n1.peers))
+
+        w2 = Wallet()
+        n2 = Network(
+            wallet=w2,
+            ip_string=bootnodes[1],
+            ctx=self.ctx
+        )
+        r2 = Router(
+            socket_id=_socket(bootnodes[1]),
+            ctx=self.ctx,
+            wallet=w1
+        )
+        r2.add_service('identity', IdentityProcessor(wallet=w2, ip_string=bootnodes[1]))
+        r2.add_service('join', JoinProcessor(self.ctx, n2.peers))
+
+        w3 = Wallet()
+        n3 = Network(
+            wallet=w3,
+            ip_string=bootnodes[2],
+            ctx=self.ctx
+        )
+        r3 = Router(
+            socket_id=_socket(bootnodes[2]),
+            ctx=self.ctx,
+            wallet=w1
+        )
+        r3.add_service('identity', IdentityProcessor(wallet=w3, ip_string=bootnodes[2]))
+        r3.add_service('join', JoinProcessor(self.ctx, n3.peers))
+
+        vks = [w1.verifying_key().hex(),
+               w2.verifying_key().hex(),
+               w3.verifying_key().hex()]
+
+        async def stop_server(s: Router, timeout=0.2):
+            await asyncio.sleep(timeout)
+            s.stop()
+
+        tasks = asyncio.gather(
+            r1.serve(),
+            r2.serve(),
+            r3.serve(),
+            n1.start(bootnodes, vks),
+            n2.start(bootnodes, vks),
+            n3.start(bootnodes, vks),
+            stop_server(r1),
+            stop_server(r2),
+            stop_server(r3),
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        expected = {
+            w1.verifying_key().hex(): bootnodes[0],
+            w2.verifying_key().hex(): bootnodes[1],
+            w3.verifying_key().hex(): bootnodes[2],
+        }
+
+        self.assertDictEqual(n1.peers, expected)
+        self.assertDictEqual(n2.peers, expected)
+        self.assertDictEqual(n3.peers, expected)

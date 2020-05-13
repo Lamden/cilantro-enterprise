@@ -58,10 +58,10 @@ class Router(JSONAsyncInbox):
         super().__init__(*args, **kwargs)
 
     async def handle_msg(self, _id, msg):
-        inbox = msg.get('inbox')
+        service = msg.get('service')
         request = msg.get('msg')
 
-        if inbox is None:
+        if service is None:
             await super().return_msg(_id, OK)
             return
 
@@ -69,7 +69,7 @@ class Router(JSONAsyncInbox):
             await super().return_msg(_id, OK)
             return
 
-        processor = self.services.get(inbox)
+        processor = self.services.get(service)
 
         if processor is None:
             await super().return_msg(_id, OK)

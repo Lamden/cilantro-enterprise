@@ -12,7 +12,7 @@ from cilantro_ee.authentication import SocketAuthenticator
 from cilantro_ee.storage import StateDriver
 from contracting.client import ContractingClient
 
-from cilantro_ee.nodes.rewards import RewardManager
+from cilantro_ee.nodes import rewards
 from cilantro_ee.cli.utils import version_reboot
 
 from cilantro_ee.logger.base import get_logger
@@ -169,10 +169,6 @@ class Node:
         self.new_block_processor = NewBlock(driver=self.driver)
         self.router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
 
-        ### 'Declass' This
-        self.reward_manager = RewardManager(driver=self.driver, debug=True)
-        ###
-
         self.running = False
 
     async def catchup(self, mn_seed):
@@ -202,7 +198,7 @@ class Node:
             self.log.info('Processing new block...')
             self.driver.update_with_block(block)
 
-            self.reward_manager.issue_rewards(block=block)
+            rewards.issue_rewards(block=block, client=self.client)
             self.update_sockets()
 
             if self.store:

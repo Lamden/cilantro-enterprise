@@ -1,13 +1,9 @@
-from cilantro_ee.nodes.catchup import BlockFetcher
 from cilantro_ee.storage import MasterStorage
 
 from cilantro_ee.networking.simple_network import Network
 from cilantro_ee.router import Router
 
-from cilantro_ee.nodes.new_block_inbox import NBNInbox
-from cilantro_ee.storage import VKBook
 from cilantro_ee.contracts import sync
-from cilantro_ee.networking.parameters import Parameters, ServiceType, NetworkParameters
 import cilantro_ee
 import zmq.asyncio
 import asyncio
@@ -42,14 +38,15 @@ class Node:
 
         self.log = get_logger('NODE')
         self.log.propagate = debug
-        self.log.info(constitution)
         self.socket_base = socket_base
         self.wallet = wallet
         self.ctx = ctx
-        self.ctx.max_sockets = 50_000
 
-        self.client = ContractingClient(driver=self.driver,
-                                        submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py')
+        ### Contain in module
+        self.client = ContractingClient(
+            driver=self.driver,
+            submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py'
+        )
 
         # Sync contracts
 
@@ -64,17 +61,10 @@ class Node:
 
         self.driver.commit()
         self.driver.clear_pending_state()
-
-        self.contacts = VKBook(
-            client=self.client,
-            boot_mn=constitution['masternode_min_quorum'],
-            boot_del=constitution['delegate_min_quorum'],
-        )
+        ###
 
         self.current_masters = deepcopy(self.contacts.masternodes)
         self.current_delegates = deepcopy(self.contacts.delegates)
-
-        self.parameters = Parameters(socket_base, ctx, wallet, contacts=self.contacts)
 
         self.socket_authenticator = SocketAuthenticator(ctx=self.ctx)
 
@@ -192,7 +182,7 @@ class Node:
 
         self.version_check()
 
-    async def start(self):
+    async def start(self, bootnodes, vks):
         await self.network.start()
 
         # Start block server

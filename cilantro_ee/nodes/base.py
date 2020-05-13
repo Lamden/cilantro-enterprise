@@ -1,6 +1,6 @@
 from cilantro_ee.storage import BlockStorage
 
-from cilantro_ee.networking.simple_network import Network
+from cilantro_ee.network import Network
 from cilantro_ee.router import Router, request, Processor
 
 from cilantro_ee.contracts import sync
@@ -9,7 +9,7 @@ import zmq.asyncio
 import asyncio
 
 from cilantro_ee.authentication import SocketAuthenticator
-from cilantro_ee.storage.contract import StateDriver
+from cilantro_ee.storage import StateDriver
 from contracting.client import ContractingClient
 
 from cilantro_ee.nodes.rewards import RewardManager
@@ -104,7 +104,7 @@ class Node:
         ### Contain in module
         self.client = ContractingClient(
             driver=self.driver,
-            submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py'
+            submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py' # Can this be deprecated?
         )
 
         # Sync contracts
@@ -124,6 +124,7 @@ class Node:
 
         self.socket_authenticator = SocketAuthenticator(ctx=self.ctx)
 
+        ### Put this into socket authenticator
         self.elect_masternodes = self.client.get_contract('elect_masternodes')
         self.elect_delegates = self.client.get_contract('elect_delegates')
 
@@ -131,9 +132,9 @@ class Node:
         self.delegate_contract = self.client.get_contract('delegates')
 
         self.update_sockets()
+        ###
 
         # Cilantro version / upgrade
-
         self.version_state = self.client.get_contract('upgrade')
         self.active_upgrade = self.version_state.quick_read('upg_lock')
 
@@ -168,7 +169,9 @@ class Node:
         self.new_block_processor = NewBlock(driver=self.driver)
         self.router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
 
+        ### 'Declass' This
         self.reward_manager = RewardManager(driver=self.driver, debug=True)
+        ###
 
         self.running = False
 
@@ -195,22 +198,16 @@ class Node:
             return self.driver.latest_block_num < block['blockNum'] and block['hash'] != 'f' * 64
 
     def process_block(self, block):
-        # self.driver.reads.clear()
-        # self.driver.cache.clear()
-        #
-        # self.log.info(f'PENDING WRITES :{self.driver.pending_writes}')
-        # self.driver.pending_writes.clear()
-
         if self.should_process(block):
             self.log.info('Processing new block...')
             self.driver.update_with_block(block)
+
             self.reward_manager.issue_rewards(block=block)
             self.update_sockets()
 
             if self.store:
                 self.blocks.store_block(block)
-                #self.reward_manager.issue_rewards(block=block)
-                #self.update_sockets()
+
         else:
             self.log.error('Could not store block...')
             if self.driver.latest_block_num >= block['blockNum']:
@@ -254,6 +251,7 @@ class Node:
         self.nbn_inbox.stop()
         self.running = False
 
+    # Move this to authenticator?
     def update_sockets(self):
         od_mn = self.elect_masternodes.quick_read('top_candidate')
         od_dl = self.elect_delegates.quick_read('top_candidate')
@@ -269,6 +267,7 @@ class Node:
             on_deck_delegate=od_dl
         )
 
+    # Move this to another module
     def version_check(self):
 
         # check for trigger
@@ -294,6 +293,7 @@ class Node:
             # ready
             #TODO we can merge it with vote - to be decided
 
+    # Move this to another module
     def get_update_state(self):
         self.active_upgrade = self.version_state.quick_read('upg_lock')
         start_time = self.version_state.quick_read('upg_init_time')

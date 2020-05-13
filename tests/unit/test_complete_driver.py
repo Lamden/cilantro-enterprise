@@ -1,5 +1,5 @@
 from unittest import TestCase
-from cilantro_ee.storage.contract import BlockchainDriver
+from cilantro_ee.storage.contract import StateDriver
 import secrets
 import os
 import capnp
@@ -9,7 +9,7 @@ from cilantro_ee.storage.contract import PENDING_NONCE_KEY, NONCE_KEY
 
 class TestCompleteDriver(TestCase):
     def setUp(self):
-        self.db = BlockchainDriver()
+        self.db = StateDriver()
         self.db.flush()
 
     def tearDown(self):

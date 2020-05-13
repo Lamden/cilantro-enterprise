@@ -4,7 +4,7 @@ from cilantro_ee.crypto.wallet import Wallet
 import zmq.asyncio
 from contracting.client import ContractingClient
 from decimal import Decimal
-from cilantro_ee.storage import MasterStorage
+from cilantro_ee.storage import BlockStorage
 
 
 class TestGovernanceOrchestration(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestGovernanceOrchestration(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         ContractingClient().flush()
-        MasterStorage().drop_collections()
+        BlockStorage().drop_collections()
 
     def tearDown(self):
         self.ctx.destroy()

@@ -6,7 +6,7 @@ import json as _json
 from contracting.client import ContractingClient
 from contracting.db.encoder import encode, decode
 from contracting.compilation import parser
-from cilantro_ee.storage import MasterStorage, BlockchainDriver
+from cilantro_ee.storage import BlockStorage, StateDriver
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
 from cilantro_ee.nodes.masternode.server.tx_validator import TransactionException
 
@@ -27,7 +27,7 @@ class ByteEncoder(_json.JSONEncoder):
 
 
 class WebServer:
-    def __init__(self, contracting_client: ContractingClient, driver: BlockchainDriver, wallet, blocks, queue=[], port=8080, ssl_port=443, ssl_enabled=False,
+    def __init__(self, contracting_client: ContractingClient, driver: StateDriver, wallet, blocks, queue=[], port=8080, ssl_port=443, ssl_enabled=False,
                  ssl_cert_file='~/.ssh/server.csr',
                  ssl_key_file='~/.ssh/server.key',
                  workers=2, debug=True, access_log=False,
@@ -261,7 +261,7 @@ class WebServer:
         return response.json({'values': values, 'next': values[-1][0]}, status=200)
 
     async def get_latest_block(self, request):
-        index = self.blocks.get_last_n(n=1, collection=MasterStorage.BLOCK)
+        index = self.blocks.get_last_n(n=1, collection=BlockStorage.BLOCK)
         return response.json(index[0], dumps=ByteEncoder().encode)
 
     async def get_latest_block_number(self, request):

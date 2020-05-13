@@ -14,7 +14,7 @@ from cilantro_ee.nodes.new_block_inbox import NBNInbox
 from cilantro_ee.struct import _socket
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from cilantro_ee.crypto.transaction_batch import transaction_list_to_transaction_batch
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 from contracting import config
 import os
 import capnp
@@ -68,7 +68,7 @@ def get_tx_batch():
                                        config.DELIMITER,
                                        w.verifying_key().hex())
 
-    driver = BlockchainDriver()
+    driver = StateDriver()
     driver.set(balances_key, 1_000_000)
     driver.commit()
 
@@ -94,7 +94,7 @@ def get_tx_batch():
                                        config.DELIMITER,
                                        w.verifying_key().hex())
 
-    driver = BlockchainDriver()
+    driver = StateDriver()
     driver.set(balances_key, 1_000_000)
     driver.commit()
 
@@ -168,7 +168,7 @@ def make_tx(processor):
                                        config.DELIMITER,
                                        w.verifying_key().hex())
 
-    driver = BlockchainDriver()
+    driver = StateDriver()
     driver.set(balances_key, 1_000_000)
 
     return tx
@@ -352,7 +352,7 @@ class TestNewMasternode(TestCase):
                                            config.DELIMITER,
                                            w.verifying_key().hex())
 
-        driver = BlockchainDriver()
+        driver = StateDriver()
         driver.set(balances_key, 1_000_000)
         driver.commit()
 
@@ -728,7 +728,7 @@ class TestNewMasternode(TestCase):
                                            config.DELIMITER,
                                            w.verifying_key().hex())
 
-        driver = BlockchainDriver()
+        driver = StateDriver()
         driver.set(balances_key, 1_000_000)
         driver.commit()
 

@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import cilantro_ee.nodes.masternode.masternode
 from cilantro_ee.nodes.delegate.delegate import Delegate
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 from cilantro_ee.nodes.delegate import execution
 from contracting.client import ContractingClient
 from contracting.stdlib.bridge.time import Datetime
@@ -74,7 +74,7 @@ def get_tx_batch():
                                        config.DELIMITER,
                                        w.verifying_key().hex())
 
-    driver = BlockchainDriver()
+    driver = StateDriver()
     driver.set(balances_key, 1_000_000)
     driver.commit()
 
@@ -100,7 +100,7 @@ def get_tx_batch():
                                        config.DELIMITER,
                                        w.verifying_key().hex())
 
-    driver = BlockchainDriver()
+    driver = StateDriver()
     driver.set(balances_key, 1_000_000)
     driver.commit()
 

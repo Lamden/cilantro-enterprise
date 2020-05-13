@@ -3,7 +3,7 @@ from cilantro_ee.nodes.masternode.transaction_batcher import TransactionBatcher
 from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.nodes.masternode.contender.contender import Aggregator
 from cilantro_ee.networking.parameters import ServiceType
-from cilantro_ee.storage.contract import BlockchainDriver
+from cilantro_ee.storage.contract import StateDriver
 from cilantro_ee.router import Processor
 from cilantro_ee.formatting import primatives
 import json
@@ -16,7 +16,7 @@ BLOCK_SERVICE = 'service'
 
 
 class BlockService(Processor):
-    def __init__(self, blocks: MasterStorage=None, driver=BlockchainDriver()):
+    def __init__(self, blocks: MasterStorage=None, driver=StateDriver()):
         self.blocks = blocks
         self.driver = driver
 
@@ -150,7 +150,7 @@ class Masternode(Node):
 
     async def send_work(self):
 
-        driver = BlockchainDriver()
+        driver = StateDriver()
         self.active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
 
         # Else, batch some more txs

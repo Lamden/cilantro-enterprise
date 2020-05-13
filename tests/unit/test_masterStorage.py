@@ -1,10 +1,10 @@
 from unittest import TestCase
-from cilantro_ee.storage.master import MasterStorage
+from cilantro_ee.storage import BlockStorage
 
 
 class TestMasterStorage(TestCase):
     def setUp(self):
-        self.db = MasterStorage()
+        self.db = BlockStorage()
 
     def tearDown(self):
         self.db.drop_collections()
@@ -142,7 +142,7 @@ class TestMasterStorage(TestCase):
             'blockOwners': 'stu'
         }
 
-        _id = self.db.put(index, MasterStorage.INDEX)
+        _id = self.db.put(index, BlockStorage.INDEX)
 
         self.assertTrue(_id)
 
@@ -164,7 +164,7 @@ class TestMasterStorage(TestCase):
             'blockOwners': 'stu'
         }
 
-        _id = self.db.put(index, MasterStorage.INDEX)
+        _id = self.db.put(index, BlockStorage.INDEX)
 
         self.assertTrue(_id)
 
@@ -179,7 +179,7 @@ class TestMasterStorage(TestCase):
             'blockOwners': 'stu'
         }
 
-        _id = self.db.put(index, MasterStorage.INDEX)
+        _id = self.db.put(index, BlockStorage.INDEX)
 
         self.assertTrue(_id)
 
@@ -194,7 +194,7 @@ class TestMasterStorage(TestCase):
             'blockOwners': 'stu'
         }
 
-        _id = self.db.put(index, MasterStorage.INDEX)
+        _id = self.db.put(index, BlockStorage.INDEX)
 
         self.assertTrue(_id)
 
@@ -214,7 +214,7 @@ class TestMasterStorage(TestCase):
         for block in blocks:
             self.db.put(block)
 
-        got_blocks = self.db.get_last_n(3, MasterStorage.BLOCK)
+        got_blocks = self.db.get_last_n(3, BlockStorage.BLOCK)
 
         nums = [b['blockNum'] for b in got_blocks]
 
@@ -230,9 +230,9 @@ class TestMasterStorage(TestCase):
         blocks.append({'hash': 'a', 'blockNum': 5, 'data': 'woop'})
 
         for block in blocks:
-            self.db.put(block, MasterStorage.INDEX)
+            self.db.put(block, BlockStorage.INDEX)
 
-        got_blocks = self.db.get_last_n(3, MasterStorage.INDEX)
+        got_blocks = self.db.get_last_n(3, BlockStorage.INDEX)
 
         nums = [b['blockNum'] for b in got_blocks]
 
@@ -248,7 +248,7 @@ class TestMasterStorage(TestCase):
         blocks.append({'hash': 'a', 'blockNum': 5, 'data': 'woop'})
 
         for block in blocks:
-            self.db.put(block, MasterStorage.INDEX)
+            self.db.put(block, BlockStorage.INDEX)
 
         got_blocks = self.db.get_last_n(3, 5)
 

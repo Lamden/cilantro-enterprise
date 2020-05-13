@@ -1,4 +1,4 @@
-from cilantro_ee.storage import MasterStorage
+from cilantro_ee.storage import BlockStorage
 
 from cilantro_ee.networking.simple_network import Network
 from cilantro_ee.router import Router, request, Processor
@@ -9,7 +9,7 @@ import zmq.asyncio
 import asyncio
 
 from cilantro_ee.authentication import SocketAuthenticator
-from cilantro_ee.storage.contract import BlockchainDriver
+from cilantro_ee.storage.contract import StateDriver
 from contracting.client import ContractingClient
 
 from cilantro_ee.nodes.rewards import RewardManager
@@ -59,7 +59,7 @@ async def get_block(block_num: int, ip_string: str, ctx: zmq.asyncio.Context):
 
 
 class NewBlock(Processor):
-    def __init__(self, driver: BlockchainDriver=BlockchainDriver()):
+    def __init__(self, driver: StateDriver=StateDriver()):
         self.q = []
         self.driver = driver
         self.log = get_logger('NBN')
@@ -83,7 +83,7 @@ class NewBlock(Processor):
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, overwrite=False,
-                 bootnodes=[], driver=BlockchainDriver(), debug=True, store=False):
+                 bootnodes=[], driver=StateDriver(), debug=True, store=False):
 
         self.driver = driver
         self.store = store
@@ -91,7 +91,7 @@ class Node:
         self.blocks = None
 
         if self.store:
-            self.blocks = MasterStorage()
+            self.blocks = BlockStorage()
 
         self.waiting_for_confirmation = False
 

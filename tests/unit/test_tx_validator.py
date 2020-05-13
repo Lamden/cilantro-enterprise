@@ -3,7 +3,7 @@ from cilantro_ee.nodes.masternode.server import tx_validator
 from cilantro_ee.crypto.transaction import build_transaction
 from cilantro_ee.crypto.wallet import Wallet, verify
 from contracting.db.encoder import encode, decode
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 
 
 class TestTransactionBuilder(TestCase):
@@ -98,7 +98,7 @@ class TestTransactionBuilder(TestCase):
 
 class TestValidator(TestCase):
     def setUp(self):
-        self.driver = BlockchainDriver()
+        self.driver = StateDriver()
         self.driver.flush()
 
     def test_check_tx_formatting_succeeds(self):

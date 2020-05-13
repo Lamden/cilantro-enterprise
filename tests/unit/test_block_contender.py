@@ -4,7 +4,7 @@ from cilantro_ee.nodes.masternode.contender.contender import BlockContender, Agg
 import zmq.asyncio
 import asyncio
 from cilantro_ee.struct import _socket
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 from cilantro_ee.crypto import canonical
 import secrets
 from cilantro_ee.crypto.wallet import Wallet
@@ -276,7 +276,7 @@ class TestAggregator(TestCase):
         self.loop = asyncio.get_event_loop()
 
     def test_gather_subblocks_all_same_blocks(self):
-        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=BlockchainDriver())
+        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=StateDriver())
 
         c1 = [MockSBC('input_1', 'res_1', 0).to_dict(),
               MockSBC('input_2', 'res_2', 1).to_dict(),
@@ -308,7 +308,7 @@ class TestAggregator(TestCase):
         self.assertEqual(res['subblocks'][3]['merkle_leaves'][0], 'res_4')
 
     def test_mixed_results_still_makes_quorum(self):
-        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=BlockchainDriver())
+        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=StateDriver())
 
         c1 = [MockSBC('input_1', 'res_X', 0).to_dict(),
               MockSBC('input_2', 'res_2', 1).to_dict(),
@@ -340,7 +340,7 @@ class TestAggregator(TestCase):
         self.assertEqual(res['subblocks'][3]['merkle_leaves'][0], 'res_4')
 
     def test_failed_block_on_one_removes_subblock_from_block(self):
-        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=BlockchainDriver())
+        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=StateDriver())
 
         c1 = [MockSBC('input_1', 'res_X', 0).to_dict(),
                              MockSBC('input_2', 'res_2', 1).to_dict(),
@@ -373,7 +373,7 @@ class TestAggregator(TestCase):
             wallet=Wallet(),
             socket_id=_socket('tcp://127.0.0.1:8888'),
             ctx=zmq.asyncio.Context(),
-            driver=BlockchainDriver(),
+            driver=StateDriver(),
             seconds_to_timeout=0.5
         )
 

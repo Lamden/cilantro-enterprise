@@ -2,19 +2,19 @@ import argparse
 from cilantro_ee.cli.utils import validate_ip, version_reboot
 from cilantro_ee.cli.start import start_node, setup_node, join_network
 from cilantro_ee.cli.update import verify_access, verify_pkg, trigger, vote, check_ready_quorum
-from cilantro_ee.storage import MasterStorage, BlockchainDriver
+from cilantro_ee.storage import BlockStorage, StateDriver
 
 
 def flush(args):
     if args.storage_type == 'blocks':
-        MasterStorage().drop_collections()
+        BlockStorage().drop_collections()
         print('All blocks deleted.')
     elif args.storage_type == 'state':
-        BlockchainDriver().flush()
+        StateDriver().flush()
         print('State deleted.')
     elif args.storage_type == 'all':
-        MasterStorage().drop_collections()
-        BlockchainDriver().flush()
+        BlockStorage().drop_collections()
+        StateDriver().flush()
         print('All blocks deleted.')
         print('State deleted.')
     else:

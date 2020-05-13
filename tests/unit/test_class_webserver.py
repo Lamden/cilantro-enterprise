@@ -3,7 +3,7 @@ from unittest import TestCase
 from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.crypto.wallet import Wallet
 from contracting.client import ContractingClient
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 from cilantro_ee.storage import CilantroStorageDriver
 from cilantro_ee.crypto.json_transaction import build_transaction
 from cilantro_ee.messages import capnp_struct as schemas
@@ -12,7 +12,7 @@ import capnp
 
 transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
 
-n = BlockchainDriver()
+n = StateDriver()
 
 
 class TestClassWebserver(TestCase):
@@ -20,7 +20,7 @@ class TestClassWebserver(TestCase):
         self.w = Wallet()
 
         self.blocks = CilantroStorageDriver(key=self.w.verifying_key())
-        self.driver = BlockchainDriver()
+        self.driver = StateDriver()
 
         self.ws = WebServer(
             wallet=self.w,

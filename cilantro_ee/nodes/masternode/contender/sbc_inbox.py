@@ -4,12 +4,12 @@ from cilantro_ee.crypto.canonical import merklize
 from cilantro_ee.crypto.wallet import verify
 from cilantro_ee.logger.base import get_logger
 from cilantro_ee.inbox import SecureAsyncInbox
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 from contracting.db.encoder import encode, decode
 
 
 class SBCInbox(SecureAsyncInbox):
-    def __init__(self, driver: BlockchainDriver, expected_subblocks=4, debug=True, *args, **kwargs):
+    def __init__(self, driver: StateDriver, expected_subblocks=4, debug=True, *args, **kwargs):
         self.q = []
         self.driver = driver
         self.expected_subblocks = expected_subblocks

@@ -1,7 +1,7 @@
 from cilantro_ee.formatting import check_format, rules
 from contracting.db.encoder import encode
 from cilantro_ee.crypto import wallet
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 
 
 class TransactionException(Exception):
@@ -71,7 +71,7 @@ def check_tx_formatting(tx: dict, expected_processor: str):
         return TransactionProcessorInvalid
 
 
-def get_nonces(sender, processor, driver: BlockchainDriver):
+def get_nonces(sender, processor, driver: StateDriver):
     nonce = driver.get_nonce(
         processor=bytes.fromhex(processor),
         sender=bytes.fromhex(sender)

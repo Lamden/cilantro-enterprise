@@ -12,7 +12,6 @@ from zmq.error import ZMQBaseError
 
 # join should send messages to other people if they are not in the peer list
 # ping returns pepper for id verification
-from cilantro_ee.struct import SocketStruct, Protocols
 
 OK = {
     'response': 'ok'
@@ -53,11 +52,8 @@ a message to the requester.
 
 
 class AsyncInbox:
-    def __init__(self, socket_id: SocketStruct, ctx: zmq.Context, wallet=None, linger=1000, poll_timeout=50):
-        if socket_id.protocol == Protocols.TCP:
-            socket_id.id = '*'
-
-        self.address = str(socket_id)
+    def __init__(self, socket_id, ctx: zmq.Context, wallet=None, linger=1000, poll_timeout=50):
+        self.address = socket_id
         self.wallet = wallet
 
         self.ctx = ctx

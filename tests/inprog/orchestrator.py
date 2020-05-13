@@ -7,7 +7,7 @@ from contracting.db.driver import ContractDriver, InMemDriver
 from cilantro_ee.nodes.delegate.delegate import Delegate
 from cilantro_ee.nodes.masternode.masternode import Masternode
 
-from cilantro_ee.storage import BlockchainDriver
+from cilantro_ee.storage import StateDriver
 from cilantro_ee.crypto.transaction import build_transaction
 from contracting import config
 
@@ -42,7 +42,7 @@ def make_network(masternodes, delegates, ctx, mn_min_quorum=2, del_min_quorum=2)
     bootnodes = None
     node_count = 0
     for wallet in mn_wallets:
-        driver = BlockchainDriver(driver=InMemDriver())
+        driver = StateDriver(driver=InMemDriver())
         # driver = IsolatedDriver()
         ipc = f'/tmp/n{node_count}'
         make_ipc(ipc)
@@ -64,7 +64,7 @@ def make_network(masternodes, delegates, ctx, mn_min_quorum=2, del_min_quorum=2)
         node_count += 1
 
     for wallet in dl_wallets:
-        driver = BlockchainDriver(driver=InMemDriver())
+        driver = StateDriver(driver=InMemDriver())
         # driver = IsolatedDriver()
         ipc = f'/tmp/n{node_count}'
         make_ipc(ipc)

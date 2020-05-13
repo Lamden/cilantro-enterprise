@@ -1,30 +1,54 @@
 import asyncio
-from cilantro_ee.nodes.catchup import BlockServer
-from cilantro_ee.outbox import Peers, DEL, ALL
 from cilantro_ee.nodes.masternode.transaction_batcher import TransactionBatcher
 from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.nodes.masternode.contender.contender import Aggregator
 from cilantro_ee.networking.parameters import ServiceType
-from cilantro_ee.crypto import canonical
 from cilantro_ee.storage.contract import BlockchainDriver
-
+from cilantro_ee.router import Processor
+from cilantro_ee.formatting import primatives
 import json
 
 from cilantro_ee.nodes.base import Node
 from contracting.db.encoder import encode
 
+
+BLOCK_SERVICE = 'service'
+
+
+class BlockService(Processor):
+    def __init__(self, blocks: MasterStorage=None, driver=BlockchainDriver()):
+        self.blocks = blocks
+        self.driver = driver
+
+    async def process_message(self, msg):
+        response = {}
+        if primatives.dict_has_keys(msg, keys={'name', 'arg'}):
+            if msg['name'] == GET_BLOCK:
+                response = self.get_block(msg)
+            elif msg['name'] == GET_HEIGHT:
+                response = self.driver.get_latest_block_num()
+
+        return response
+
+    def get_block(self, command):
+        num = command.get('arg')
+        if not primatives.number_is_formatted(num):
+            return {}
+
+        block = self.blocks.get_block(num)
+
+        if block is None:
+            return {}
+
+        return block
+
+
 class Masternode(Node):
     def __init__(self, webserver_port=8080, *args, **kwargs):
         super().__init__(store=True, *args, **kwargs)
         # Services
-        self.block_server = BlockServer(
-            blocks=self.blocks,
-            driver=self.driver,
-            ctx=self.ctx,
-            socket_id=self.network_parameters.resolve(self.socket_base, ServiceType.BLOCK_SERVER, bind=True)
-        )
-
-        self.block_fetcher.blocks = self.blocks
+        self.block_processor = BlockService(self.blocks, self.driver)
+        self.router.add_service(BLOCK_SERVICE, self.block_processor)
 
         self.webserver = WebServer(
             contracting_client=self.client,
@@ -50,22 +74,6 @@ class Masternode(Node):
         # Network upgrade flag
         self.active_upgrade = False
 
-        self.nbn_socket_book = Peers(
-            wallet=self.wallet,
-            ctx=self.ctx,
-            parameters=self.parameters,
-            service_type=ServiceType.BLOCK_NOTIFICATIONS,
-            node_type=ALL
-        )
-
-        self.delegate_work_socket_book = Peers(
-            wallet=self.wallet,
-            ctx=self.ctx,
-            parameters=self.parameters,
-            service_type=ServiceType.INCOMING_WORK,
-            node_type=DEL
-        )
-
         self.masternode_contract = self.client.get_contract('masternodes')
 
     async def start(self):
@@ -77,19 +85,11 @@ class Masternode(Node):
         self.driver.latest_block_num = latest_block['blockNum']
         self.driver.latest_block_hash = latest_block['hash']
 
-        #
-        asyncio.ensure_future(self.block_server.serve())
         self.webserver.queue = self.tx_batcher.queue
         await self.webserver.start()
         self.log.info('Done starting...')
         asyncio.ensure_future(self.aggregator.start())
         asyncio.ensure_future(self.run())
-
-    def dl_wk_sks(self):
-        return list(self.parameters.get_delegate_sockets(service=ServiceType.INCOMING_WORK).items())
-
-    def nbn_sks(self):
-        return list(self.parameters.get_all_sockets(service=ServiceType.BLOCK_NOTIFICATIONS).items())
 
     async def run(self):
         self.log.info('Running...')
@@ -101,11 +101,7 @@ class Masternode(Node):
     async def new_blockchain_boot(self):
         self.log.info('Fresh blockchain boot.')
 
-        await self.parameters.refresh()
-        self.nbn_socket_book.sync_sockets()
-        self.delegate_work_socket_book.sync_sockets()
-
-        while len(self.tx_batcher.queue) == 0 and len(self.nbn_inbox.q) == 0:
+        while len(self.tx_batcher.queue) == 0 and len(self.new_block_processor.q) == 0:
             if not self.running:
                 return
             await asyncio.sleep(0)
@@ -130,11 +126,8 @@ class Masternode(Node):
     async def join_quorum(self):
         # Catchup with NBNs until you have work, the join the quorum
         self.log.info('Join Quorum')
-        await self.parameters.refresh()
-        self.nbn_socket_book.sync_sockets()
-        self.delegate_work_socket_book.sync_sockets()
 
-        block = await self.nbn_inbox.wait_for_next_nbn()
+        block = await self.new_block_processor.wait_for_next_nbn()
 
         while self.wallet.verifying_key().hex() not in self.masternode_contract.quick_read("S", "members"):
             # if block number does not equal one more than the current block number
@@ -149,16 +142,7 @@ class Masternode(Node):
 
             self.process_block(block)
 
-            await self.parameters.refresh()
-            self.nbn_socket_book.sync_sockets()
-
-            print(self.contacts.masternodes)
-
-            block = await self.nbn_inbox.wait_for_next_nbn()
-
-        await self.parameters.refresh()
-        self.nbn_socket_book.sync_sockets()
-        self.delegate_work_socket_book.sync_sockets()
+            block = await self.new_block_processor.wait_for_next_nbn()
 
         await self.wait_for_work(block)
 
@@ -172,16 +156,6 @@ class Masternode(Node):
         # Else, batch some more txs
         self.log.info(f'Sending {len(self.tx_batcher.queue)} transactions.')
 
-        # if self.active_upgrade is False:
-        #     tx_batch = self.tx_batcher.pack_current_queue()
-        # elif self.active_upgrade is True:
-        #     consensus_reached = driver.get_var(contract='upgrade', variable='upg_consensus', mark=False)
-        #     if consensus_reached is True:
-        #         tx_batch = self.tx_batcher.make_empty_batch()
-        #         self.log.info('Triggering version reboot')
-        #         # we should never be here node reset should have been done when state changed
-        #     else:
-
         tx_batch = self.tx_batcher.pack_current_queue()
 
         # LOOK AT SOCKETS CLASS
@@ -193,28 +167,17 @@ class Masternode(Node):
                msg=encode(tx_batch).encode()
            )
 
-        ## SEND OUT VIA SOCKETS CLASS
-        # return await secure_multicast(
-        #     wallet=self.wallet,
-        #     ctx=self.ctx,
-        #     msg=tx_batch,
-        #     peers=self.dl_wk_sks()
-        # )
-
-        # return await multicast(self.ctx, tx_batch, self.delegate_work_sockets())  # Works
-
     async def wait_for_work(self, block):
         is_skip_block = block_is_skip_block(block)
 
         if is_skip_block:
             self.log.info('SKIP. Going to hang now...')
 
-
         # If so, hang until you get a new block or some work OR NBN
-        self.nbn_inbox.clean()
+        self.new_block_processor.clean()
 
         while len(self.tx_batcher.queue) <= 0:
-            if len(self.nbn_inbox.q) > 0:
+            if len(self.new_block_processor.q) > 0:
                 self.log.info('''
 === Got a New Block Notification from another Master ===
                 ''')
@@ -224,20 +187,10 @@ class Masternode(Node):
 
     async def process_blocks(self):
         while self.running:
-            await self.parameters.refresh()
-            self.delegate_work_socket_book.sync_sockets()
-
             sends = await self.send_work()
 
             if sends is None:
                 return
-
-            self.log.info(self.contacts.masternodes)
-            self.log.info(self.contacts.delegates)
-
-            self.log.error(f'{len(self.contacts.masternodes)} MNS!')
-
-            self.log.info(f'{sends}')
 
             # this really should just give us a block straight up
             block = await self.aggregator.gather_subblocks(
@@ -251,12 +204,9 @@ class Masternode(Node):
 
             self.process_block(encoded_block)
 
-            await self.parameters.refresh()
-            self.nbn_socket_book.sync_sockets()
-
             await self.wait_for_work(encoded_block)
 
-            sends = await self.nbn_socket_book.send_to_peers(
+            sends = await self.new_block_processor.send_to_peers(
                 msg=encode(block).encode()
             )
 
@@ -267,7 +217,6 @@ class Masternode(Node):
 
     def stop(self):
         super().stop()
-        self.block_server.stop()
         self.webserver.app.stop()
 
 

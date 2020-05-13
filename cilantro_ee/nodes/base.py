@@ -1,7 +1,7 @@
 from cilantro_ee.storage import MasterStorage
 
 from cilantro_ee.networking.simple_network import Network
-from cilantro_ee.router import Router
+from cilantro_ee.router import Router, request, Processor
 
 from cilantro_ee.contracts import sync
 import cilantro_ee
@@ -17,20 +17,79 @@ from cilantro_ee.cli.utils import version_reboot
 
 from cilantro_ee.logger.base import get_logger
 
-from copy import deepcopy
-
 import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+BLOCK_SERVICE = 'service'
+GET_BLOCK = 'get_block'
+GET_HEIGHT = 'get_height'
+NEW_BLOCK_SERVICE = 'new_blocks'
+
+
+async def get_latest_block_height(ip_string: str, ctx: zmq.asyncio.Context):
+    msg = {
+        'name': GET_HEIGHT,
+        'arg': ''
+    }
+
+    response = await request(
+        socket_str=ip_string,
+        service=BLOCK_SERVICE,
+        msg=msg,
+        ctx=ctx
+    )
+
+    return response
+
+
+async def get_block(block_num: int, ip_string: str, ctx: zmq.asyncio.Context):
+    msg = {
+        'name': GET_BLOCK,
+        'arg': block_num
+    }
+
+    response = await request(
+        socket_str=ip_string,
+        service=BLOCK_SERVICE,
+        msg=msg,
+        ctx=ctx
+    )
+
+    return response
+
+
+class NewBlock(Processor):
+    def __init__(self, driver: BlockchainDriver=BlockchainDriver()):
+        self.q = []
+        self.driver = driver
+        self.log = get_logger('NBN')
+
+    async def process_message(self, msg):
+        self.q.append(msg)
+
+    async def wait_for_next_nbn(self):
+        while len(self.q) <= 0:
+            await asyncio.sleep(0)
+
+        nbn = self.q.pop(0)
+
+        self.q.clear()
+
+        return nbn
+
+    def clean(self):
+        self.q = [nbn for nbn in self.q if nbn['blockNum'] >= self.driver.latest_block_num]
 
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, overwrite=False,
-                 bootnodes=[], network_parameters=NetworkParameters(), driver=BlockchainDriver(), debug=True, store=False):
+                 bootnodes=[], driver=BlockchainDriver(), debug=True, store=False):
 
         self.driver = driver
         self.store = store
 
         self.blocks = None
+
         if self.store:
             self.blocks = MasterStorage()
 
@@ -63,9 +122,6 @@ class Node:
         self.driver.clear_pending_state()
         ###
 
-        self.current_masters = deepcopy(self.contacts.masternodes)
-        self.current_delegates = deepcopy(self.contacts.delegates)
-
         self.socket_authenticator = SocketAuthenticator(ctx=self.ctx)
 
         self.elect_masternodes = self.client.get_contract('elect_masternodes')
@@ -96,8 +152,6 @@ class Node:
         # self.pending_cnt = self.all_votes - self.vote_cnt
         # stuff
 
-        self.network_parameters = network_parameters
-
         self.bootnodes = bootnodes
         self.constitution = constitution
         self.overwrite = overwrite
@@ -107,23 +161,12 @@ class Node:
         self.network = Network(
             wallet=wallet,
             ip_string=socket_base + '18000',
-            ctx=self.ctx
+            ctx=self.ctx,
+            router=self.router
         )
 
-        # Should have a function to get the current NBN
-        self.block_fetcher = BlockFetcher(
-            ctx=self.ctx,
-        )
-
-        self.nbn_inbox = NBNInbox(
-            socket_id=self.network_parameters.resolve(
-                self.socket_base,
-                service_type=ServiceType.BLOCK_NOTIFICATIONS,
-                bind=True),
-            ctx=self.ctx,
-            driver=self.driver,
-            wallet=wallet
-        )
+        self.new_block_processor = NewBlock(driver=self.driver)
+        self.router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
 
         self.reward_manager = RewardManager(driver=self.driver, debug=True)
 
@@ -131,13 +174,13 @@ class Node:
 
     async def catchup(self, mn_seed):
         current = self.driver.get_latest_block_num()
-        latest = await self.block_fetcher.get_latest_block_height(mn_seed)
+        latest = await get_latest_block_height(ip_string=mn_seed, ctx=self.ctx)
 
         if current == 0:
             current = 1
 
         for i in range(current, latest):
-            block = await self.block_fetcher.get_block_from_master(i, mn_seed)
+            block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
             block = block.to_dict()
             self.process_block(block)
 

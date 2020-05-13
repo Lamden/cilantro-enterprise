@@ -1,6 +1,7 @@
-from cilantro_ee.networking.network import Network
 from cilantro_ee.nodes.catchup import BlockFetcher
 from cilantro_ee.storage import MasterStorage
+
+from cilantro_ee.networking.simple_network import Network
 
 from cilantro_ee.nodes.new_block_inbox import NBNInbox
 from cilantro_ee.storage import VKBook
@@ -113,19 +114,6 @@ class Node:
         # Should have a function to get the current NBN
         self.block_fetcher = BlockFetcher(
             ctx=self.ctx,
-        )
-
-        self.network = Network(
-            wallet=self.wallet,
-            ctx=self.ctx,
-            socket_base=socket_base,
-            bootnodes=self.bootnodes,
-            params=self.network_parameters,
-            initial_del_quorum=deepcopy(self.contacts.delegate_quorum_min),
-            initial_mn_quorum=deepcopy(self.contacts.masternode_quorum_min),
-            mn_to_find=deepcopy(self.contacts.masternodes),
-            del_to_find=deepcopy(self.contacts.delegates),
-            mn_seed=mn_seed
         )
 
         self.nbn_inbox = NBNInbox(

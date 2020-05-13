@@ -314,46 +314,43 @@ class TestNetwork(TestCase):
                      'tcp://127.0.0.1:18003']
 
         w1 = Wallet()
-        n1 = Network(
-            wallet=w1,
-            ip_string=bootnodes[0],
-            ctx=self.ctx
-        )
         r1 = Router(
             socket_id=_socket(bootnodes[0]),
             ctx=self.ctx,
             wallet=w1
         )
-        r1.add_service('identity', IdentityProcessor(wallet=w1, ip_string=bootnodes[0]))
-        r1.add_service('join', JoinProcessor(self.ctx, n1.peers))
+        n1 = Network(
+            wallet=w1,
+            ip_string=bootnodes[0],
+            ctx=self.ctx,
+            router=r1
+        )
 
         w2 = Wallet()
-        n2 = Network(
-            wallet=w2,
-            ip_string=bootnodes[1],
-            ctx=self.ctx
-        )
         r2 = Router(
             socket_id=_socket(bootnodes[1]),
             ctx=self.ctx,
             wallet=w1
         )
-        r2.add_service('identity', IdentityProcessor(wallet=w2, ip_string=bootnodes[1]))
-        r2.add_service('join', JoinProcessor(self.ctx, n2.peers))
+        n2 = Network(
+            wallet=w2,
+            ip_string=bootnodes[1],
+            ctx=self.ctx,
+            router=r2
+        )
 
         w3 = Wallet()
-        n3 = Network(
-            wallet=w3,
-            ip_string=bootnodes[2],
-            ctx=self.ctx
-        )
         r3 = Router(
             socket_id=_socket(bootnodes[2]),
             ctx=self.ctx,
             wallet=w1
         )
-        r3.add_service('identity', IdentityProcessor(wallet=w3, ip_string=bootnodes[2]))
-        r3.add_service('join', JoinProcessor(self.ctx, n3.peers))
+        n3 = Network(
+            wallet=w3,
+            ip_string=bootnodes[2],
+            ctx=self.ctx,
+            router=r3
+        )
 
         vks = [w1.verifying_key().hex(),
                w2.verifying_key().hex(),

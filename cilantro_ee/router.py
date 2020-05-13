@@ -12,7 +12,6 @@ from contracting.db.encoder import decode
 # join should send messages to other people if they are not in the peer list
 # ping returns pepper for id verification
 
-DEFAULT_PORT = 11777
 OK = {
     'response': 'ok'
 }

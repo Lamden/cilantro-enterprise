@@ -1,14 +1,12 @@
-from cilantro_ee.crypto.wallet import Wallet, verify
-import zmq.asyncio
-from copy import deepcopy
-from cilantro_ee.router import request
-import asyncio
-from contracting.db.encoder import encode
 import time
 import hashlib
+import asyncio
+import zmq.asyncio
+from contracting.db.encoder import encode
 
 from cilantro_ee.formatting import rules, primatives
-from cilantro_ee.router import Processor
+from cilantro_ee.crypto.wallet import Wallet, verify
+from cilantro_ee.router import Processor, Router, request
 
 PROOF_EXPIRY = 15
 PEPPER = 'cilantroV1'
@@ -101,16 +99,20 @@ class JoinProcessor(Processor):
 
 
 class Network:
-    def __init__(self, wallet: Wallet, ip_string: str, ctx: zmq.asyncio.Context, pepper: str=PEPPER):
+    def __init__(self, wallet: Wallet, ip_string: str, ctx: zmq.asyncio.Context, router: Router, pepper: str=PEPPER):
         self.wallet = wallet
         self.ctx = ctx
-        self.pepper = pepper
 
         self.peers = {
             self.wallet.verifying_key().hex(): ip_string
         }
 
+        # Add processors to router to accept and process networking messages
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers)
+        self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
+
+        router.add_service('join', self.join_processor)
+        router.add_service('identity', self.identity_processor)
 
         self.join_msg = {
             'ip': ip_string,

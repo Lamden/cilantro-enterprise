@@ -2,11 +2,10 @@ from unittest import TestCase
 from cilantro_ee.nodes import rewards
 from contracting.client import ContractingClient
 from cilantro_ee.contracts import sync
-from contracting.stdlib.bridge.decimal import ContractingDecimal
 import cilantro_ee
 
 
-class TestRewards2(TestCase):
+class TestRewards(TestCase):
     def setUp(self):
         self.client = ContractingClient()
 
@@ -52,91 +51,63 @@ class TestRewards2(TestCase):
         bal = self.client.get_var('currency', variable='balances', arguments=['stu'])
         self.assertEqual(bal, 246)
 
-
-
-class TestRewards(TestCase):
-    def setUp(self):
-
-        self.client = ContractingClient()
-        self.driver = self.client.raw_driver
-
-        # Sync contracts
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
-        sync.submit_node_election_contracts(
-            initial_masternodes=['stu', 'raghu', 'steve'],
-            boot_mns=2,
-            initial_delegates=['tejas', 'alex'],
-            boot_dels=3,
-            client=self.client
+    def test_calculate_rewards_returns_accurate_amounts_per_participant_group(self):
+        self.sync()
+        self.client.set_var(
+            contract='rewards',
+            variable='S',
+            arguments=['value'],
+            value=[0.4, 0.4, 0.1, 0.1]
         )
 
-    def tearDown(self):
-        self.client.flush()
+        total_tau_to_split = 4900
 
-    def test_add_rewards(self):
-        block = random_txs.random_block()
+        m, d, f = rewards.calculate_all_rewards(total_tau_to_split, self.client)
 
-        total = 0
+        reconstructed = (m * 3) + (d * 2) + (f * 1) + (f * 1)
 
-        for sb in block.subBlocks:
-            for tx in sb.transactions:
-                total += tx.stampsUsed
+        self.assertAlmostEqual(reconstructed, total_tau_to_split)
 
-        self.assertEqual(self.r.stamps_in_block(block), total)
+    def test_calculate_participant_reward_shaves_off_dust(self):
+        rounded_reward = rewards.calculate_participant_reward(
+            participant_ratio=1,
+            number_of_participants=1,
+            total_tau_to_split=1.0000000000001
+        )
 
-    def test_add_to_balance(self):
-        currency_contract = self.client.get_contract('currency')
-        current_balance = currency_contract.quick_read(variable='balances', key='test')
+        self.assertEqual(rounded_reward, 1)
 
-        if current_balance is None:
-            current_balance = 0
+    def test_distribute_rewards_adds_to_all_wallets(self):
+        self.sync()
+        self.client.set_var(
+            contract='rewards',
+            variable='S',
+            arguments=['value'],
+            value=[0.4, 0.4, 0.1, 0.1]
+        )
+        self.client.set_var(
+            contract='foundation',
+            variable='owner',
+            value='xxx'
+        )
 
-        self.assertEqual(current_balance, 0)
+        total_tau_to_split = 4900
 
-        rewards.add_to_balance('test', 1234, client=self.client)
-        self.client.raw_driver.commit()
+        m, d, f = rewards.calculate_all_rewards(total_tau_to_split, self.client)
 
-        current_balance = currency_contract.quick_read(variable='balances', key='test')
-        if current_balance is None:
-            current_balance = 0
+        rewards.distribute_rewards(m, d, f, self.client)
 
-        self.assertEqual(current_balance, 1234)
+        masters = self.client.get_var(contract='masternodes', variable='S', arguments=['members'])
+        delegates = self.client.get_var(contract='delegates', variable='S', arguments=['members'])
 
-        rewards.add_to_balance('test', 1234, client=self.client)
-        self.client.raw_driver.commit()
+        for mn in masters:
+            current_balance = self.client.get_var(contract='currency', variable='balances', arguments=[mn], mark=False)
+            self.assertEqual(current_balance, m)
 
-        current_balance = currency_contract.quick_read(variable='balances', key='test')
-        if current_balance is None:
-            current_balance = 0
+        for dl in delegates:
+            current_balance = self.client.get_var(contract='currency', variable='balances', arguments=[dl], mark=False)
+            self.assertEqual(current_balance, d)
 
-        self.assertEqual(current_balance, 2234)
+        current_balance = self.client.get_var(contract='currency', variable='balances', arguments=['xxx'], mark=False)
+        self.assertEqual(current_balance, f)
 
-    def test_stamps_per_tau_works(self):
-        self.assertEqual(self.r.stamps_per_tau, 20_000)
-
-        stamps = self.client.get_contract('stamp_cost')
-
-        stamps.quick_write('S', 'rate', 555)
-
-        self.assertEqual(self.r.stamps_per_tau, 555)
-
-    def test_reward_ratio_works(self):
-        self.assertEqual(self.r.reward_ratio, [0.5, 0.5, 0, 0])
-
-    def test_issue_rewards_works(self):
-        self.r.set_pending_rewards(1000)
-        self.r.issue_rewards()
-
-        currency_contract = self.client.get_contract('currency')
-
-        self.r.add_to_balance('raghu', 1000)
-        self.r.add_to_balance('steve', 10000)
-
-        self.assertEqual(currency_contract.quick_read(variable='balances', key='stu'), ContractingDecimal(166.66666666666666))
-        self.assertEqual(currency_contract.quick_read(variable='balances', key='raghu'), ContractingDecimal(1166.66666666666666))
-        self.assertEqual(currency_contract.quick_read(variable='balances', key='steve'), ContractingDecimal(10166.66666666666666))
-
-        self.assertEqual(currency_contract.quick_read(variable='balances', key='tejas'), 250)
-        self.assertEqual(currency_contract.quick_read(variable='balances', key='alex'), 250)
-
-        self.assertEqual(self.r.get_pending_rewards(), 0)

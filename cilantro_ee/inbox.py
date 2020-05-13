@@ -83,6 +83,22 @@ class SecureAsyncInbox(AsyncInbox):
 
 
 class JSONAsyncInbox(AsyncInbox):
+    def __init__(self, secure=False, *args, **kwargs):
+        self.secure = secure
+        super().__init__(*args, **kwargs)
+
+    def setup_socket(self):
+        self.socket = self.ctx.socket(zmq.ROUTER)
+
+        if self.secure:
+            self.socket.curve_secretkey = self.wallet.curve_sk
+            self.socket.curve_publickey = self.wallet.curve_vk
+
+            self.socket.curve_server = True
+
+        self.socket.setsockopt(zmq.LINGER, self.linger)
+        self.socket.bind(self.address)
+
     async def receive_message(self):
         _id = await self.socket.recv()
         msg = await self.socket.recv()

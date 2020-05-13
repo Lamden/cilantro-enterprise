@@ -244,3 +244,65 @@ class TestProcessors(TestCase):
         }
 
         self.assertDictEqual(res[1], expected_return)
+
+
+class TestNetwork(TestCase):
+    def setUp(self):
+        self.ctx = zmq.asyncio.Context()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.ctx.destroy()
+        self.loop.close()
+
+    def test_start_sends_joins_and_adds_peers_that_respond(self):
+        me = Wallet()
+        n = Network(
+            wallet=me,
+            ip_string='tcp://127.0.0.1:18002',
+            ctx=self.ctx
+        )
+
+        bootnodes = [
+            'tcp://127.0.0.1:18003',
+            'tcp://127.0.0.1:18004'
+        ]
+
+        async def reply(tcp, peers):
+            socket = self.ctx.socket(zmq.ROUTER)
+            socket.bind(tcp)
+
+            res = await socket.recv_multipart()
+            await socket.send_multipart(
+                [res[0], encode(peers).encode()]
+            )
+
+            return res[1]
+
+        w_1 = Wallet()
+        peers_1 = {
+            'peers': [{'vk': w_1.verifying_key().hex(), 'ip': bootnodes[0]}]
+        }
+
+        w_2 = Wallet()
+        peers_2 = {
+            'peers': [{'vk': w_2.verifying_key().hex(), 'ip': bootnodes[1]}]
+        }
+
+        tasks = asyncio.gather(
+            reply(bootnodes[0], peers_1),
+            reply(bootnodes[1], peers_2),
+            n.start(bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()])
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        expected = {
+            w_1.verifying_key().hex(): bootnodes[0],
+            w_2.verifying_key().hex(): bootnodes[1],
+            me.verifying_key().hex(): 'tcp://127.0.0.1:18002'
+        }
+
+        self.assertDictEqual(n.peers, expected)
+

@@ -85,7 +85,7 @@ class JoinProcessor:
         self.peers[msg.get('vk')] = msg.get('ip')
 
         return {
-            'peers': self.peers
+            'peers': [{'vk': v, 'ip': i} for v, i in self.peers.items()]
         }
 
     async def forward_to_peers(self, msg):
@@ -101,30 +101,28 @@ class JoinProcessor:
 
 
 class Network:
-    def __init__(self, wallet: Wallet, socket_base: str, ctx: zmq.asyncio.Context, pepper: str):
+    def __init__(self, wallet: Wallet, ip_string: str, ctx: zmq.asyncio.Context, pepper: str=PEPPER):
         self.wallet = wallet
-        self.socket_base = socket_base
         self.ctx = ctx
         self.pepper = pepper
 
-        self.peers = {}
+        self.peers = {
+            self.wallet.verifying_key().hex(): ip_string
+        }
 
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers)
 
         self.join_msg = {
             'service': 'join',
             'msg': {
-                'ip': self.socket_base,
+                'ip': ip_string,
                 'vk': self.wallet.verifying_key().hex()
             }
         }
 
-    async def start(self, bootnodes):
+    async def start(self, bootnodes, vks):
         # Join all bootnodes
-
-        to_contact = deepcopy(bootnodes)
-
-        while len(to_contact) > 0:
+        while not self.all_vks_found(vks):
             coroutines = [
                 request(
                     socket_str=node,
@@ -140,22 +138,15 @@ class Network:
                 if result is None:
                     continue
 
-                if not self.verify_join(result):
-                    continue
+                for peer in result['peers']:
+                    self.peers.update(
+                        {
+                            peer['vk']: peer['ip']
+                        }
+                    )
 
-                self.peers.update(result['peers'])
-
-                results.remove(result)
-
-    def join(self, seednode):
-        pass
-
-    def verify_join(self, msg):
-        if msg.get('peers') is None:
-            return False
-
-        # for peer in peers,
-        # check if the contents adhere to JOIN_MESSAGE_RULES
-        # also add if not in join
-
+    def all_vks_found(self, vks):
+        for vk in vks:
+            if self.peers.get(vk) is None:
+                return False
         return True

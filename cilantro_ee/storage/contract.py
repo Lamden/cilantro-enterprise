@@ -1,5 +1,4 @@
-from contracting.db.driver import ContractDriver, Driver
-from contracting.db.encoder import decode
+from contracting.db.driver import ContractDriver
 from cilantro_ee.logger.base import get_logger
 
 BLOCK_HASH_KEY = '_current_block_hash'

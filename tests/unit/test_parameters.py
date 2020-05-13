@@ -4,7 +4,7 @@ from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.struct import _socket
 from cilantro_ee.contracts import sync
 from cilantro_ee.storage.vkbook import VKBook
-from cilantro_ee.networking.network import Network
+from cilantro_ee.network import Network
 from contracting.client import ContractingClient
 import cilantro_ee
 import zmq

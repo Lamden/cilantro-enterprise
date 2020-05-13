@@ -1,7 +1,7 @@
 from unittest import TestCase
 from cilantro_ee.struct import _socket
 from cilantro_ee.networking.discovery import *
-from cilantro_ee.networking.network import Network
+from cilantro_ee.network import Network
 from cilantro_ee.networking.parameters import NetworkParameters, PEPPER
 from cilantro_ee.networking.peers import PeerServer
 from cilantro_ee.networking.discovery import DiscoveryServer

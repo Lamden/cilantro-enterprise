@@ -111,3 +111,116 @@ class TestRewards(TestCase):
         current_balance = self.client.get_var(contract='currency', variable='balances', arguments=['xxx'], mark=False)
         self.assertEqual(current_balance, f)
 
+    def test_stamps_in_block(self):
+        block = {
+            'subblocks': [
+                {
+                    'transactions': [
+                        {
+                            'stamps_used': 1000
+                        },
+                        {
+                            'stamps_used': 2000
+                        },
+                        {
+                            'stamps_used': 3000
+                        }
+                    ]
+                },
+
+                {
+                    'transactions': [
+                        {
+                            'stamps_used': 4500
+                        },
+                        {
+                            'stamps_used': 1250
+                        },
+                        {
+                            'stamps_used': 2750
+                        }
+                    ]
+                }
+            ]
+        }
+
+        self.assertEqual(rewards.stamps_in_block(block), 14500)
+
+    def test_issue_rewards_full_loop_works(self):
+        self.sync()
+        self.client.set_var(
+            contract='rewards',
+            variable='S',
+            arguments=['value'],
+            value=[0.4, 0.4, 0.1, 0.1]
+        )
+        self.client.set_var(
+            contract='foundation',
+            variable='owner',
+            value='xxx'
+        )
+        self.client.set_var(
+            contract='stamp_cost',
+            variable='S',
+            arguments=['value'],
+            value=100
+        )
+
+        block = {
+            'subblocks': [
+                {
+                    'transactions': [
+                        {
+                            'stamps_used': 1000
+                        },
+                        {
+                            'stamps_used': 2000
+                        },
+                        {
+                            'stamps_used': 3000
+                        }
+                    ]
+                },
+
+                {
+                    'transactions': [
+                        {
+                            'stamps_used': 4500
+                        },
+                        {
+                            'stamps_used': 1250
+                        },
+                        {
+                            'stamps_used': 2750
+                        }
+                    ]
+                }
+            ]
+        }
+
+        # tau to distribute should be 145
+
+        tau = rewards.calculate_tau_to_split(block, client=self.client)
+
+        self.assertEqual(tau, 145)
+
+        rewards.issue_rewards(block, client=self.client)
+
+        total_tau_to_split = 145
+
+        m, d, f = rewards.calculate_all_rewards(total_tau_to_split, self.client)
+
+        masters = self.client.get_var(contract='masternodes', variable='S', arguments=['members'])
+        delegates = self.client.get_var(contract='delegates', variable='S', arguments=['members'])
+
+        for mn in masters:
+            current_balance = self.client.get_var(contract='currency', variable='balances', arguments=[mn], mark=False)
+            self.assertEqual(current_balance, m)
+
+        for dl in delegates:
+            current_balance = self.client.get_var(contract='currency', variable='balances', arguments=[dl], mark=False)
+            self.assertEqual(current_balance, d)
+
+        current_balance = self.client.get_var(contract='currency', variable='balances', arguments=['xxx'], mark=False)
+        self.assertEqual(current_balance, f)
+

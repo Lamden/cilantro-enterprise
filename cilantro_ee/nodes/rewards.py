@@ -99,8 +99,12 @@ def distribute_rewards(master_reward, delegate_reward, foundation_reward, client
     add_to_balance(vk=foundation_wallet, amount=foundation_reward, client=client)
 
 
+def calculate_tau_to_split(block, client: ContractingClient):
+    return stamps_in_block(block) / client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
+
+
 def issue_rewards(block, client: ContractingClient):
-    total_tau_to_split = stamps_in_block(block) / client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
+    total_tau_to_split = calculate_tau_to_split(block, client)
 
     rewards = calculate_all_rewards(
         total_tau_to_split=total_tau_to_split,

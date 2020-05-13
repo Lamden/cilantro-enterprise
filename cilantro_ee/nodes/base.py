@@ -2,6 +2,7 @@ from cilantro_ee.nodes.catchup import BlockFetcher
 from cilantro_ee.storage import MasterStorage
 
 from cilantro_ee.networking.simple_network import Network
+from cilantro_ee.router import Router
 
 from cilantro_ee.nodes.new_block_inbox import NBNInbox
 from cilantro_ee.storage import VKBook
@@ -28,7 +29,7 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, overwrite=False,
-                 bootnodes=[], network_parameters=NetworkParameters(), driver=BlockchainDriver(), mn_seed=None, debug=True, store=False):
+                 bootnodes=[], network_parameters=NetworkParameters(), driver=BlockchainDriver(), debug=True, store=False):
 
         self.driver = driver
         self.store = store
@@ -110,6 +111,14 @@ class Node:
         self.bootnodes = bootnodes
         self.constitution = constitution
         self.overwrite = overwrite
+
+        self.router = Router()
+
+        self.network = Network(
+            wallet=wallet,
+            ip_string=socket_base + '18000',
+            ctx=self.ctx
+        )
 
         # Should have a function to get the current NBN
         self.block_fetcher = BlockFetcher(
@@ -208,7 +217,7 @@ class Node:
         self.running = True
 
     def stop(self):
-        self.network.stop()
+        self.router.stop()
         self.nbn_inbox.stop()
         self.running = False
 

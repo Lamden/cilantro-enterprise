@@ -1,22 +1,13 @@
-from cilantro_ee.storage import BlockStorage
-
-from cilantro_ee.network import Network
-from cilantro_ee.router import Router, request, Processor
+from cilantro_ee import storage, network, router, authentication, rewards, upgrade
 
 from cilantro_ee.contracts import sync
 import cilantro_ee
 import zmq.asyncio
 import asyncio
 
-from cilantro_ee.authentication import SocketAuthenticator
-from cilantro_ee.storage import StateDriver
 from contracting.client import ContractingClient
 
-from cilantro_ee.nodes import rewards
-from cilantro_ee.cli.utils import version_reboot
-
 from cilantro_ee.logger.base import get_logger
-
 import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -32,7 +23,7 @@ async def get_latest_block_height(ip_string: str, ctx: zmq.asyncio.Context):
         'arg': ''
     }
 
-    response = await request(
+    response = await router.request(
         socket_str=ip_string,
         service=BLOCK_SERVICE,
         msg=msg,
@@ -48,7 +39,7 @@ async def get_block(block_num: int, ip_string: str, ctx: zmq.asyncio.Context):
         'arg': block_num
     }
 
-    response = await request(
+    response = await router.request(
         socket_str=ip_string,
         service=BLOCK_SERVICE,
         msg=msg,
@@ -58,8 +49,8 @@ async def get_block(block_num: int, ip_string: str, ctx: zmq.asyncio.Context):
     return response
 
 
-class NewBlock(Processor):
-    def __init__(self, driver: StateDriver=StateDriver()):
+class NewBlock(router.Processor):
+    def __init__(self, driver: storage.StateDriver):
         self.q = []
         self.driver = driver
         self.log = get_logger('NBN')
@@ -82,8 +73,8 @@ class NewBlock(Processor):
 
 
 class Node:
-    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, overwrite=False,
-                 bootnodes=[], driver=StateDriver(), debug=True, store=False):
+    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict,
+                 bootnodes=[], driver=storage.StateDriver(), debug=True, store=False):
 
         self.driver = driver
         self.store = store
@@ -91,7 +82,7 @@ class Node:
         self.blocks = None
 
         if self.store:
-            self.blocks = BlockStorage()
+            self.blocks = storage.BlockStorage()
 
         self.waiting_for_confirmation = False
 
@@ -101,65 +92,22 @@ class Node:
         self.wallet = wallet
         self.ctx = ctx
 
-        ### Contain in module
         self.client = ContractingClient(
             driver=self.driver,
-            submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py' # Can this be deprecated?
+            submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py'
         )
 
-        # Sync contracts
+        self.socket_authenticator = authentication.SocketAuthenticator(ctx=self.ctx, client=self.client)
+        self.socket_authenticator.refresh_governance_sockets()
 
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
-        sync.submit_node_election_contracts(
-            initial_masternodes=constitution['masternodes'],
-            boot_mns=constitution['masternode_min_quorum'],
-            initial_delegates=constitution['delegates'],
-            boot_dels=constitution['delegate_min_quorum'],
-            client=self.client
-        )
-
-        self.driver.commit()
-        self.driver.clear_pending_state()
-        ###
-
-        self.socket_authenticator = SocketAuthenticator(ctx=self.ctx)
-
-        ### Put this into socket authenticator
-        self.elect_masternodes = self.client.get_contract('elect_masternodes')
-        self.elect_delegates = self.client.get_contract('elect_delegates')
-
-        self.masternode_contract = self.client.get_contract('masternodes')
-        self.delegate_contract = self.client.get_contract('delegates')
-
-        self.update_sockets()
-        ###
-
-        # Cilantro version / upgrade
-        self.version_state = self.client.get_contract('upgrade')
-        self.active_upgrade = self.version_state.quick_read('upg_lock')
-
-        self.tol_mn = self.version_state.quick_read('tol_mn')
-        self.tot_dl = self.version_state.quick_read('tot_dl')
-
-        if self.tol_mn is None:
-            self.tol_mn = 0
-
-        if self.tot_dl is None:
-            self.tot_dl = 0
-
-        self.all_votes = self.tol_mn + self.tot_dl
-        self.mn_votes = self.version_state.quick_read('mn_vote')
-        self.dl_votes = self.version_state.quick_read('dl_vote')
-        # self.pending_cnt = self.all_votes - self.vote_cnt
-        # stuff
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
 
         self.bootnodes = bootnodes
         self.constitution = constitution
-        self.overwrite = overwrite
 
-        self.router = Router()
+        self.router = router.Router()
 
-        self.network = Network(
+        self.network = network.Network(
             wallet=wallet,
             ip_string=socket_base + '18000',
             ctx=self.ctx,
@@ -183,8 +131,8 @@ class Node:
             block = block.to_dict()
             self.process_block(block)
 
-        while len(self.nbn_inbox.q) > 0:
-            block = self.nbn_inbox.q.pop(0)
+        while len(self.new_block_processor.q) > 0:
+            block = self.new_block_processor.q.pop(0)
             self.process_block(block)
 
     def should_process(self, block):
@@ -199,7 +147,7 @@ class Node:
             self.driver.update_with_block(block)
 
             rewards.issue_rewards(block=block, client=self.client)
-            self.update_sockets()
+            self.socket_authenticator.refresh_governance_sockets()
 
             if self.store:
                 self.blocks.store_block(block)
@@ -214,101 +162,55 @@ class Node:
             self.driver.delete_pending_nonces()
 
         self.driver.cache.clear()
-        self.nbn_inbox.clean()
+        self.new_block_processor.clean()
 
-        self.version_check()
+        self.upgrade_manager.version_check()
 
-    async def start(self, bootnodes, vks):
-        await self.network.start()
+    async def get_current_block_heights(self, ip_string):
+        latest_block_height = await get_latest_block_height(ip_string=ip_string, ctx=self.ctx)
+        local_block_height = self.driver.get_latest_block_num()
+        return latest_block_height, local_block_height
 
-        # Start block server
-        asyncio.ensure_future(self.nbn_inbox.serve())
+    async def start(self, bootnodes):
+        sync.setup_genesis_contracts(
+            initial_masternodes=self.constitution['masternodes'],
+            initial_delegates=self.constitution['delegates'],
+            client=self.client
+        )
 
-        # Catchup when joining the network
-        if self.network.mn_seed is not None:
-            await self.catchup(
-                self.network_parameters.resolve(
-                    self.network.mn_seed,
-                    ServiceType.BLOCK_SERVER
-                )
-            )
+        vks = self.constitution['masternodes'] + self.constitution['delegates']
 
-            self.log.info(self.network.peers())
+        await self.network.start(bootnodes=bootnodes, vks=vks)
 
-            self.parameters.sockets.update(self.network.peers())
+        masternode = self.constitution['masternodes'][0]
+        masternode_ip = self.network.peers[masternode]
 
-        # Start block server
-        #asyncio.ensure_future(self.nbn_inbox.serve())
+        await self.catchup(mn_seed=masternode_ip)
 
         self.running = True
 
     def stop(self):
         self.router.stop()
-        self.nbn_inbox.stop()
         self.running = False
 
-    # Move this to authenticator?
-    def update_sockets(self):
-        od_mn = self.elect_masternodes.quick_read('top_candidate')
-        od_dl = self.elect_delegates.quick_read('top_candidate')
-
-        masternodes = self.masternode_contract.quick_read('S', 'members')
-        delegates = self.delegate_contract.quick_read('S', 'members')
-
-        # These are hex strings so only accept hex strings
-        self.socket_authenticator.add_governance_sockets(
-            masternode_list=masternodes,
-            delegate_list=delegates,
-            on_deck_masternode=od_mn,
-            on_deck_delegate=od_dl
+    def _get_member_peers(self, contract_name):
+        members = self.client.get_var(
+            contract=contract_name,
+            variable='S',
+            arguments=['members']
         )
 
-    # Move this to another module
-    def version_check(self):
+        member_peers = dict()
 
-        # check for trigger
-        self.version_state = self.client.get_contract('upgrade')
-        self.mn_votes = self.version_state.quick_read('mn_vote')
-        self.dl_votes = self.version_state.quick_read('dl_vote')
+        for member in members:
+            ip = self.network.peers.get(member)
+            if ip is not None:
+                member_peers[member] = ip
 
-        self.get_update_state()
+        return member_peers
 
-        if self.version_state:
-            self.log.info('Waiting for Consensys on vote')
-            self.log.info('num masters voted -> {}'.format(self.mn_votes))
-            self.log.info('num delegates voted -> {}'.format(self.dl_votes))
+    def get_delegate_peers(self):
+        return self._get_member_peers('delegates')
 
-            # check for vote consensys
-            vote_consensus = self.version_state.quick_read('upg_consensus')
-            if vote_consensus:
-                self.log.info('Rebooting Node with new verion')
-                version_reboot()
-            else:
-                self.log.info('waiting for vote on upgrade')
-
-            # ready
-            #TODO we can merge it with vote - to be decided
-
-    # Move this to another module
-    def get_update_state(self):
-        self.active_upgrade = self.version_state.quick_read('upg_lock')
-        start_time = self.version_state.quick_read('upg_init_time')
-        window = self.version_state.quick_read('upg_window')
-        pepper = self.version_state.quick_read('upg_pepper')
-        self.mn_votes = self.version_state.quick_read('mn_vote')
-        self.dl_votes = self.version_state.quick_read('dl_vote')
-        consensus = self.version_state.quick_read('upg_consensus')
-
-        print("Upgrade -> {} Cil Pepper   -> {}\n"
-              "Init time -> {}, Time Window -> {}\n"
-              "Masters      -> {}\n"
-              "Delegates    -> {}\n"
-              "Votes        -> {}\n "
-              "MN-Votes     -> {}\n "
-              "DL-Votes     -> {}\n "
-              "Consensus    -> {}\n"
-              .format(self.active_upgrade,
-                      pepper, start_time, window, self.tol_mn,
-                      self.tot_dl, self.all_votes,
-                      self.mn_votes, self.dl_votes,
-                      consensus))
+    def get_masternode_peers(self):
+        return self._get_member_peers('masternodes')

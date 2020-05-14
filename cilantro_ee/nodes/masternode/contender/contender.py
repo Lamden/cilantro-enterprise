@@ -8,7 +8,6 @@ from contracting.db.encoder import encode
 from cilantro_ee.crypto.canonical import format_dictionary
 from cilantro_ee.nodes.masternode.contender.sbc_inbox import SBCInbox
 from cilantro_ee.logger.base import get_logger
-from cilantro_ee.crypto import canonical
 
 import asyncio
 import time

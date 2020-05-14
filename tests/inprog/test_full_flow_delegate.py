@@ -3,7 +3,7 @@ from unittest import TestCase
 import cilantro_ee.nodes.masternode.masternode
 from cilantro_ee.nodes.delegate.delegate import Delegate
 
-from cilantro_ee.nodes.masternode.transaction_batcher import TransactionBatcher
+from cilantro_ee.nodes.masternode.masternode import TransactionBatcher
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto import canonical
 from cilantro_ee.storage import StateDriver

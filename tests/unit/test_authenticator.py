@@ -61,11 +61,11 @@ class TestAuthenticator(TestCase):
 
         fake_od_d = Wallet().verifying_key().hex()
 
-        self.s.add_governance_sockets(masternode_list=fake_mns,
-                                      on_deck_masternode=fake_od_m,
-                                      delegate_list=fake_dels,
-                                      on_deck_delegate=fake_od_d
-                                      )
+        self.s.refresh_governance_sockets(masternode_list=fake_mns,
+                                          on_deck_masternode=fake_od_m,
+                                          delegate_list=fake_dels,
+                                          on_deck_delegate=fake_od_d
+                                          )
 
         for m in fake_mns:
             self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{m}.key')))

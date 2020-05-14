@@ -7,15 +7,17 @@ import asyncio
 import pathlib
 from nacl.bindings import crypto_sign_ed25519_pk_to_curve25519
 from cilantro_ee.logger.base import get_logger
+from contracting.client import ContractingClient
 
 CERT_DIR = 'cilsocks'
 
 
 class SocketAuthenticator:
-    def __init__(self, ctx: zmq.asyncio.Context,
+    def __init__(self, client: ContractingClient, ctx: zmq.asyncio.Context,
                  loop=asyncio.get_event_loop(), domain='*', cert_dir=CERT_DIR, debug=True):
 
         # Create the directory if it doesn't exist
+        self.client = client
 
         self.cert_dir = pathlib.Path.home() / cert_dir
         self.cert_dir.mkdir(parents=True, exist_ok=True)
@@ -33,7 +35,29 @@ class SocketAuthenticator:
         self.authenticator.start()
         self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
 
-    def add_governance_sockets(self, masternode_list, on_deck_masternode, delegate_list, on_deck_delegate):
+    def refresh_governance_sockets(self):
+        masternode_list = self.client.get_var(
+            contract='masternodes',
+            variable='S',
+            arguments=['members']
+        )
+
+        delegate_list = self.client.get_var(
+            contract='delegates',
+            variable='S',
+            arguments=['members']
+        )
+
+        on_deck_masternode = self.client.get_var(
+            contract='elect_masternodes',
+            variable='top_candidate'
+        )
+
+        on_deck_delegate = self.client.get_var(
+            contract='elect_delegates',
+            variable='top_candidate'
+        )
+
         self.flush_all_keys()
 
         for mn in masternode_list:

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from cilantro_ee.nodes import rewards
+from cilantro_ee import rewards
 from contracting.client import ContractingClient
 from cilantro_ee.contracts import sync
 import cilantro_ee

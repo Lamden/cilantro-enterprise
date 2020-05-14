@@ -1,5 +1,8 @@
 import asyncio
-from cilantro_ee.nodes.masternode.transaction_batcher import TransactionBatcher
+import hashlib
+import time
+
+from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.nodes.masternode.contender.contender import Aggregator
 from cilantro_ee.networking.parameters import ServiceType
@@ -43,13 +46,45 @@ class BlockService(Processor):
         return block
 
 
+class TransactionBatcher:
+    def __init__(self, wallet: Wallet, queue):
+        self.wallet = wallet
+        self.queue = queue
+
+    def make_batch(self, transactions):
+        timestamp = int(round(time.time() * 1000))
+
+        h = hashlib.sha3_256()
+        h.update('{}'.format(timestamp).encode())
+        input_hash = h.digest()
+
+        signature = self.wallet.sign(input_hash)
+
+        batch = {
+            'transactions': transactions,
+            'timestamp': timestamp,
+            'signature': signature.hex(),
+            'sender': self.wallet.verifying_key().hex(),
+            'input_hash': input_hash.hex()
+        }
+
+        return batch
+
+    def pack_current_queue(self, tx_number=100):
+        tx_list = []
+
+        while len(tx_list) < tx_number and len(self.queue) > 0:
+            tx_list.append(self.queue.pop(0))
+
+        batch = self.make_batch(tx_list)
+
+        return batch
+
+
 class Masternode(Node):
     def __init__(self, webserver_port=8080, *args, **kwargs):
         super().__init__(store=True, *args, **kwargs)
         # Services
-        self.block_processor = BlockService(self.blocks, self.driver)
-        self.router.add_service(BLOCK_SERVICE, self.block_processor)
-
         self.webserver = WebServer(
             contracting_client=self.client,
             driver=self.driver,
@@ -76,18 +111,21 @@ class Masternode(Node):
 
         self.masternode_contract = self.client.get_contract('masternodes')
 
-    async def start(self):
-        await super().start()
-        # Start block server to provide catchup to other nodes
+    async def start(self, bootnodes):
+        await super().start(bootnodes=bootnodes)
 
         latest_block = self.blocks.get_last_n(1, self.blocks.BLOCK)[0]
         self.log.info(latest_block)
         self.driver.latest_block_num = latest_block['blockNum']
         self.driver.latest_block_hash = latest_block['hash']
 
+        self.router.add_service(BLOCK_SERVICE, BlockService(self.blocks, self.driver))
+
         self.webserver.queue = self.tx_batcher.queue
         await self.webserver.start()
+
         self.log.info('Done starting...')
+
         asyncio.ensure_future(self.aggregator.start())
         asyncio.ensure_future(self.run())
 
@@ -239,3 +277,5 @@ def get_genesis_block():
         'subblocks': []
     }
     return block
+
+

@@ -8,7 +8,7 @@ from cilantro_ee.nodes.delegate.delegate import Delegate
 from cilantro_ee.nodes.masternode.masternode import Masternode
 
 from cilantro_ee.storage import StateDriver
-from cilantro_ee.crypto.transaction import build_transaction
+from cilantro_ee.nodes.masternode.server.tx_validator import build_transaction
 from contracting import config
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal

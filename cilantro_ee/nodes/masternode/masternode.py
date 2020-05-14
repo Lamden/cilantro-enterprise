@@ -23,7 +23,7 @@ class BlockService(Processor):
         self.driver = driver
 
     async def process_message(self, msg):
-        response = {}
+        response = None
         if primatives.dict_has_keys(msg, keys={'name', 'arg'}):
             if msg['name'] == base.GET_BLOCK:
                 response = self.get_block(msg)
@@ -35,12 +35,12 @@ class BlockService(Processor):
     def get_block(self, command):
         num = command.get('arg')
         if not primatives.number_is_formatted(num):
-            return {}
+            return None
 
         block = self.blocks.get_block(num)
 
         if block is None:
-            return {}
+            return None
 
         return block
 

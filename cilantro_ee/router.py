@@ -1,5 +1,5 @@
 import asyncio
-
+from cilantro_ee.crypto.wallet import Wallet
 import zmq
 import zmq.asyncio
 from contracting.db.encoder import encode, decode
@@ -175,6 +175,36 @@ class Router(JSONAsyncInbox):
         self.services[name] = processor
 
 
+def build_socket(socket_str: str, ctx: zmq.asyncio.Context, linger=500):
+    socket = ctx.socket(zmq.DEALER)
+    socket.setsockopt(zmq.LINGER, linger)
+    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
+
+    try:
+        socket.connect(socket_str)
+        return socket
+    except ZMQBaseError:
+        return None
+
+
+# def build_secure_socket(socket_str: str, wallet: Wallet, reciever_vk: str, ctx: zmq.asyncio.Context, linger=500):
+#     socket = ctx.socket(zmq.DEALER)
+#     socket.setsockopt(zmq.LINGER, linger)
+#     socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
+#
+#     socket.curve_secretkey = wallet.curve_sk
+#     socket.curve_publickey = wallet.curve_vk
+#
+#     server_pub, _ = load_certificate(str(cert_dir / f'{server_vk}.key'))
+#
+#     socket.curve_serverkey = server_pub
+#
+#     try:
+#         socket.connect(socket_str)
+#     except ZMQBaseError:
+#         return None
+
+
 async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Context, timeout=1000, linger=500):
     socket = ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.LINGER, linger)
@@ -204,5 +234,4 @@ async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Con
         socket.close()
 
     return msg
-
 

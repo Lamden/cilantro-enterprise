@@ -5,13 +5,12 @@ import time
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.nodes.masternode.contender.contender import Aggregator
-from cilantro_ee.networking.parameters import ServiceType
-from cilantro_ee.storage.contract import StateDriver
+from cilantro_ee.storage import StateDriver, BlockStorage
 from cilantro_ee.router import Processor
 from cilantro_ee.formatting import primatives
 import json
 
-from cilantro_ee.nodes.base import Node
+from cilantro_ee.nodes import base
 from contracting.db.encoder import encode
 
 
@@ -19,16 +18,16 @@ BLOCK_SERVICE = 'service'
 
 
 class BlockService(Processor):
-    def __init__(self, blocks: MasterStorage=None, driver=StateDriver()):
+    def __init__(self, blocks: BlockStorage=None, driver=StateDriver()):
         self.blocks = blocks
         self.driver = driver
 
     async def process_message(self, msg):
         response = {}
         if primatives.dict_has_keys(msg, keys={'name', 'arg'}):
-            if msg['name'] == GET_BLOCK:
+            if msg['name'] == base.GET_BLOCK:
                 response = self.get_block(msg)
-            elif msg['name'] == GET_HEIGHT:
+            elif msg['name'] == base.GET_HEIGHT:
                 response = self.driver.get_latest_block_num()
 
         return response
@@ -81,7 +80,7 @@ class TransactionBatcher:
         return batch
 
 
-class Masternode(Node):
+class Masternode(base.Node):
     def __init__(self, webserver_port=8080, *args, **kwargs):
         super().__init__(store=True, *args, **kwargs)
         # Services

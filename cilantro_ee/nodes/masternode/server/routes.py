@@ -8,14 +8,14 @@ from contracting.db.encoder import encode, decode
 from contracting.compilation import parser
 from cilantro_ee.storage import BlockStorage, StateDriver
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
-from cilantro_ee.nodes.masternode.server.tx_validator import TransactionException
+from cilantro_ee.crypto.transaction import TransactionException
 
 import ssl
 import asyncio
 
 log = get_logger("MN-WebServer")
 
-from cilantro_ee.nodes.masternode.server import tx_validator
+from cilantro_ee.crypto import transaction
 
 
 class ByteEncoder(_json.JSONEncoder):
@@ -130,11 +130,11 @@ class WebServer:
             return response.json({'error': 'Malformed request body.'})
 
         # Check that the TX is correctly formatted
-        error = tx_validator.check_tx_formatting(tx, self.wallet.verifying_key().hex())
+        error = transaction.check_tx_formatting(tx, self.wallet.verifying_key().hex())
         if error is not None:
-            return response.json(tx_validator.EXCEPTION_MAP[error])
+            return response.json(transaction.EXCEPTION_MAP[error])
 
-        nonce, pending_nonce = tx_validator.get_nonces(
+        nonce, pending_nonce = transaction.get_nonces(
             sender=tx['payload']['sender'],
             processor=tx['payload']['processor'],
             driver=self.driver
@@ -143,7 +143,7 @@ class WebServer:
         # Calculate and set the 'pending nonce' which keeps track of what the sender's nonce will
         # be if the block the tx is included in is successful.
         try:
-            pending_nonce = tx_validator.get_new_pending_nonce(
+            pending_nonce = transaction.get_new_pending_nonce(
                 tx_nonce=tx['payload']['nonce'],
                 nonce=nonce,
                 pending_nonce=pending_nonce
@@ -154,7 +154,7 @@ class WebServer:
                 nonce=pending_nonce
             )
         except TransactionException as e:
-            return response.json(tx_validator.EXCEPTION_MAP[e])
+            return response.json(transaction.EXCEPTION_MAP[e])
 
         # Add TX to the processing queue
         self.queue.append(tx)
@@ -177,7 +177,7 @@ class WebServer:
 
     # Get the Nonce of a VK
     async def get_nonce(self, request, vk):
-        nonce, pending_nonce = tx_validator.get_nonces(
+        nonce, pending_nonce = transaction.get_nonces(
             processor=self.wallet.verifying_key().hex(),
             sender=vk,
             driver=self.driver

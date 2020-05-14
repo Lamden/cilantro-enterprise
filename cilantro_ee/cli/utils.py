@@ -6,7 +6,7 @@ import ipaddress
 import cilantro_ee
 from checksumdir import dirhash
 from contracting.client import ContractingClient
-from cilantro_ee.storage.contract import StateDriver
+from cilantro_ee.storage import StateDriver
 
 
 def validate_ip(address):

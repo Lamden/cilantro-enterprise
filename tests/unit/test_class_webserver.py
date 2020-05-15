@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from cilantro_ee.nodes.masternode.server.routes import WebServer
+from cilantro_ee.nodes.masternode.routes import WebServer
 from cilantro_ee.crypto.wallet import Wallet
 from contracting.client import ContractingClient
 from cilantro_ee.storage import StateDriver

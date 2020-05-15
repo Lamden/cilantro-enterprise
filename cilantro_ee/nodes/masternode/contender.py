@@ -285,15 +285,13 @@ class BlockContender:
 
 # Can probably move this into the masternode. Move the sbc inbox there and deprecate this class
 class Aggregator:
-    def __init__(self, socket_id, ctx, driver, wallet, expected_subblocks=4, seconds_to_timeout=10):
+    def __init__(self, driver, expected_subblocks=4, seconds_to_timeout=10):
         self.expected_subblocks = expected_subblocks
         self.sbc_inbox = SBCInbox(
-            socket_id=socket_id,
-            ctx=ctx,
             driver=driver,
             expected_subblocks=self.expected_subblocks,
-            wallet=wallet
         )
+
         self.driver = driver
 
         self.seconds_to_timeout = seconds_to_timeout
@@ -341,12 +339,6 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
             previous_hash=self.driver.latest_block_hash,
             block_num=self.driver.latest_block_num + 1
         )
-
-    async def start(self):
-        asyncio.ensure_future(self.sbc_inbox.serve())
-
-    def stop(self):
-        self.sbc_inbox.stop()
 
 
 def block_from_subblocks(subblocks, previous_hash: bytes, block_num: int) -> dict:

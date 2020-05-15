@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from cilantro_ee.nodes.masternode.contender.contender import BlockContender, Aggregator
+from cilantro_ee.nodes.masternode.contender import BlockContender, Aggregator
 import zmq.asyncio
 import asyncio
 from cilantro_ee.struct import _socket

@@ -4,6 +4,7 @@ import zmq
 import zmq.asyncio
 from contracting.db.encoder import encode, decode
 from zmq.error import ZMQBaseError
+from zmq.auth.certs import load_certificate
 # new block
 # work
 # sub block contenders
@@ -186,23 +187,40 @@ def build_socket(socket_str: str, ctx: zmq.asyncio.Context, linger=500):
     except ZMQBaseError:
         return None
 
+async def secure_send(msg: dict, service, cert_dir, wallet: Wallet, vk, ip, ctx: zmq.asyncio.Context, linger=500):
+    socket = ctx.socket(zmq.DEALER)
+    socket.setsockopt(zmq.LINGER, linger)
+    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
 
-# def build_secure_socket(socket_str: str, wallet: Wallet, reciever_vk: str, ctx: zmq.asyncio.Context, linger=500):
-#     socket = ctx.socket(zmq.DEALER)
-#     socket.setsockopt(zmq.LINGER, linger)
-#     socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-#
-#     socket.curve_secretkey = wallet.curve_sk
-#     socket.curve_publickey = wallet.curve_vk
-#
-#     server_pub, _ = load_certificate(str(cert_dir / f'{server_vk}.key'))
-#
-#     socket.curve_serverkey = server_pub
-#
-#     try:
-#         socket.connect(socket_str)
-#     except ZMQBaseError:
-#         return None
+    socket.curve_secretkey = wallet.curve_sk
+    socket.curve_publickey = wallet.curve_vk
+
+    server_pub, _ = load_certificate(str(cert_dir / f'{vk}.key'))
+
+    socket.curve_serverkey = server_pub
+
+    try:
+        socket.connect(ip)
+    except ZMQBaseError:
+        return None
+
+    message = {
+        'service': service,
+        'msg': msg
+    }
+
+    payload = encode(message).encode()
+
+    await socket.send(payload, flags=zmq.NOWAIT)
+
+async def secure_multicast(msg: dict, service, cert_dir, wallet: Wallet, peer_map: dict, ctx: zmq.asyncio.Context, linger=500):
+    coroutines = []
+    for vk, ip in peer_map.items():
+        coroutines.append(
+            secure_send(msg, service, cert_dir, wallet, vk, ip, ctx, linger)
+        )
+
+    await asyncio.gather(*coroutines)
 
 
 async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Context, timeout=1000, linger=500):

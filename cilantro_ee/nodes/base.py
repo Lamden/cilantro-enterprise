@@ -12,9 +12,10 @@ import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 BLOCK_SERVICE = 'service'
+NEW_BLOCK_SERVICE = 'new_blocks'
+
 GET_BLOCK = 'get_block'
 GET_HEIGHT = 'get_height'
-NEW_BLOCK_SERVICE = 'new_blocks'
 
 
 async def get_latest_block_height(ip_string: str, ctx: zmq.asyncio.Context):
@@ -97,15 +98,23 @@ class Node:
             submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py'
         )
 
-        self.socket_authenticator = authentication.SocketAuthenticator(ctx=self.ctx, client=self.client)
-        self.socket_authenticator.refresh_governance_sockets()
-
-        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
-
         self.bootnodes = bootnodes
         self.constitution = constitution
 
-        self.router = router.Router()
+        sync.setup_genesis_contracts(
+            initial_masternodes=self.constitution['masternodes'],
+            initial_delegates=self.constitution['delegates'],
+            client=self.client
+        )
+
+        self.socket_authenticator = authentication.SocketAuthenticator(ctx=self.ctx, client=self.client)
+
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
+
+        self.router = router.Router(
+            socket_id=socket_base + '18000',
+            ctx=self.ctx
+        )
 
         self.network = network.Network(
             wallet=wallet,
@@ -123,12 +132,13 @@ class Node:
         current = self.driver.get_latest_block_num()
         latest = await get_latest_block_height(ip_string=mn_seed, ctx=self.ctx)
 
+        self.log.info(f'Current: {current}, Latest: {latest}')
+
         if current == 0:
-            current = 1
+            self.process_block(get_genesis_block())
 
         for i in range(current, latest):
             block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
-            block = block.to_dict()
             self.process_block(block)
 
         while len(self.new_block_processor.q) > 0:
@@ -136,10 +146,11 @@ class Node:
             self.process_block(block)
 
     def should_process(self, block):
+        self.log.info(block)
         if self.waiting_for_confirmation:
-            return self.driver.latest_block_num <= block['blockNum'] and block['hash'] != 'f' * 64
+            return self.driver.latest_block_num <= block['number'] and block['hash'] != 'f' * 64
         else:
-            return self.driver.latest_block_num < block['blockNum'] and block['hash'] != 'f' * 64
+            return self.driver.latest_block_num < block['number'] and block['hash'] != 'f' * 64
 
     def process_block(self, block):
         if self.should_process(block):
@@ -154,9 +165,9 @@ class Node:
 
         else:
             self.log.error('Could not store block...')
-            if self.driver.latest_block_num >= block['blockNum']:
+            if self.driver.latest_block_num >= block['number']:
                 self.log.error(f'Latest block num = {self.driver.latest_block_num}')
-                self.log.error(f'New block num = {block["blockNum"]}')
+                self.log.error(f'New block num = {block["number"]}')
             if block['hash'] == 'f' * 64:
                 self.log.error(f'Block hash = {block["hash"]}')
             self.driver.delete_pending_nonces()
@@ -166,18 +177,7 @@ class Node:
 
         self.upgrade_manager.version_check()
 
-    async def get_current_block_heights(self, ip_string):
-        latest_block_height = await get_latest_block_height(ip_string=ip_string, ctx=self.ctx)
-        local_block_height = self.driver.get_latest_block_num()
-        return latest_block_height, local_block_height
-
     async def start(self, bootnodes):
-        sync.setup_genesis_contracts(
-            initial_masternodes=self.constitution['masternodes'],
-            initial_delegates=self.constitution['delegates'],
-            client=self.client
-        )
-
         vks = self.constitution['masternodes'] + self.constitution['delegates']
 
         await self.network.start(bootnodes=bootnodes, vks=vks)
@@ -186,6 +186,8 @@ class Node:
         masternode_ip = self.network.peers[masternode]
 
         await self.catchup(mn_seed=masternode_ip)
+
+        self.socket_authenticator.refresh_governance_sockets()
 
         self.running = True
 
@@ -214,3 +216,13 @@ class Node:
 
     def get_masternode_peers(self):
         return self._get_member_peers('masternodes')
+
+
+def get_genesis_block():
+    block = {
+        'hash': (b'\x00' * 32).hex(),
+        'number': 0,
+        'previous': (b'\x00' * 32).hex(),
+        'subblocks': []
+    }
+    return block

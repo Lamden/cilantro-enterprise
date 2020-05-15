@@ -58,7 +58,11 @@ def register_policies(client: ContractingClient):
     ]
 
     for policy in policies_to_register:
-        if election_house.policies[policy] is None:
+        if client.get_var(
+            contract='election_house',
+            variable='policies',
+            arguments=[policy]
+        ) is None:
             election_house.register_policy(contract=policy)
 
 

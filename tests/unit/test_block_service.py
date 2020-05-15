@@ -24,6 +24,13 @@ class TestBlockService(TestCase):
             driver=storage.StateDriver()
         )
 
+        self.r = router.Router(
+            socket_id='tcp://127.0.0.1:18001',
+            ctx=self.ctx
+        )
+
+        self.r.add_service(base.BLOCK_SERVICE, self.b)
+
     def tearDown(self):
         self.ctx.destroy()
         self.loop.close()
@@ -45,7 +52,7 @@ class TestBlockService(TestCase):
     def test_service_returns_block_for_number_if_exists(self):
         block = {
             'hash': (b'\x00' * 32).hex(),
-            'blockNum': 1337,
+            'number': 1337,
             'previous': (b'\x00' * 32).hex(),
             'subblocks': []
         }
@@ -73,7 +80,7 @@ class TestBlockService(TestCase):
     def test_service_returns_none_if_blocknum_not_num(self):
         block = {
             'hash': (b'\x00' * 32).hex(),
-            'blockNum': 1337,
+            'number': 1337,
             'previous': (b'\x00' * 32).hex(),
             'subblocks': []
         }
@@ -92,7 +99,7 @@ class TestBlockService(TestCase):
     def test_service_returns_none_if_no_block_found(self):
         block = {
             'hash': (b'\x00' * 32).hex(),
-            'blockNum': 1337,
+            'number': 1337,
             'previous': (b'\x00' * 32).hex(),
             'subblocks': []
         }
@@ -107,31 +114,6 @@ class TestBlockService(TestCase):
         res = self.loop.run_until_complete(self.b.process_message(msg))
 
         self.assertIsNone(res)
-
-
-class TestCatchupFunctions(TestCase):
-    def setUp(self):
-        self.ctx = zmq.asyncio.Context()
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-        self.b = masternode.BlockService(
-            blocks=storage.BlockStorage(),
-            driver=storage.StateDriver()
-        )
-
-        self.r = router.Router(
-            socket_id='tcp://127.0.0.1:18001',
-            ctx=self.ctx
-        )
-
-        self.r.add_service(base.BLOCK_SERVICE, self.b)
-
-    def tearDown(self):
-        self.ctx.destroy()
-        self.loop.close()
-        self.b.blocks.drop_collections()
-        self.b.driver.flush()
 
     def test_get_latest_block_height(self):
         self.b.driver.set_latest_block_num(1337)
@@ -153,10 +135,10 @@ class TestCatchupFunctions(TestCase):
 
         self.assertEqual(res, 1337)
 
-    def test_service_returns_block_for_number_if_exists(self):
+    def test_router_returns_block_for_number_if_exists(self):
         block = {
             'hash': (b'\x00' * 32).hex(),
-            'blockNum': 1337,
+            'number': 1337,
             'previous': (b'\x00' * 32).hex(),
             'subblocks': []
         }
@@ -181,10 +163,10 @@ class TestCatchupFunctions(TestCase):
 
         self.assertEqual(res, block)
 
-    def test_service_returns_none_if_no_block_found(self):
+    def test_router_returns_none_if_no_block_found(self):
         block = {
             'hash': (b'\x00' * 32).hex(),
-            'blockNum': 1337,
+            'number': 1337,
             'previous': (b'\x00' * 32).hex(),
             'subblocks': []
         }

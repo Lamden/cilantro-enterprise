@@ -145,22 +145,9 @@ class BlockStorage:
         self.indexes = self.db['index']
         self.txs = self.db['tx']
 
-        if self.get_block(0) is None:
-            self.put({
-                'blockNum': 0,
-                'hash': b'\x00' * 32,
-                'blockOwners': [b'\x00' * 32]
-            }, BlockStorage.BLOCK)
-
-            self.put({
-                'blockNum': 0,
-                'hash': b'\x00' * 32,
-                'blockOwners': [b'\x00' * 32]
-            }, BlockStorage.INDEX)
-
     def q(self, v):
         if isinstance(v, int):
-            return {'blockNum': v}
+            return {'number': v}
         return {'hash': v}
 
     def get_block(self, v=None):
@@ -196,29 +183,18 @@ class BlockStorage:
             return None
 
         block_query = c.find({}, {'_id': False}).sort(
-            'blockNum', DESCENDING
+            'number', DESCENDING
         ).limit(n)
 
         blocks = [block for block in block_query]
 
         if len(blocks) > 1:
-            first_block_num = blocks[0].get('blockNum')
-            last_block_num = blocks[-1].get('blockNum')
+            first_block_num = blocks[0].get('number')
+            last_block_num = blocks[-1].get('number')
 
             assert first_block_num > last_block_num, "Blocks are not descending."
 
         return blocks
-
-    def get_owners(self, v):
-        q = self.q(v)
-        index = self.indexes.find_one(q)
-
-        if index is None:
-            return index
-
-        owners = index.get('blockOwners')
-
-        return owners
 
     def get_index(self, v):
         q = self.q(v)

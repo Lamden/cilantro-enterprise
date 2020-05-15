@@ -271,7 +271,7 @@ def block_is_skip_block(block: dict):
 def get_genesis_block():
     block = {
         'hash': (b'\x00' * 32).hex(),
-        'blockNum': 1,
+        'blockNum': 0,
         'previous': (b'\x00' * 32).hex(),
         'subblocks': []
     }

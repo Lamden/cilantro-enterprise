@@ -70,7 +70,7 @@ class NewBlock(router.Processor):
         return nbn
 
     def clean(self):
-        self.q = [nbn for nbn in self.q if nbn['blockNum'] >= self.driver.latest_block_num]
+        self.q = [nbn for nbn in self.q if nbn['number'] >= self.driver.latest_block_num]
 
 
 class Node:
@@ -135,9 +135,9 @@ class Node:
         self.log.info(f'Current: {current}, Latest: {latest}')
 
         if current == 0:
-            self.process_block(get_genesis_block())
+            current = 1
 
-        for i in range(current, latest):
+        for i in range(current, latest + 1):
             block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
             self.process_block(block)
 

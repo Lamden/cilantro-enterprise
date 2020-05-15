@@ -6,7 +6,7 @@ import ipaddress
 import cilantro_ee
 from checksumdir import dirhash
 from contracting.client import ContractingClient
-from cilantro_ee.storage import StateDriver
+from contracting.db.driver import ContractDriver
 
 
 def validate_ip(address):
@@ -69,7 +69,7 @@ def version_reboot():
 
 
 def get_update_state():
-    driver = StateDriver()
+    driver = ContractDriver()
     active_upgrade = driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
     pepper = driver.get_var(contract='upgrade', variable='upg_pepper', mark=False)
     start_time = driver.get_var(contract='upgrade', variable='upg_init_time', mark=False)

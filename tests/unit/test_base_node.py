@@ -2,7 +2,7 @@ from cilantro_ee.nodes.masternode import masternode
 from cilantro_ee.nodes import base
 from cilantro_ee import router, storage
 from cilantro_ee.crypto.wallet import Wallet
-from contracting.db.driver import InMemDriver
+from contracting.db.driver import InMemDriver, ContractDriver
 import zmq.asyncio
 import asyncio
 
@@ -49,11 +49,11 @@ class TestNode(TestCase):
         asyncio.set_event_loop(self.loop)
 
         self.blocks = storage.BlockStorage()
-        self.state = storage.StateDriver()
 
+        self.driver = ContractDriver(driver=InMemDriver())
         self.b = masternode.BlockService(
             blocks=self.blocks,
-            driver=self.state
+            driver=self.driver
         )
 
         self.r = router.Router(
@@ -70,8 +70,7 @@ class TestNode(TestCase):
         self.b.driver.flush()
 
     def test_catchup(self):
-        driver = storage.StateDriver(driver=InMemDriver())
-
+        driver = ContractDriver(driver=InMemDriver())
         node = base.Node(
             socket_base='tcp://127.0.0.1:18002',
             ctx=self.ctx,
@@ -86,7 +85,7 @@ class TestNode(TestCase):
         self.blocks.store_block(block_1)
         self.blocks.store_block(block_2)
         self.blocks.store_block(block_3)
-        self.state.set_latest_block_num(3)
+        storage.set_latest_block_height(3, self.driver)
 
         tasks = asyncio.gather(
             self.r.serve(),
@@ -95,11 +94,11 @@ class TestNode(TestCase):
         )
 
         self.loop.run_until_complete(tasks)
-        self.assertEqual(node.driver.get_latest_block_num(), 3)
+
+        self.assertEqual(storage.get_latest_block_height(node.driver), 3)
 
     def test_catchup_with_nbn_added(self):
-        driver = storage.StateDriver(driver=InMemDriver())
-
+        driver = ContractDriver(driver=InMemDriver())
         node = base.Node(
             socket_base='tcp://127.0.0.1:18002',
             ctx=self.ctx,
@@ -114,7 +113,7 @@ class TestNode(TestCase):
         self.blocks.store_block(block_1)
         self.blocks.store_block(block_2)
         self.blocks.store_block(block_3)
-        self.state.set_latest_block_num(3)
+        storage.set_latest_block_height(3, self.driver)
 
         node.new_block_processor.q.append(block_4)
 
@@ -125,5 +124,5 @@ class TestNode(TestCase):
         )
 
         self.loop.run_until_complete(tasks)
-        self.assertEqual(node.driver.get_latest_block_num(), 4)
+        self.assertEqual(storage.get_latest_block_height(node.driver), 4)
 

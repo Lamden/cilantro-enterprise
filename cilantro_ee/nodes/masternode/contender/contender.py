@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import bson
 from contracting.db.encoder import encode, decode
+from contracting.db.driver import ContractDriver
 
 from cilantro_ee import router
 from cilantro_ee.crypto.canonical import format_dictionary, merklize
@@ -12,8 +13,6 @@ from cilantro_ee.logger.base import get_logger
 
 import asyncio
 import time
-
-from cilantro_ee.storage import StateDriver
 
 
 class SBCException(Exception):
@@ -45,7 +44,7 @@ class SBCIndexGreaterThanPossibleError(SBCException):
 
 
 class SBCInbox(router.Processor):
-    def __init__(self, driver: StateDriver, expected_subblocks=4, debug=True, *args, **kwargs):
+    def __init__(self, driver: ContractDriver, expected_subblocks=4, debug=True, *args, **kwargs):
         self.q = []
         self.driver = driver
         self.expected_subblocks = expected_subblocks

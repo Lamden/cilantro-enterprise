@@ -5,8 +5,9 @@ from cilantro_ee.logger.base import get_logger
 import json as _json
 from contracting.client import ContractingClient
 from contracting.db.encoder import encode, decode
+from contracting.db.driver import ContractDriver
 from contracting.compilation import parser
-from cilantro_ee.storage import BlockStorage, StateDriver
+from cilantro_ee import storage
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
 from cilantro_ee.crypto.transaction import TransactionException
 
@@ -27,7 +28,7 @@ class ByteEncoder(_json.JSONEncoder):
 
 
 class WebServer:
-    def __init__(self, contracting_client: ContractingClient, driver: StateDriver, wallet, blocks, queue=[], port=8080, ssl_port=443, ssl_enabled=False,
+    def __init__(self, contracting_client: ContractingClient, driver: ContractDriver, wallet, blocks, queue=[], port=8080, ssl_port=443, ssl_enabled=False,
                  ssl_cert_file='~/.ssh/server.csr',
                  ssl_key_file='~/.ssh/server.key',
                  workers=2, debug=True, access_log=False,
@@ -45,6 +46,7 @@ class WebServer:
         # Initialize the backend data interfaces
         self.client = contracting_client
         self.driver = driver
+        self.nonces = storage.NonceStorage()
         self.blocks = blocks
 
         self.static_headers = {}
@@ -148,10 +150,11 @@ class WebServer:
                 nonce=nonce,
                 pending_nonce=pending_nonce
             )
-            self.driver.set_pending_nonce(
+
+            self.nonces.set_pending_nonce(
                 sender=tx['payload']['sender'],
                 processor=tx['payload']['processor'],
-                nonce=pending_nonce
+                value=pending_nonce
             )
         except TransactionException as e:
             return response.json(transaction.EXCEPTION_MAP[e])
@@ -261,14 +264,15 @@ class WebServer:
         return response.json({'values': values, 'next': values[-1][0]}, status=200)
 
     async def get_latest_block(self, request):
-        index = self.blocks.get_last_n(n=1, collection=BlockStorage.BLOCK)
+        index = self.blocks.get_last_n(n=1, collection=storage.BlockStorage.BLOCK)
         return response.json(index[0], dumps=ByteEncoder().encode)
 
     async def get_latest_block_number(self, request):
-        return response.json({'latest_block_number': self.driver.get_latest_block_num()})
+
+        return response.json({'latest_block_number': storage.get_latest_block_height(self.driver)})
 
     async def get_latest_block_hash(self, request):
-        return response.json({'latest_block_hash': self.driver.get_latest_block_hash()})
+        return response.json({'latest_block_hash': storage.get_latest_block_hash(self.driver)})
 
     async def get_block(self, request):
         num = request.args.get('num')

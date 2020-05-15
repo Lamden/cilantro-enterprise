@@ -5,20 +5,20 @@ import time
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.nodes.masternode.server.routes import WebServer
 from cilantro_ee.nodes.masternode.contender.contender import Aggregator
-from cilantro_ee.storage import StateDriver, BlockStorage
+from cilantro_ee.storage import BlockStorage, get_latest_block_height
 from cilantro_ee.router import Processor
 from cilantro_ee.formatting import primatives
 import json
 
 from cilantro_ee.nodes import base
 from contracting.db.encoder import encode
-
+from contracting.db.driver import ContractDriver
 
 BLOCK_SERVICE = 'service'
 
 
 class BlockService(Processor):
-    def __init__(self, blocks: BlockStorage=None, driver=StateDriver()):
+    def __init__(self, blocks: BlockStorage=None, driver=ContractDriver()):
         self.blocks = blocks
         self.driver = driver
 
@@ -28,7 +28,7 @@ class BlockService(Processor):
             if msg['name'] == base.GET_BLOCK:
                 response = self.get_block(msg)
             elif msg['name'] == base.GET_HEIGHT:
-                response = self.driver.get_latest_block_num()
+                response = get_latest_block_height(self.driver)
 
         return response
 

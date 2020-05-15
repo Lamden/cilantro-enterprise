@@ -1,6 +1,7 @@
 from cilantro_ee import storage, network, router, authentication, rewards, upgrade
 
 from cilantro_ee.contracts import sync
+from contracting.db.driver import ContractDriver
 import cilantro_ee
 import zmq.asyncio
 import asyncio
@@ -51,7 +52,7 @@ async def get_block(block_num: int, ip_string: str, ctx: zmq.asyncio.Context):
 
 
 class NewBlock(router.Processor):
-    def __init__(self, driver: storage.StateDriver):
+    def __init__(self, driver: ContractDriver):
         self.q = []
         self.driver = driver
         self.log = get_logger('NBN')
@@ -70,14 +71,16 @@ class NewBlock(router.Processor):
         return nbn
 
     def clean(self):
-        self.q = [nbn for nbn in self.q if nbn['number'] >= self.driver.latest_block_num]
+        num = storage.get_latest_block_height(self.driver)
+        self.q = [nbn for nbn in self.q if nbn['number'] >= num]
 
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict,
-                 bootnodes=[], driver=storage.StateDriver(), debug=True, store=False):
+                 bootnodes=[], driver=ContractDriver(), debug=True, store=False):
 
         self.driver = driver
+        self.nonces = storage.NonceStorage()
         self.store = store
 
         self.blocks = None
@@ -129,8 +132,10 @@ class Node:
         self.running = False
 
     async def catchup(self, mn_seed):
-        current = self.driver.get_latest_block_num()
+        current = storage.get_latest_block_height(self.driver)
         latest = await get_latest_block_height(ip_string=mn_seed, ctx=self.ctx)
+
+        assert type(latest) != dict, 'Provided node is not in sync.'
 
         self.log.info(f'Current: {current}, Latest: {latest}')
 
@@ -139,38 +144,40 @@ class Node:
 
         for i in range(current, latest + 1):
             block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
-            self.process_block(block)
+            self.update_state(block)
 
         while len(self.new_block_processor.q) > 0:
             block = self.new_block_processor.q.pop(0)
-            self.process_block(block)
+            self.update_state(block)
 
     def should_process(self, block):
         self.log.info(block)
         if self.waiting_for_confirmation:
-            return self.driver.latest_block_num <= block['number'] and block['hash'] != 'f' * 64
+            return storage.get_latest_block_height(self.driver) <= block['number'] and block['hash'] != 'f' * 64
         else:
-            return self.driver.latest_block_num < block['number'] and block['hash'] != 'f' * 64
+            return storage.get_latest_block_height(self.driver) < block['number'] and block['hash'] != 'f' * 64
+
+    def update_state(self, block):
+        storage.update_state_with_block(
+            block=block,
+            driver=self.driver,
+            nonces=self.nonces
+        )
+
+        rewards.issue_rewards(
+            block=block,
+            client=self.client
+        )
 
     def process_block(self, block):
         if self.should_process(block):
             self.log.info('Processing new block...')
-            self.driver.update_with_block(block)
 
-            rewards.issue_rewards(block=block, client=self.client)
+            self.update_state(block)
             self.socket_authenticator.refresh_governance_sockets()
 
             if self.store:
                 self.blocks.store_block(block)
-
-        else:
-            self.log.error('Could not store block...')
-            if self.driver.latest_block_num >= block['number']:
-                self.log.error(f'Latest block num = {self.driver.latest_block_num}')
-                self.log.error(f'New block num = {block["number"]}')
-            if block['hash'] == 'f' * 64:
-                self.log.error(f'Block hash = {block["hash"]}')
-            self.driver.delete_pending_nonces()
 
         self.driver.cache.clear()
         self.new_block_processor.clean()

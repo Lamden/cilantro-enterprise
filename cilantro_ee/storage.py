@@ -5,132 +5,131 @@ import cilantro_ee
 from cilantro_ee.logger.base import get_logger
 
 BLOCK_HASH_KEY = '_current_block_hash'
-BLOCK_NUM_KEY = '_current_block_num'
+BLOCK_NUM_HEIGHT = '_current_block_height'
 NONCE_KEY = '__n'
 PENDING_NONCE_KEY = '__pn'
 
 log = get_logger('STATE')
 
 
-class StateDriver(ContractDriver):
-    def get_latest_block_hash(self):
-        block_hash = self.driver.get(BLOCK_HASH_KEY)
-        if block_hash is None:
-            return '0' * 64
-        return block_hash
+class NonceStorage:
+    def __init__(self, port=27027, config_path=cilantro_ee.__path__[0]):
+        self.config_path = config_path
 
-    def set_latest_block_hash(self, v: str):
-        if type(v) == bytes:
-            v = v.hex()
-        assert len(v) == 64, 'Hash provided is not 32 bytes.'
-        self.driver.set(BLOCK_HASH_KEY, v)
+        self.port = port
 
-    latest_block_hash = property(get_latest_block_hash, set_latest_block_hash)
-
-    def get_latest_block_num(self) -> int:
-        num = self.driver.get(BLOCK_NUM_KEY)
-
-        if num is None:
-            return 0
-
-        num = int(num)
-
-        return num
-
-    def set_latest_block_num(self, v):
-        v = int(v)
-        assert v >= 0, 'Block number must be positive integer.'
-
-        # v = str(v).encode()
-
-        self.driver.set(BLOCK_NUM_KEY, v)
-
-    latest_block_num = property(get_latest_block_num, set_latest_block_num)
-
-    def set_transaction_data(self, tx):
-        if tx['state'] is not None and len(tx['state']) > 0:
-            for delta in tx['state']:
-                self.driver.set(delta['key'], delta['value']) # driver.driver bypasses cache
-                log.info(f"{delta['key']} -> {delta['value']}")
-
-    def update_with_block(self, block):
-        if self.latest_block_hash != block['previous']:
-            log.error('BLOCK MISMATCH!!!')
-
-        self.latest_block_num += 1
-
-        for sb in block['subblocks']:
-            for tx in sb['transactions']:
-                self.set_transaction_data(tx=tx)
-
-        # Commit new nonces
-        self.commit_nonces()
-        self.delete_pending_nonces()
-
-        # Update our block hash and block num
-        self.set_latest_block_hash(block['hash'])
+        self.client = MongoClient()
+        self.db = self.client.get_database('blockchain')
+        self.nonces = self.db['nonces']
+        self.pending_nonces = self.db['pending_nonces']
 
     @staticmethod
-    def n_key(key, processor, sender):
-        if type(processor) == bytes:
-            processor = processor.hex()
+    def get_one(sender, processor, db):
+        v = db.find_one(
+            {
+                'sender': sender,
+                'processor': processor
+            }
+        )
 
-        if type(sender) == bytes:
-            sender = sender.hex()
+        return v['value']
 
-        return ':'.join([key, processor, sender])
+    @staticmethod
+    def set_one(sender, processor, value, db):
+        db.update_one(
+            {
+                'sender': sender,
+                'processor': processor
+            },
+            {
+                '$set':
+                    {
+                        'value': value
+                    }
+            }, upsert=True
+        )
 
-    # Nonce methods
-    def get_pending_nonce(self, processor: bytes, sender: bytes):
-        return self.driver.get(self.n_key(PENDING_NONCE_KEY, processor, sender))
+    def get_nonce(self, sender, processor):
+        return self.get_one(sender, processor, self.nonces)
 
-    def get_nonce(self, processor: bytes, sender: bytes):
-        return self.driver.get(self.n_key(NONCE_KEY, processor, sender))
+    def get_pending_nonce(self, sender, processor):
+        return self.get_one(sender, processor, self.pending_nonces)
 
-    def set_pending_nonce(self, processor: bytes, sender: bytes, nonce: int):
-        self.driver.set(self.n_key(PENDING_NONCE_KEY, processor, sender), nonce)
+    def set_nonce(self, sender, processor, value):
+        self.set_one(sender, processor, value, self.nonces)
 
-    def set_nonce(self, processor: bytes, sender: bytes, nonce: int):
-        self.driver.set(self.n_key(NONCE_KEY, processor, sender), nonce)
+    def set_pending_nonce(self, sender, processor, value):
+        self.set_one(sender, processor, value, self.pending_nonces)
 
-    def delete_pending_nonce(self, processor: bytes, sender: bytes):
-        self.driver.delete(self.n_key(PENDING_NONCE_KEY, processor, sender))
+    def get_latest_nonce(self, sender, processor):
+        latest_nonce = self.get_pending_nonce(processor, sender)
 
-    def get_latest_nonce(self, processor:bytes, sender: bytes):
-        nonce = self.get_pending_nonce(processor, sender)
+        if latest_nonce is None:
+            latest_nonce = self.get_nonce(processor, sender)
 
-        if nonce is None:
-            nonce = self.get_nonce(processor, sender)
+        if latest_nonce is None:
+            latest_nonce = 0
 
-        if nonce is None:
-            nonce = 0
+        return latest_nonce
 
-        return nonce
 
-    def commit_nonces(self):
-        for n in self.driver.iter(PENDING_NONCE_KEY):
-            _, processor, sender = n.split(':')
+def get_latest_block_hash(driver: ContractDriver):
+    return driver.get(BLOCK_HASH_KEY, mark=False)
 
-            processor = bytes.fromhex(processor)
-            sender = bytes.fromhex(sender)
 
-            nonce = self.get_pending_nonce(processor=processor, sender=sender)
+def set_latest_block_hash(h, driver: ContractDriver):
+    driver.set(BLOCK_HASH_KEY, h, mark=False)
 
-            self.set_nonce(processor=processor, sender=sender, nonce=nonce)
-            self.delete(n, mark=False)
 
-    def delete_pending_nonces(self):
-        for nonce in self.keys(PENDING_NONCE_KEY):
-            self.delete(nonce, mark=False)
+def get_latest_block_height(driver: ContractDriver):
+    h = driver.get(BLOCK_NUM_HEIGHT, mark=False)
+    if h is None:
+        return 0
+    return h
 
-    def iter(self, *args, **kwargs):
-        return self.driver.iter(*args, **kwargs)
+
+def set_latest_block_height(h, driver: ContractDriver):
+    driver.set(BLOCK_NUM_HEIGHT, h, mark=False)
+
+
+def write_state_changes_for_tx(tx, driver: ContractDriver):
+    if tx['state'] is not None and len(tx['state']) > 0:
+        for delta in tx['state']:
+            driver.set(delta['key'], delta['value'])
+
+
+def update_state_with_transaction(tx, driver: ContractDriver, nonces: NonceStorage):
+    nonces_to_delete = []
+
+    if tx['state'] is not None and len(tx['state']) > 0:
+        for delta in tx['state']:
+            driver.set(delta['key'], delta['value'], mark=False)
+
+            nonces.set_nonce(
+                sender=tx['sender'],
+                processor=tx['processor'],
+                value=tx['nonce']
+            )
+
+            nonces_to_delete.append((tx['sender'], tx['processor']))
+
+    for n in nonces_to_delete:
+        nonces.set_pending_nonce(*n, value=None)
+
+
+def update_state_with_block(block, driver: ContractDriver, nonces: NonceStorage):
+    for sb in block['subblocks']:
+        for tx in sb['transactions']:
+            update_state_with_transaction(tx, driver, nonces)
+
+    # Update our block hash and block num
+    set_latest_block_hash(block['hash'], driver=driver)
+    set_latest_block_height(block['number'], driver=driver)
 
 
 class BlockStorage:
     BLOCK = 0
-    INDEX = 1
-    TX = 2
+    TX = 1
 
     def __init__(self, port=27027, config_path=cilantro_ee.__path__[0]):
         # Setup configuration file to read constants
@@ -142,7 +141,6 @@ class BlockStorage:
         self.db = self.client.get_database('blockchain')
 
         self.blocks = self.db['blocks']
-        self.indexes = self.db['index']
         self.txs = self.db['tx']
 
     def q(self, v):
@@ -165,8 +163,6 @@ class BlockStorage:
     def put(self, data, collection=BLOCK):
         if collection == BlockStorage.BLOCK:
             _id = self.blocks.insert_one(data)
-        elif collection == BlockStorage.INDEX:
-            _id = self.indexes.insert_one(data)
         elif collection == BlockStorage.TX:
             _id = self.txs.insert_one(data)
         else:
@@ -174,11 +170,9 @@ class BlockStorage:
 
         return _id is not None
 
-    def get_last_n(self, n, collection=INDEX):
+    def get_last_n(self, n, collection=BLOCK):
         if collection == BlockStorage.BLOCK:
             c = self.blocks
-        elif collection == BlockStorage.INDEX:
-            c = self.indexes
         else:
             return None
 
@@ -196,15 +190,6 @@ class BlockStorage:
 
         return blocks
 
-    def get_index(self, v):
-        q = self.q(v)
-        block = self.indexes.find_one(q)
-
-        if block is not None:
-            block.pop('_id')
-
-        return block
-
     def get_tx(self, h):
         tx = self.txs.find_one({'hash': h})
 
@@ -215,7 +200,7 @@ class BlockStorage:
 
     def drop_collections(self):
         self.blocks.remove()
-        self.indexes.remove()
+        self.txs.remove()
 
     def store_block(self, block):
         self.put(block, BlockStorage.BLOCK)

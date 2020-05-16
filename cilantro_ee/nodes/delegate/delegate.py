@@ -1,7 +1,6 @@
-from cilantro_ee.nodes.delegate import execution
-from cilantro_ee.nodes.delegate.work import gather_transaction_batches, pad_work, filter_work
+from cilantro_ee.nodes.delegate import execution, work
 from cilantro_ee import router
-from cilantro_ee.nodes.base import Node
+from cilantro_ee.nodes import base
 from cilantro_ee.logger.base import get_logger
 import asyncio
 
@@ -40,8 +39,24 @@ class WorkProcessor(router.Processor):
 
         self.todo.clear()
 
+    async def accept_work(self, expected_batched):
+        self.accepting_work = True
+        self.process_todo_work()
 
-class Delegate(Node):
+        w = await work.gather_transaction_batches(
+            queue=self.work,
+            expected_batches=expected_batched,
+            timeout=5
+        )
+
+        self.accepting_work = False
+
+        self.log.info(f'Got {len(w)} batch(es) of work')
+
+        return w
+
+
+class Delegate(base.Node):
     def __init__(self, parallelism=4, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -53,95 +68,77 @@ class Delegate(Node):
         self.work_processor = WorkProcessor()
         self.router.add_service(WORK_SERVICE, self.work_processor)
 
-        self.pending_sbcs = set()
-
         self.log = get_logger(f'DEL {self.wallet.vk_pretty[4:12]}')
 
         self.masternode_contract = self.client.get_contract('masternodes')
 
-    async def start(self):
-        await super().start()
+    async def start(self, bootnodes):
+        await super().start(bootnodes)
+
+        if self.driver.latest_block_num == 0:
+            block = await self.new_block_processor.wait_for_next_nbn()
+            self.update_state(block)
+            self.version_check()
 
         asyncio.ensure_future(self.run())
 
         self.log.info('Running...')
 
     async def acquire_work(self):
-        if len(self.parameters.sockets) == 0:
+        current_masternodes = self.client.get_var(contract='masternodes', variable='S', arguments=['members'])
+
+        self.log.error(f'{len(current_masternodes)} MNS!')
+
+        w = await self.work_processor.accept_work(expected_batched=len(current_masternodes))
+
+        self.log.info(f'Got {len(w)} batch(es) of work')
+
+        expected_masters = set(current_masternodes)
+        work.pad_work(work=w, expected_masters=expected_masters)
+
+        return work.filter_work(w)
+
+    async def loop(self):
+        if len(self.get_masternode_peers()) == 0:
             return
 
-        self.log.error(f'{len(self.masternode_contract.quick_read("S", "members"))} MNS!')
+        filtered_work = await self.acquire_work()
 
-        self.work_processor.accepting_work = True
-        self.work_processor.process_todo_work()
+        # Run mini catch up here to prevent 'desyncing'
+        self.log.info(f'Pending Block Notifications to Process: {len(self.new_block_processor.q)}')
 
-        work = await gather_transaction_batches(
-            queue=self.work_processor.work,
-            expected_batches=len(self.masternode_contract.quick_read("S", "members")),
-            timeout=5
-        )
+        while len(self.new_block_processor.q) > 0:
+            block = self.new_block_processor.q.pop(0)
+            self.update_state(block)
 
-        self.work_processor.accepting_work = False
-
-        self.log.info(f'Got {len(work)} batch(es) of work')
-
-        expected_masters = set(self.masternode_contract.quick_read("S", "members"))
-        pad_work(work=work, expected_masters=expected_masters)
-
-        return filter_work(work)
-
-    def process_work(self, filtered_work):
         results = execution.execute_work(
             executor=self.executor,
             driver=self.driver,
             work=filtered_work,
             wallet=self.wallet,
             previous_block_hash=self.driver.latest_block_hash,
-            stamp_cost=self.reward_manager.stamps_per_tau
+            stamp_cost=self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
         )
 
-        return results
+        print(results)
+
+        await router.secure_multicast(
+            msg=results,
+            service=base.CONTENDER_SERVICE,
+            cert_dir=self.socket_authenticator.cert_dir,
+            wallet=self.wallet,
+            peer_map=self.get_masternode_peers(),
+            ctx=self.ctx
+        )
+
+        self.driver.clear_pending_state()  # Add
+
+        block = await self.new_block_processor.wait_for_next_nbn()
+        self.update_state(block)
 
     async def run(self):
-        # If first block, just wait for masters to send the genesis NBN
-        if self.driver.latest_block_num == 0:
-            nbn = await self.new_block_processor.wait_for_next_nbn()
-            self.process_block(nbn)
-            self.version_check()
-
         while self.running:
-            filtered_work = await self.acquire_work()
-
-            # Run mini catch up here to prevent 'desyncing'
-            self.log.info(f'Pending Block Notifications to Process: {len(self.new_block_processor.q)}')
-
-            while len(self.new_block_processor.q) > 0:
-                block = self.new_block_processor.q.pop(0)
-                self.process_block(block)
-
-            results = execution.execute_work(
-                executor=self.executor,
-                driver=self.driver,
-                work=filtered_work,
-                wallet=self.wallet,
-                previous_block_hash=self.driver.latest_block_hash,
-                stamp_cost=self.reward_manager.stamps_per_tau
-            )
-
-            print(results)
-
-            await self.masternode_socket_book.send_to_peers(
-                msg=encode(results).encode()
-            )
-
-            self.driver.clear_pending_state() # Add
-
-            self.waiting_for_confirmation = True
-
-            nbn = await self.new_block_processor.wait_for_next_nbn()
-            self.process_block(nbn)
-
-            self.waiting_for_confirmation = False
+            await self.loop()
 
     def stop(self):
         self.router.stop()

@@ -1,5 +1,11 @@
+import json
+from copy import deepcopy
+
 import bson
 import hashlib
+
+from contracting.db.encoder import encode
+
 from cilantro_ee.logger.base import get_logger
 
 log = get_logger('CANON')
@@ -55,3 +61,36 @@ def verify_merkle_tree(leaves, expected_root):
     if tree[0] == expected_root:
         return True
     return False
+
+
+def block_from_subblocks(subblocks, previous_hash: str, block_num: int) -> dict:
+    block_hasher = hashlib.sha3_256()
+    block_hasher.update(bytes.fromhex(previous_hash))
+
+    deserialized_subblocks = []
+
+    for subblock in subblocks:
+        if subblock is None:
+            continue
+
+        sb = format_dictionary(subblock)
+        deserialized_subblocks.append(sb)
+
+        sb_without_sigs = deepcopy(sb)
+        del sb_without_sigs['signatures']
+
+        encoded_sb = encode(sb_without_sigs)
+        e = json.loads(encoded_sb)
+
+        b = bson.BSON.encode(e)
+
+        block_hasher.update(b)
+
+    block = {
+        'hash': block_hasher.digest().hex(),
+        'number': block_num,
+        'previous': previous_hash,
+        'subblocks': deserialized_subblocks
+    }
+
+    return block

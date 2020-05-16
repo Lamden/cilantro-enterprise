@@ -1,5 +1,5 @@
 from cilantro_ee import storage, network, router, authentication, rewards, upgrade
-
+from cilantro_ee.crypto import canonical
 from cilantro_ee.contracts import sync
 from contracting.db.driver import ContractDriver
 import cilantro_ee
@@ -90,8 +90,6 @@ class Node:
         if self.store:
             self.blocks = storage.BlockStorage()
 
-        self.waiting_for_confirmation = False
-
         self.log = get_logger('NODE')
         self.log.propagate = debug
         self.socket_base = socket_base
@@ -134,6 +132,7 @@ class Node:
         self.running = False
 
     async def catchup(self, mn_seed):
+        # Get the current latest block stored and the latest block of the network
         current = storage.get_latest_block_height(self.driver)
         latest = await get_latest_block_height(ip_string=mn_seed, ctx=self.ctx)
 
@@ -141,66 +140,102 @@ class Node:
 
         self.log.info(f'Current: {current}, Latest: {latest}')
 
+        # Increment current by one. Don't count the genesis block.
         if current == 0:
             current = 1
 
+        # Find the missing blocks process them
         for i in range(current, latest + 1):
             block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
             self.update_state(block)
 
+        # Process any blocks that were made while we were catching up
         while len(self.new_block_processor.q) > 0:
             block = self.new_block_processor.q.pop(0)
             self.update_state(block)
 
     def should_process(self, block):
-        self.log.info(block)
-        if self.waiting_for_confirmation:
-            return storage.get_latest_block_height(self.driver) <= block['number'] and block['hash'] != 'f' * 64
-        else:
-            return storage.get_latest_block_height(self.driver) < block['number'] and block['hash'] != 'f' * 64
+        # Test if block failed immediately
+        if block['hash'] == 'f' * 64:
+            return False
+
+        # Get current metastate
+        current_hash = storage.get_latest_block_hash(self.driver)
+        current_height = storage.get_latest_block_height(self.driver)
+
+        # Test if block contains the same metastate
+        if block['number'] != current_height + 1:
+            return False
+
+        if block['previous'] != current_hash:
+            return False
+
+        # If so, use metastate and subblocks to create the 'expected' block
+        expected_block = canonical.block_from_subblocks(
+            subblocks=block['subblocks'],
+            previous_hash=current_hash,
+            block_num=current_height + 1
+        )
+
+        # Return if the block contains the expected information
+        return block == expected_block
 
     def update_state(self, block):
-        storage.update_state_with_block(
-            block=block,
-            driver=self.driver,
-            nonces=self.nonces
-        )
+        # Check if the block is valid
+        if self.should_process(block):
+            # Commit the state changes and nonces to the database
+            storage.update_state_with_block(
+                block=block,
+                driver=self.driver,
+                nonces=self.nonces
+            )
 
-        rewards.issue_rewards(
-            block=block,
-            client=self.client
-        )
+            # Calculate and issue the rewards for the governance nodes
+            rewards.issue_rewards(
+                block=block,
+                client=self.client
+            )
 
     def process_block(self, block):
-        if self.should_process(block):
-            self.log.info('Processing new block...')
+        self.log.info('Processing new block...')
 
-            self.update_state(block)
-            self.socket_authenticator.refresh_governance_sockets()
+        # Update the state and refresh the sockets so new nodes can join
+        self.update_state(block)
+        self.socket_authenticator.refresh_governance_sockets()
 
-            if self.store:
-                self.blocks.store_block(block)
+        # Store the block if it's a masternode
+        if self.store:
+            self.blocks.store_block(block)
 
+        # Prepare for the next block by flushing out driver and notification state
         self.driver.cache.clear()
         self.new_block_processor.clean()
 
+        # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager.version_check()
 
     async def start(self, bootnodes):
+        # Get the set of VKs we are looking for from the constitution argument
         vks = self.constitution['masternodes'] + self.constitution['delegates']
 
+        # Use it to boot up the network
         await self.network.start(bootnodes=bootnodes, vks=vks)
 
+        # Take a masternode vk from the constitution and look up its IP
         masternode = self.constitution['masternodes'][0]
         masternode_ip = self.network.peers[masternode]
 
+        # Use this IP to request any missed blocks
         await self.catchup(mn_seed=masternode_ip)
 
+        # Refresh the sockets to accept new nodes
         self.socket_authenticator.refresh_governance_sockets()
 
+        # Start running
         self.running = True
 
     def stop(self):
+        # Kill the router and throw the running flag to stop the loop
         self.router.stop()
         self.running = False
 

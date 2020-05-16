@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+import cilantro_ee.crypto.canonical
 import cilantro_ee.nodes.masternode.contender
 from cilantro_ee.crypto import canonical
 
@@ -81,7 +82,7 @@ class TestCanonicalCoding(TestCase):
     def test_block_from_subblocks_verify_works(self):
         sbs = random_txs.random_block().subBlocks
 
-        block = cilantro_ee.nodes.masternode.contender.block_from_subblocks(subblocks=sbs, previous_hash=b'\x00' * 32, block_num=0)
+        block = cilantro_ee.crypto.canonical.block_from_subblocks(subblocks=sbs, previous_hash=b'\x00' * 32, block_num=0)
 
         prev_hash = block['prevBlockHash']
         prop_hash = block['hash']

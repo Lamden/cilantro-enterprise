@@ -105,24 +105,34 @@ class Masternode(base.Node):
     async def start(self, bootnodes):
         await super().start(bootnodes=bootnodes)
 
+        # Look up the latest block stored in our database
         latest_block = self.blocks.get_last_n(1, self.blocks.BLOCK)[0]
 
+        # Set the metastate to this block. This is a sanity check
         self.driver.latest_block_num = latest_block['blockNum']
         self.driver.latest_block_hash = latest_block['hash']
 
+        # Start the block server so others can run catchup using our node as a seed.
+        # Start the block contender service to participate in consensus
         self.router.add_service(base.BLOCK_SERVICE, BlockService(self.blocks, self.driver))
         self.router.add_service(base.CONTENDER_SERVICE, self.aggregator.sbc_inbox)
 
+        # Start the webserver to accept transactions
         await self.webserver.start()
 
         self.log.info('Done starting...')
 
+        # If we have no blocks in our database, we are starting a new network from scratch
         if self.driver.latest_block_num == 0:
             await self.new_blockchain_boot()
+        # Otherwise, we are joining an existing network quorum
         else:
             await self.join_quorum()
 
     async def hang(self):
+        # Wait for activity on our transaction queue or new block processor.
+        # If another masternode has transactions, it will send use a new block notification.
+        # If we have transactions, we will do the opposite. This 'wakes' up the network.
         while len(self.tx_batcher.queue) <= 0 and len(self.new_block_processor.q) <= 0:
             if not self.running:
                 return
@@ -131,8 +141,11 @@ class Masternode(base.Node):
     async def new_blockchain_boot(self):
         self.log.info('Fresh blockchain boot.')
 
+        # Simply wait for the first transaction to come through
         await self.hang()
 
+        # Check if it was us who recieved the first transaction.
+        # If so, multicast a block notification to wake everyone up
         if len(self.tx_batcher.queue) > 0:
             await router.secure_multicast(
                 msg=get_genesis_block(),

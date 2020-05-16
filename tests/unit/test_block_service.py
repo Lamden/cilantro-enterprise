@@ -1,7 +1,7 @@
 from cilantro_ee.nodes.masternode import masternode
 from cilantro_ee.nodes import base
 from cilantro_ee import router, storage
-
+from contracting.db.driver import ContractDriver
 import zmq.asyncio
 import asyncio
 
@@ -21,7 +21,7 @@ class TestBlockService(TestCase):
 
         self.b = masternode.BlockService(
             blocks=storage.BlockStorage(),
-            driver=storage.StateDriver()
+            driver=ContractDriver()
         )
 
         self.r = router.Router(
@@ -38,7 +38,7 @@ class TestBlockService(TestCase):
         self.b.driver.flush()
 
     def test_service_returns_block_height_if_proper_message(self):
-        self.b.driver.set_latest_block_num(1337)
+        storage.set_latest_block_height(1337, self.b.driver)
 
         msg = {
             'name': base.GET_HEIGHT,
@@ -116,7 +116,7 @@ class TestBlockService(TestCase):
         self.assertIsNone(res)
 
     def test_get_latest_block_height(self):
-        self.b.driver.set_latest_block_num(1337)
+        storage.set_latest_block_height(1337, self.b.driver)
 
         async def send_msg():
             res = await base.get_latest_block_height(

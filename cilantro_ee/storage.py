@@ -74,7 +74,10 @@ class NonceStorage:
 
 
 def get_latest_block_hash(driver: ContractDriver):
-    return driver.get(BLOCK_HASH_KEY, mark=False)
+    latest_hash = driver.get(BLOCK_HASH_KEY, mark=False)
+    if latest_hash is None:
+        return '0' * 64
+    return latest_hash
 
 
 def set_latest_block_hash(h, driver: ContractDriver):

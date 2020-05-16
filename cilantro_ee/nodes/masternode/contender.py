@@ -1,13 +1,8 @@
-import hashlib
-import json
-from copy import deepcopy
-
-import bson
 from contracting.db.encoder import encode, decode
 from contracting.db.driver import ContractDriver
 
 from cilantro_ee import router
-from cilantro_ee.crypto.canonical import format_dictionary, merklize
+from cilantro_ee.crypto.canonical import merklize, block_from_subblocks
 from cilantro_ee.crypto.wallet import verify
 from cilantro_ee.logger.base import get_logger
 
@@ -339,36 +334,3 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
             previous_hash=self.driver.latest_block_hash,
             block_num=self.driver.latest_block_num + 1
         )
-
-
-def block_from_subblocks(subblocks, previous_hash: bytes, block_num: int) -> dict:
-    block_hasher = hashlib.sha3_256()
-    block_hasher.update(bytes.fromhex(previous_hash))
-
-    deserialized_subblocks = []
-
-    for subblock in subblocks:
-        if subblock is None:
-            continue
-
-        sb = format_dictionary(subblock)
-        deserialized_subblocks.append(sb)
-
-        sb_without_sigs = deepcopy(sb)
-        del sb_without_sigs['signatures']
-
-        encoded_sb = encode(sb_without_sigs)
-        e = json.loads(encoded_sb)
-
-        b = bson.BSON.encode(e)
-
-        block_hasher.update(b)
-
-    block = {
-        'hash': block_hasher.digest().hex(),
-        'blockNum': block_num,
-        'previous': previous_hash,
-        'subblocks': deserialized_subblocks
-    }
-
-    return block

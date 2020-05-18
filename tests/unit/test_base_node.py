@@ -411,3 +411,7 @@ class TestNode(TestCase):
         )
 
         self.loop.run_until_complete(tasks)
+
+        self.assertEqual(storage.get_latest_block_height(node.driver), 3)
+        self.assertEqual(storage.get_latest_block_hash(node.driver), blocks[2]['hash'])
+

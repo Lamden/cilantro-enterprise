@@ -35,8 +35,6 @@ class BlockService(router.Processor):
         if not primatives.number_is_formatted(num):
             return None
 
-        print(f'asked for {num}')
-
         block = self.blocks.get_block(num)
 
         if block is None:

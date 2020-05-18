@@ -147,9 +147,6 @@ class Node:
         # Find the missing blocks process them
         for i in range(current, latest + 1):
             block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
-            if not self.should_process(block):
-                print('uh oh')
-                print(block)
             self.update_state(block)
 
         # Process any blocks that were made while we were catching up
@@ -168,11 +165,9 @@ class Node:
 
         # Test if block contains the same metastate
         if block['number'] != current_height + 1:
-            print('h')
             return False
 
         if block['previous'] != current_hash:
-            print('hash')
             return False
 
         # If so, use metastate and subblocks to create the 'expected' block

@@ -195,6 +195,8 @@ class Node:
                 block=block,
                 client=self.client
             )
+        self.driver.commit()
+        self.driver.clear_pending_state()
 
     def process_new_block(self, block):
         self.log.info('Processing new block...')

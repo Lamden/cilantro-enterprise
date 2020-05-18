@@ -77,7 +77,8 @@ def block_from_subblocks(subblocks, previous_hash: str, block_num: int) -> dict:
         deserialized_subblocks.append(sb)
 
         sb_without_sigs = deepcopy(sb)
-        del sb_without_sigs['signatures']
+        if sb_without_sigs.get('signatures') is not None:
+            del sb_without_sigs['signatures']
 
         encoded_sb = encode(sb_without_sigs)
         e = json.loads(encoded_sb)

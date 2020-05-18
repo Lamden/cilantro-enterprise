@@ -187,6 +187,7 @@ def build_socket(socket_str: str, ctx: zmq.asyncio.Context, linger=500):
     except ZMQBaseError:
         return None
 
+
 async def secure_send(msg: dict, service, cert_dir, wallet: Wallet, vk, ip, ctx: zmq.asyncio.Context, linger=500):
     socket = ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.LINGER, linger)
@@ -211,7 +212,8 @@ async def secure_send(msg: dict, service, cert_dir, wallet: Wallet, vk, ip, ctx:
 
     payload = encode(message).encode()
 
-    await socket.send(payload, flags=zmq.NOWAIT)
+    await socket.send(payload, flags=zmq.NOBLOCK)
+
 
 async def secure_multicast(msg: dict, service, cert_dir, wallet: Wallet, peer_map: dict, ctx: zmq.asyncio.Context, linger=500):
     coroutines = []

@@ -138,12 +138,7 @@ class Masternode(base.Node):
                 return
             await asyncio.sleep(0)
 
-    async def new_blockchain_boot(self):
-        self.log.info('Fresh blockchain boot.')
-
-        # Simply wait for the first transaction to come through
-        await self.hang()
-
+    async def broadcast_new_blockchain_started(self):
         # Check if it was us who recieved the first transaction.
         # If so, multicast a block notification to wake everyone up
         if len(self.tx_batcher.queue) > 0:
@@ -159,35 +154,32 @@ class Masternode(base.Node):
                 ctx=self.ctx
             )
 
-        if len(self.get_masternode_peers()) > 1:
-            self.driver.set_latest_block_num(1)
+    async def new_blockchain_boot(self):
+        self.log.info('Fresh blockchain boot.')
+
+        # Simply wait for the first transaction to come through
+        await self.hang()
+        await self.broadcast_new_blockchain_started()
 
         while self.running:
             await self.loop()
+
+    async def intermediate_catchup(self):
+        while self.running:
+
+            block = await self.new_block_processor.wait_for_next_nbn()
+            self.update_state(block)
+
+            if self.wallet.verifying_key().hex() in self.driver.get_var(contract='masternodes',
+                                                                        variable='S',
+                                                                        arguments=['members']):
+                break
 
     async def join_quorum(self):
         # Catchup with NBNs until you have work, the join the quorum
         self.log.info('Join Quorum')
 
-        block = await self.new_block_processor.wait_for_next_nbn()
-
-        while self.wallet.verifying_key().hex() not in self.driver.get_var(
-                contract='masternodes',
-                variable='S',
-                arguments=['members']
-        ):
-            if block['blockNum'] > self.driver.latest_block_num + 1:
-                last_block = await base.get_block(
-                    block_num=block['number'] - 1,
-                    ip_string=self.bootnodes[0],
-                    ctx=self.ctx
-                )
-
-                self.update_state(last_block)
-
-            self.update_state(block)
-
-            block = await self.new_block_processor.wait_for_next_nbn()
+        await self.intermediate_catchup()
 
         await self.hang()
 
@@ -216,8 +208,8 @@ class Masternode(base.Node):
             ctx=self.ctx
         )
 
-    async def loop(self):
-        sends = await self.send_work()
+    async def get_work_processed(self):
+        await self.send_work()
 
         # this really should just give us a block straight up
         block = await self.aggregator.gather_subblocks(
@@ -232,8 +224,9 @@ class Masternode(base.Node):
 
         self.new_block_processor.clean()
 
-        await self.hang()
+        return block
 
+    async def confirm_new_block(self, block):
         await router.secure_multicast(
             msg=block,
             service=base.NEW_BLOCK_SERVICE,
@@ -246,10 +239,13 @@ class Masternode(base.Node):
             ctx=self.ctx
         )
 
-        self.log.info(f'NBN SENDS {sends}')
-
         # Clear the work here??
         self.aggregator.sbc_inbox.q.clear()
+
+    async def loop(self):
+        block = await self.get_work_processed()
+        await self.hang()
+        await self.confirm_new_block(block)
 
     def stop(self):
         super().stop()

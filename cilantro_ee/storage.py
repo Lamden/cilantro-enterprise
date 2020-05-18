@@ -109,12 +109,12 @@ def update_state_with_transaction(tx, driver: ContractDriver, nonces: NonceStora
             driver.driver.set(delta['key'], delta['value'])
 
             nonces.set_nonce(
-                sender=tx['sender'],
-                processor=tx['processor'],
-                value=tx['nonce']
+                sender=tx['transaction']['sender'],
+                processor=tx['transaction']['processor'],
+                value=tx['transaction']['nonce']
             )
 
-            nonces_to_delete.append((tx['sender'], tx['processor']))
+            nonces_to_delete.append((tx['transaction']['sender'], tx['transaction']['processor']))
 
     for n in nonces_to_delete:
         nonces.set_pending_nonce(*n, value=None)
@@ -128,9 +128,6 @@ def update_state_with_block(block, driver: ContractDriver, nonces: NonceStorage)
     # Update our block hash and block num
     set_latest_block_hash(block['hash'], driver=driver)
     set_latest_block_height(block['number'], driver=driver)
-
-    # Purge the cache to force new values to be looked up in the database
-    driver.clear_pending_state()
 
 
 class BlockStorage:

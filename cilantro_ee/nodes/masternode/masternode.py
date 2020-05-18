@@ -175,6 +175,17 @@ class Masternode(base.Node):
                                                                         arguments=['members']):
                 break
 
+    async def wait_for_block(self):
+        self.new_block_processor.clean()
+
+        while len(self.new_block_processor.q) <= 0:
+            if not self.running:
+                return
+            await asyncio.sleep(0)
+
+        block = self.new_block_processor.q.pop(0)
+        self.update_state(block)
+
     async def join_quorum(self):
         # Catchup with NBNs until you have work, the join the quorum
         self.log.info('Join Quorum')
@@ -182,6 +193,7 @@ class Masternode(base.Node):
         await self.intermediate_catchup()
 
         await self.hang()
+        await self.wait_for_block()
 
         while self.running:
             await self.loop()

@@ -7,8 +7,7 @@ from contracting.db.driver import ContractDriver, InMemDriver
 from cilantro_ee.nodes.delegate.delegate import Delegate
 from cilantro_ee.nodes.masternode.masternode import Masternode
 
-from cilantro_ee.storage import StateDriver
-from cilantro_ee.nodes.masternode.server.tx_validator import build_transaction
+from cilantro_ee.crypto.transaction import build_transaction
 from contracting import config
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
@@ -26,15 +25,13 @@ def make_ipc(p):
         pass
 
 
-def make_network(masternodes, delegates, ctx, mn_min_quorum=2, del_min_quorum=2):
+def make_network(masternodes, delegates, ctx):
     mn_wallets = [Wallet() for _ in range(masternodes)]
     dl_wallets = [Wallet() for _ in range(delegates)]
 
     constitution = {
         'masternodes': [mn.verifying_key().hex() for mn in mn_wallets],
         'delegates': [dl.verifying_key().hex() for dl in dl_wallets],
-        'masternode_min_quorum': mn_min_quorum,
-        'delegate_min_quorum': del_min_quorum,
     }
 
     mns = []
@@ -42,18 +39,20 @@ def make_network(masternodes, delegates, ctx, mn_min_quorum=2, del_min_quorum=2)
     bootnodes = None
     node_count = 0
     for wallet in mn_wallets:
-        driver = StateDriver(driver=InMemDriver())
+        driver = ContractDriver(driver=InMemDriver())
         # driver = IsolatedDriver()
-        ipc = f'/tmp/n{node_count}'
-        make_ipc(ipc)
+        port = 18000 + node_count
+        tcp = f'tcp://127.0.0.1:{port}'
+
+        print(tcp)
 
         if bootnodes is None:
-            bootnodes = [f'ipc://{ipc}']
+            bootnodes = [tcp]
 
         mn = Masternode(
             wallet=wallet,
             ctx=ctx,
-            socket_base=f'ipc://{ipc}',
+            socket_base=tcp,
             bootnodes=bootnodes,
             constitution=deepcopy(constitution),
             webserver_port=18080 + node_count,
@@ -64,15 +63,15 @@ def make_network(masternodes, delegates, ctx, mn_min_quorum=2, del_min_quorum=2)
         node_count += 1
 
     for wallet in dl_wallets:
-        driver = StateDriver(driver=InMemDriver())
+        driver = ContractDriver(driver=InMemDriver())
         # driver = IsolatedDriver()
-        ipc = f'/tmp/n{node_count}'
-        make_ipc(ipc)
+        port = 18000 + node_count
+        tcp = f'tcp://127.0.0.1:{port}'
 
         dl = Delegate(
             wallet=wallet,
             ctx=ctx,
-            socket_base=f'ipc://{ipc}',
+            socket_base=tcp,
             constitution=deepcopy(constitution),
             bootnodes=bootnodes,
             driver=driver
@@ -85,12 +84,19 @@ def make_network(masternodes, delegates, ctx, mn_min_quorum=2, del_min_quorum=2)
 
 
 def make_start_awaitable(mns, dls):
+    print(len(mns + dls))
+
+    bootnodes = []
+    for i in range(len(mns+dls)):
+        port = 18000 + i
+        bootnodes.append(f'tcp://127.0.0.1:{port}')
+
     coros = []
     for mn in mns:
-        coros.append(mn.start())
+        coros.append(mn.start(bootnodes=bootnodes))
 
     for dl in dls:
-        coros.append(dl.start())
+        coros.append(dl.start(bootnodes=bootnodes))
 
     return asyncio.gather(*coros)
 
@@ -156,9 +162,9 @@ async def send_tx_batch(masternode, txs, server='http://127.0.0.1'):
 
 
 class Orchestrator:
-    def __init__(self, masternode_num, delegate_num, ctx, min_mn_quorum=2, min_del_quorum=2):
+    def __init__(self, masternode_num, delegate_num, ctx):
         self.ctx = ctx
-        mns, dels = make_network(masternode_num, delegate_num, ctx, min_mn_quorum, min_del_quorum)
+        mns, dels = make_network(masternode_num, delegate_num, ctx)
         self.masternodes = mns
         self.delegates = dels
         self.nodes = self.masternodes + self.delegates

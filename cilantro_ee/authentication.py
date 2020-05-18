@@ -1,4 +1,5 @@
 from zmq.auth.asyncio import AsyncioAuthenticator
+from zmq.error import ZMQBaseError
 from zmq.auth.certs import _write_key_file, _cert_public_banner
 from zmq.utils import z85
 import shutil
@@ -31,9 +32,14 @@ class SocketAuthenticator:
         self.log = get_logger('zmq.auth')
         self.log.propagate = debug
 
-        self.authenticator = AsyncioAuthenticator(context=self.ctx, loop=self.loop)
-        self.authenticator.start()
-        self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
+        # This should throw an exception if the socket already exist
+        try:
+            self.authenticator = AsyncioAuthenticator(context=self.ctx, loop=self.loop)
+            self.authenticator.start()
+            self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
+        except ZMQBaseError:
+            pass
+            #raise Exception('AsyncioAuthenicator could not be started. Is it already running?')
 
     def refresh_governance_sockets(self):
         masternode_list = self.client.get_var(

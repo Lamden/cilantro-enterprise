@@ -301,4 +301,3 @@ class TestMasternode(TestCase):
         self.loop.run_until_complete(tasks)
 
         self.assertFalse(node.running)
-

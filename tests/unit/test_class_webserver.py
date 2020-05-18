@@ -1,26 +1,22 @@
 from unittest import TestCase
 
-from cilantro_ee.nodes.masternode.routes import WebServer
+from cilantro_ee.nodes.masternode.webserver import WebServer
 from cilantro_ee.crypto.wallet import Wallet
 from contracting.client import ContractingClient
-from cilantro_ee.storage import StateDriver
-from cilantro_ee.storage import CilantroStorageDriver
-from cilantro_ee.crypto.json_transaction import build_transaction
-from cilantro_ee.messages import capnp_struct as schemas
-import os
-import capnp
+from contracting.db.driver import ContractDriver
+from cilantro_ee.storage import BlockStorage
+from cilantro_ee.crypto.transaction import build_transaction
+from cilantro_ee import storage
 
-transaction_capnp = capnp.load(os.path.dirname(schemas.__file__) + '/transaction.capnp')
-
-n = StateDriver()
+n = ContractDriver()
 
 
 class TestClassWebserver(TestCase):
     def setUp(self):
         self.w = Wallet()
 
-        self.blocks = CilantroStorageDriver(key=self.w.verifying_key())
-        self.driver = StateDriver()
+        self.blocks = BlockStorage()
+        self.driver = ContractDriver()
 
         self.ws = WebServer(
             wallet=self.w,
@@ -54,7 +50,11 @@ class TestClassWebserver(TestCase):
     def test_get_nonce_pending_nonce_is_not_none_returns_pending_nonce(self):
         w2 = Wallet()
 
-        self.ws.driver.set_pending_nonce(self.w.verifying_key(), w2.verifying_key(), 123)
+        self.ws.nonces.set_pending_nonce(
+            sender=w2.verifying_key().hex(),
+            processor=self.w.verifying_key().hex(),
+            value=123
+        )
 
         _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key().hex()))
 
@@ -65,7 +65,7 @@ class TestClassWebserver(TestCase):
     def test_get_nonce_pending_nonce_is_none_but_nonce_is_not_returns_nonce(self):
         w2 = Wallet()
 
-        self.ws.driver.set_nonce(self.w.verifying_key(), w2.verifying_key(), 555)
+        self.ws.nonces.set_nonce(processor=self.w.verifying_key().hex(), sender=w2.verifying_key().hex(), value=555)
 
         _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key().hex()))
 
@@ -266,7 +266,7 @@ def get():
     def test_get_latest_block(self):
         block = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 
@@ -274,24 +274,24 @@ def get():
 
         block2 = {
             'hash': 'abb',
-            'blockNum': 1000,
+            'number': 1000,
             'data': 'woop2'
         }
 
         self.ws.blocks.put(block2)
 
         _, response = self.ws.app.test_client.get('/latest_block')
-        self.assertDictEqual(response.json, {'hash': 'abb', 'blockNum': 1000, 'data': 'woop2'})
+        self.assertDictEqual(response.json, {'hash': 'abb', 'number': 1000, 'data': 'woop2'})
 
     def test_get_latest_block_num(self):
-        self.ws.driver.set_latest_block_num(1234)
+        storage.set_latest_block_height(1234, self.ws.driver)
 
         _, response = self.ws.app.test_client.get('/latest_block_num')
         self.assertDictEqual(response.json, {'latest_block_number': 1234})
 
     def test_get_latest_block_hash(self):
         h = '0' * 64
-        self.ws.driver.set_latest_block_hash(h)
+        storage.set_latest_block_hash(h, self.ws.driver)
 
         _, response = self.ws.app.test_client.get('/latest_block_hash')
 
@@ -300,7 +300,7 @@ def get():
     def test_get_block_by_num_that_exists(self):
         block = {
             'hash': '1234',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 

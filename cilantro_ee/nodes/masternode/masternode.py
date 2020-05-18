@@ -1,7 +1,7 @@
 import asyncio
 import hashlib
 import time
-from cilantro_ee import router
+from cilantro_ee import router, storage
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.storage import BlockStorage, get_latest_block_height
 from cilantro_ee.nodes.masternode import contender, webserver
@@ -11,6 +11,10 @@ import json
 from cilantro_ee.nodes import base
 from contracting.db.encoder import encode
 from contracting.db.driver import ContractDriver
+
+from cilantro_ee.logger.base import get_logger
+
+mn_logger = get_logger('Masternode')
 
 BLOCK_SERVICE = 'service'
 
@@ -103,18 +107,12 @@ class Masternode(base.Node):
         self.masternode_contract = self.client.get_contract('masternodes')
 
     async def start(self, bootnodes):
+        self.router.add_service(base.BLOCK_SERVICE, BlockService(self.blocks, self.driver))
+
         await super().start(bootnodes=bootnodes)
-
-        # Look up the latest block stored in our database
-        latest_block = self.blocks.get_last_n(1, self.blocks.BLOCK)[0]
-
-        # Set the metastate to this block. This is a sanity check
-        self.driver.latest_block_num = latest_block['blockNum']
-        self.driver.latest_block_hash = latest_block['hash']
 
         # Start the block server so others can run catchup using our node as a seed.
         # Start the block contender service to participate in consensus
-        self.router.add_service(base.BLOCK_SERVICE, BlockService(self.blocks, self.driver))
         self.router.add_service(base.CONTENDER_SERVICE, self.aggregator.sbc_inbox)
 
         # Start the webserver to accept transactions
@@ -123,7 +121,8 @@ class Masternode(base.Node):
         self.log.info('Done starting...')
 
         # If we have no blocks in our database, we are starting a new network from scratch
-        if self.driver.latest_block_num == 0:
+
+        if storage.get_latest_block_height(self.driver) == 0:
             await self.new_blockchain_boot()
         # Otherwise, we are joining an existing network quorum
         else:
@@ -168,7 +167,7 @@ class Masternode(base.Node):
         while self.running:
 
             block = await self.new_block_processor.wait_for_next_nbn()
-            self.update_state(block)
+            self.process_new_block(block)
 
             if self.wallet.verifying_key().hex() in self.driver.get_var(contract='masternodes',
                                                                         variable='S',
@@ -184,7 +183,7 @@ class Masternode(base.Node):
             await asyncio.sleep(0)
 
         block = self.new_block_processor.q.pop(0)
-        self.update_state(block)
+        self.process_new_block(block)
 
     async def join_quorum(self):
         # Catchup with NBNs until you have work, the join the quorum
@@ -232,7 +231,7 @@ class Masternode(base.Node):
         encoded_block = encode(block)
         encoded_block = json.loads(encoded_block)
 
-        self.update_state(encoded_block)
+        self.process_new_block(encoded_block)
 
         self.new_block_processor.clean()
 

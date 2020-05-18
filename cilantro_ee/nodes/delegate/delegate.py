@@ -1,5 +1,5 @@
 from cilantro_ee.nodes.delegate import execution, work
-from cilantro_ee import router
+from cilantro_ee import router, storage
 from cilantro_ee.nodes import base
 from cilantro_ee.logger.base import get_logger
 import asyncio
@@ -75,10 +75,9 @@ class Delegate(base.Node):
     async def start(self, bootnodes):
         await super().start(bootnodes)
 
-        if self.driver.latest_block_num == 0:
+        if storage.get_latest_block_height(self.driver) == 0:
             block = await self.new_block_processor.wait_for_next_nbn()
-            self.update_state(block)
-            self.version_check()
+            self.process_new_block(block)
 
         asyncio.ensure_future(self.run())
 

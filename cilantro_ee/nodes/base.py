@@ -134,9 +134,10 @@ class Node:
     async def catchup(self, mn_seed):
         # Get the current latest block stored and the latest block of the network
         current = storage.get_latest_block_height(self.driver)
+        print(mn_seed)
         latest = await get_latest_block_height(ip_string=mn_seed, ctx=self.ctx)
 
-        assert type(latest) != dict, 'Provided node is not in sync.'
+        #assert type(latest) != dict, 'Provided node is not in sync.'
 
         self.log.info(f'Current: {current}, Latest: {latest}')
 

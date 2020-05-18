@@ -139,7 +139,7 @@ class WebServer:
         nonce, pending_nonce = transaction.get_nonces(
             sender=tx['payload']['sender'],
             processor=tx['payload']['processor'],
-            driver=self.driver
+            driver=self.nonces
         )
 
         # Calculate and set the 'pending nonce' which keeps track of what the sender's nonce will
@@ -180,16 +180,10 @@ class WebServer:
 
     # Get the Nonce of a VK
     async def get_nonce(self, request, vk):
-        nonce, pending_nonce = transaction.get_nonces(
-            processor=self.wallet.verifying_key().hex(),
-            sender=vk,
-            driver=self.driver
-        )
-
-        nonce_to_return = max(nonce, pending_nonce)
+        latest_nonce = self.nonces.get_latest_nonce(sender=vk, processor=self.wallet.verifying_key().hex())
 
         return response.json({
-            'nonce': nonce_to_return,
+            'nonce': latest_nonce,
             'processor': self.wallet.verifying_key().hex(),
             'sender': vk
         })

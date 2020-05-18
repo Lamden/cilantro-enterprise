@@ -32,6 +32,9 @@ class NonceStorage:
             }
         )
 
+        if v is None:
+            return None
+
         return v['value']
 
     @staticmethod
@@ -62,10 +65,10 @@ class NonceStorage:
         self.set_one(sender, processor, value, self.pending_nonces)
 
     def get_latest_nonce(self, sender, processor):
-        latest_nonce = self.get_pending_nonce(processor, sender)
+        latest_nonce = self.get_pending_nonce(sender=sender, processor=processor)
 
         if latest_nonce is None:
-            latest_nonce = self.get_nonce(processor, sender)
+            latest_nonce = self.get_nonce(sender=sender, processor=processor)
 
         if latest_nonce is None:
             latest_nonce = 0

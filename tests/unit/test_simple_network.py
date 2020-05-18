@@ -1,10 +1,9 @@
 from unittest import TestCase
-from cilantro_ee.networking.simple_network import *
+from cilantro_ee.network import *
 from cilantro_ee.crypto.wallet import Wallet
 
 from contracting.db.encoder import encode, decode
 from cilantro_ee.router import Router
-from cilantro_ee.struct import _socket
 
 import asyncio
 import zmq.asyncio
@@ -263,7 +262,11 @@ class TestNetwork(TestCase):
         n = Network(
             wallet=me,
             ip_string='tcp://127.0.0.1:18002',
-            ctx=self.ctx
+            ctx=self.ctx,
+            router=Router(
+                socket_id='tcp://127.0.0.1:18002',
+                ctx=self.ctx
+            )
         )
 
         bootnodes = [
@@ -315,7 +318,7 @@ class TestNetwork(TestCase):
 
         w1 = Wallet()
         r1 = Router(
-            socket_id=_socket(bootnodes[0]),
+            socket_id=bootnodes[0],
             ctx=self.ctx,
             wallet=w1
         )
@@ -328,7 +331,7 @@ class TestNetwork(TestCase):
 
         w2 = Wallet()
         r2 = Router(
-            socket_id=_socket(bootnodes[1]),
+            socket_id=bootnodes[1],
             ctx=self.ctx,
             wallet=w1
         )
@@ -341,7 +344,7 @@ class TestNetwork(TestCase):
 
         w3 = Wallet()
         r3 = Router(
-            socket_id=_socket(bootnodes[2]),
+            socket_id=bootnodes[2],
             ctx=self.ctx,
             wallet=w1
         )

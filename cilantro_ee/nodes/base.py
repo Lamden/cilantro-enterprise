@@ -79,13 +79,13 @@ class NewBlock(router.Processor):
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict,
-                 bootnodes=[], driver=ContractDriver(), debug=True, store=False):
+                 blocks=None, bootnodes=[], driver=ContractDriver(), debug=True, store=False):
 
         self.driver = driver
         self.nonces = storage.NonceStorage()
         self.store = store
 
-        self.blocks = None
+        self.blocks = blocks
 
         if self.store:
             self.blocks = storage.BlockStorage()
@@ -147,6 +147,9 @@ class Node:
         # Find the missing blocks process them
         for i in range(current, latest + 1):
             block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
+            if not self.should_process(block):
+                print('uh oh')
+                print(block)
             self.update_state(block)
 
         # Process any blocks that were made while we were catching up
@@ -165,9 +168,11 @@ class Node:
 
         # Test if block contains the same metastate
         if block['number'] != current_height + 1:
+            print('h')
             return False
 
         if block['previous'] != current_hash:
+            print('hash')
             return False
 
         # If so, use metastate and subblocks to create the 'expected' block
@@ -196,7 +201,7 @@ class Node:
                 client=self.client
             )
 
-    def process_block(self, block):
+    def process_new_block(self, block):
         self.log.info('Processing new block...')
 
         # Update the state and refresh the sockets so new nodes can join
@@ -208,7 +213,7 @@ class Node:
             self.blocks.store_block(block)
 
         # Prepare for the next block by flushing out driver and notification state
-        self.driver.cache.clear()
+        self.driver.clear_pending_state()
         self.new_block_processor.clean()
 
         # Finally, check and initiate an upgrade if one needs to be done

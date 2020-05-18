@@ -81,7 +81,7 @@ def get_latest_block_hash(driver: ContractDriver):
 
 
 def set_latest_block_hash(h, driver: ContractDriver):
-    driver.set(BLOCK_HASH_KEY, h, mark=False)
+    driver.driver.set(BLOCK_HASH_KEY, h)
 
 
 def get_latest_block_height(driver: ContractDriver):
@@ -92,13 +92,13 @@ def get_latest_block_height(driver: ContractDriver):
 
 
 def set_latest_block_height(h, driver: ContractDriver):
-    driver.set(BLOCK_NUM_HEIGHT, h, mark=False)
+    driver.driver.set(BLOCK_NUM_HEIGHT, h)
 
 
 def write_state_changes_for_tx(tx, driver: ContractDriver):
     if tx['state'] is not None and len(tx['state']) > 0:
         for delta in tx['state']:
-            driver.set(delta['key'], delta['value'])
+            driver.driver.set(delta['key'], delta['value'])
 
 
 def update_state_with_transaction(tx, driver: ContractDriver, nonces: NonceStorage):
@@ -106,7 +106,7 @@ def update_state_with_transaction(tx, driver: ContractDriver, nonces: NonceStora
 
     if tx['state'] is not None and len(tx['state']) > 0:
         for delta in tx['state']:
-            driver.set(delta['key'], delta['value'], mark=False)
+            driver.driver.set(delta['key'], delta['value'])
 
             nonces.set_nonce(
                 sender=tx['sender'],
@@ -128,6 +128,7 @@ def update_state_with_block(block, driver: ContractDriver, nonces: NonceStorage)
     # Update our block hash and block num
     set_latest_block_hash(block['hash'], driver=driver)
     set_latest_block_height(block['number'], driver=driver)
+    driver.clear_pending_state()
 
 
 class BlockStorage:

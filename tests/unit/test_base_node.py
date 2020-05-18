@@ -232,3 +232,85 @@ class TestNode(TestCase):
         )
 
         self.assertTrue(node.should_process(block))
+
+    def test_process_new_block_updates_state(self):
+        block = canonical.block_from_subblocks(
+            subblocks=[],
+            previous_hash='0' * 64,
+            block_num=1
+        )
+
+        driver = ContractDriver(driver=InMemDriver())
+        node = base.Node(
+            socket_base='tcp://127.0.0.1:18002',
+            ctx=self.ctx,
+            wallet=Wallet(),
+            constitution={
+                'masternodes': [Wallet().verifying_key().hex()],
+                'delegates': [Wallet().verifying_key().hex()]
+            },
+            driver=driver
+        )
+
+        node.process_new_block(block)
+
+        self.assertEqual(storage.get_latest_block_height(node.driver), 1)
+        self.assertEqual(storage.get_latest_block_hash(node.driver), block['hash'])
+
+    def test_process_new_block_stores_block_if_should_store(self):
+        block = canonical.block_from_subblocks(
+            subblocks=[],
+            previous_hash='0' * 64,
+            block_num=1
+        )
+
+        driver = ContractDriver(driver=InMemDriver())
+        node = base.Node(
+            socket_base='tcp://127.0.0.1:18002',
+            ctx=self.ctx,
+            wallet=Wallet(),
+            constitution={
+                'masternodes': [Wallet().verifying_key().hex()],
+                'delegates': [Wallet().verifying_key().hex()]
+            },
+            driver=driver,
+            store=True,
+            blocks=self.blocks,
+        )
+
+        node.process_new_block(block)
+
+        b = node.blocks.get_block(1)
+
+        self.assertEqual(b, block)
+
+    def test_process_new_block_clears_cache(self):
+        block = canonical.block_from_subblocks(
+            subblocks=[],
+            previous_hash='0' * 64,
+            block_num=1
+        )
+
+        driver = ContractDriver(driver=InMemDriver())
+        node = base.Node(
+            socket_base='tcp://127.0.0.1:18002',
+            ctx=self.ctx,
+            wallet=Wallet(),
+            constitution={
+                'masternodes': [Wallet().verifying_key().hex()],
+                'delegates': [Wallet().verifying_key().hex()]
+            },
+            driver=driver,
+            store=True,
+            blocks=self.blocks,
+        )
+
+        node.driver.cache['test'] = 123
+
+        node.process_new_block(block)
+
+        self.assertIsNone(node.driver.cache.get('test'))
+
+    def test_process_new_block_cleans_nbn(self):
+        pass
+

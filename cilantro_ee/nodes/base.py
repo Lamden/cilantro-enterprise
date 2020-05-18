@@ -74,7 +74,7 @@ class NewBlock(router.Processor):
 
     def clean(self):
         num = storage.get_latest_block_height(self.driver)
-        self.q = [nbn for nbn in self.q if nbn['number'] >= num]
+        self.q = [nbn for nbn in self.q if nbn['number'] > num]
 
 
 class Node:
@@ -115,13 +115,13 @@ class Node:
         self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
 
         self.router = router.Router(
-            socket_id=socket_base + '18000',
+            socket_id=socket_base,
             ctx=self.ctx
         )
 
         self.network = network.Network(
             wallet=wallet,
-            ip_string=socket_base + '18000',
+            ip_string=socket_base,
             ctx=self.ctx,
             router=self.router
         )
@@ -208,13 +208,14 @@ class Node:
             self.blocks.store_block(block)
 
         # Prepare for the next block by flushing out driver and notification state
-        self.driver.clear_pending_state()
         self.new_block_processor.clean()
 
         # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager.version_check()
 
     async def start(self, bootnodes):
+        asyncio.ensure_future(self.router.serve())
+
         # Get the set of VKs we are looking for from the constitution argument
         vks = self.constitution['masternodes'] + self.constitution['delegates']
 

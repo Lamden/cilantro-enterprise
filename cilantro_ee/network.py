@@ -126,7 +126,6 @@ class Network:
                           for node in bootnodes]
 
             results = await asyncio.gather(*coroutines)
-            print(results)
 
             for result in results:
                 if result is None or result == {'response': 'ok'}:

@@ -75,6 +75,10 @@ class NonceStorage:
 
         return latest_nonce
 
+    def flush(self):
+        self.nonces.remove()
+        self.pending_nonces.remove()
+
 
 def get_latest_block_hash(driver: ContractDriver):
     latest_hash = driver.get(BLOCK_HASH_KEY, mark=False)

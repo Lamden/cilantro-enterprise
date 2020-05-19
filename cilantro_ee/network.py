@@ -8,8 +8,11 @@ from cilantro_ee.formatting import rules, primatives
 from cilantro_ee.crypto.wallet import Wallet, verify
 from cilantro_ee.router import Processor, Router, request
 
+from cilantro_ee.logger.base import get_logger
+
 PROOF_EXPIRY = 15
 PEPPER = 'cilantroV1'
+LOGGER = get_logger('Network')
 
 
 def verify_proof(proof, pepper):

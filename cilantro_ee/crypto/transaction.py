@@ -77,15 +77,15 @@ def check_tx_formatting(tx: dict, expected_processor: str):
 
 def get_nonces(sender, processor, driver: storage.NonceStorage):
     nonce = driver.get_nonce(
-        processor=bytes.fromhex(processor),
-        sender=bytes.fromhex(sender)
+        processor=processor,
+        sender=sender
     )
     if nonce is None:
         nonce = 0
 
     pending_nonce = driver.get_pending_nonce(
-        processor=bytes.fromhex(processor),
-        sender=bytes.fromhex(sender)
+        processor=processor,
+        sender=sender
     )
     if pending_nonce is None:
         pending_nonce = 0
@@ -123,9 +123,9 @@ def has_enough_stamps(balance, stamp_per_balance, stamps_supplied, contract=None
             raise TransactionSenderTooFewStamps
 
 
-def contract_name_is_valid(contract, function, name):
-    if contract == 'submission' and function == 'submit_contract' and not contract_name_is_formatted(name):
-        raise TransactionContractNameInvalid
+# def contract_name_is_valid(contract, function, name):
+#     if contract == 'submission' and function == 'submit_contract' and not contract_name_is_formatted(name):
+#         raise TransactionContractNameInvalid
 
 
 def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce: int, processor: str, stamps: int):

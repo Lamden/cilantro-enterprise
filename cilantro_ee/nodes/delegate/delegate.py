@@ -73,11 +73,10 @@ class Delegate(base.Node):
         self.masternode_contract = self.client.get_contract('masternodes')
 
     async def start(self, bootnodes):
+        self.log.debug('Starting')
         await super().start(bootnodes)
 
-        if storage.get_latest_block_height(self.driver) == 0:
-            block = await self.new_block_processor.wait_for_next_nbn()
-            self.process_new_block(block)
+
 
         asyncio.ensure_future(self.run())
 
@@ -136,6 +135,12 @@ class Delegate(base.Node):
         self.update_state(block)
 
     async def run(self):
+        self.log.debug('Running...')
+        if storage.get_latest_block_height(self.driver) == 0:
+            self.log.debug('Waiting for a new block')
+            block = await self.new_block_processor.wait_for_next_nbn()
+            self.process_new_block(block)
+
         while self.running:
             await self.loop()
 

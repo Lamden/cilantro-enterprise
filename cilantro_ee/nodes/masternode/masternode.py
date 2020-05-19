@@ -123,19 +123,22 @@ class Masternode(base.Node):
         # If we have no blocks in our database, we are starting a new network from scratch
 
         if storage.get_latest_block_height(self.driver) == 0:
-            await self.new_blockchain_boot()
+            asyncio.ensure_future(self.new_blockchain_boot())
         # Otherwise, we are joining an existing network quorum
         else:
             await self.join_quorum()
+        self.log.debug('returned')
 
     async def hang(self):
         # Wait for activity on our transaction queue or new block processor.
         # If another masternode has transactions, it will send use a new block notification.
         # If we have transactions, we will do the opposite. This 'wakes' up the network.
+        mn_logger.debug('Waiting for work or blocks...')
         while len(self.tx_batcher.queue) <= 0 and len(self.new_block_processor.q) <= 0:
             if not self.running:
                 return
             await asyncio.sleep(0)
+        mn_logger.debug('Work / blocks available. Continuing.')
 
     async def broadcast_new_blockchain_started(self):
         # Check if it was us who recieved the first transaction.

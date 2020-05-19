@@ -44,8 +44,6 @@ def make_network(masternodes, delegates, ctx):
         port = 18000 + node_count
         tcp = f'tcp://127.0.0.1:{port}'
 
-        print(tcp)
-
         if bootnodes is None:
             bootnodes = [tcp]
 
@@ -84,8 +82,6 @@ def make_network(masternodes, delegates, ctx):
 
 
 def make_start_awaitable(mns, dls):
-    print(len(mns + dls))
-
     bootnodes = []
     for i in range(len(mns+dls)):
         port = 18000 + i

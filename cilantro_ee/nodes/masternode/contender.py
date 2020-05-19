@@ -1,7 +1,7 @@
 from contracting.db.encoder import encode, decode
 from contracting.db.driver import ContractDriver
 
-from cilantro_ee import router
+from cilantro_ee import router, storage
 from cilantro_ee.crypto.canonical import merklize, block_from_subblocks
 from cilantro_ee.crypto.wallet import verify
 from cilantro_ee.logger.base import get_logger
@@ -331,6 +331,6 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
 
         return block_from_subblocks(
             block,
-            previous_hash=self.driver.latest_block_hash,
-            block_num=self.driver.latest_block_num + 1
+            previous_hash=storage.get_latest_block_hash(self.driver),
+            block_num=storage.get_latest_block_height(self.driver) + 1
         )

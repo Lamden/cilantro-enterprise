@@ -3,10 +3,10 @@ from unittest import TestCase
 from cilantro_ee.nodes.masternode.contender import BlockContender, Aggregator
 import zmq.asyncio
 import asyncio
-from cilantro_ee.struct import _socket
-from cilantro_ee.storage import StateDriver
 from cilantro_ee.crypto import canonical
 import secrets
+
+from contracting.db.driver import ContractDriver
 from cilantro_ee.crypto.wallet import Wallet
 
 
@@ -276,7 +276,7 @@ class TestAggregator(TestCase):
         self.loop = asyncio.get_event_loop()
 
     def test_gather_subblocks_all_same_blocks(self):
-        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=StateDriver())
+        a = Aggregator(driver=ContractDriver())
 
         c1 = [MockSBC('input_1', 'res_1', 0).to_dict(),
               MockSBC('input_2', 'res_2', 1).to_dict(),
@@ -308,7 +308,7 @@ class TestAggregator(TestCase):
         self.assertEqual(res['subblocks'][3]['merkle_leaves'][0], 'res_4')
 
     def test_mixed_results_still_makes_quorum(self):
-        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=StateDriver())
+        a = Aggregator(driver=ContractDriver())
 
         c1 = [MockSBC('input_1', 'res_X', 0).to_dict(),
               MockSBC('input_2', 'res_2', 1).to_dict(),
@@ -340,7 +340,7 @@ class TestAggregator(TestCase):
         self.assertEqual(res['subblocks'][3]['merkle_leaves'][0], 'res_4')
 
     def test_failed_block_on_one_removes_subblock_from_block(self):
-        a = Aggregator(wallet=Wallet(), socket_id=_socket('tcp://127.0.0.1:8888'), ctx=zmq.asyncio.Context(), driver=StateDriver())
+        a = Aggregator(driver=ContractDriver())
 
         c1 = [MockSBC('input_1', 'res_X', 0).to_dict(),
                              MockSBC('input_2', 'res_2', 1).to_dict(),
@@ -370,10 +370,7 @@ class TestAggregator(TestCase):
 
     def test_block_never_received_goes_through_adequate_consensus(self):
         a = Aggregator(
-            wallet=Wallet(),
-            socket_id=_socket('tcp://127.0.0.1:8888'),
-            ctx=zmq.asyncio.Context(),
-            driver=StateDriver(),
+            driver=ContractDriver(),
             seconds_to_timeout=0.5
         )
 
@@ -396,5 +393,5 @@ class TestAggregator(TestCase):
 
         res = self.loop.run_until_complete(a.gather_subblocks(4, adequate_ratio=0.3))
 
+        self.assertNotEqual(res['hash'], 'f' * 64)
 
-        self.assertFalse(canonical.block_is_failed(res, '0' * 32, 1))

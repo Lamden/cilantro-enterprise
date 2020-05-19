@@ -1,9 +1,9 @@
 from unittest import TestCase
-from cilantro_ee.nodes.masternode.server import tx_validator
-from cilantro_ee.nodes.masternode.server.tx_validator import build_transaction
+from cilantro_ee.crypto import transaction
+from cilantro_ee.crypto.transaction import build_transaction
 from cilantro_ee.crypto.wallet import Wallet, verify
 from contracting.db.encoder import encode, decode
-from cilantro_ee.storage import StateDriver
+from contracting.db.driver import ContractDriver
 
 
 class TestTransactionBuilder(TestCase):
@@ -95,10 +95,9 @@ class TestTransactionBuilder(TestCase):
 
         self.assertDictEqual(decoded['payload'], expected)
 
-
 class TestValidator(TestCase):
     def setUp(self):
-        self.driver = StateDriver()
+        self.driver = ContractDriver()
         self.driver.flush()
 
     def test_check_tx_formatting_succeeds(self):
@@ -141,9 +140,9 @@ class TestValidator(TestCase):
         decoded = decode(tx)
         decoded['payload']['nonce'] = -123
 
-        error = tx_validator.check_tx_formatting(decoded, 'b' * 64)
+        error = transaction.check_tx_formatting(decoded, 'b' * 64)
 
-        self.assertEqual(error, tx_validator.TransactionFormattingError)
+        self.assertEqual(error, transaction.TransactionFormattingError)
 
     def test_check_tx_formatting_incorrect_processor_fails(self):
         w = Wallet()
@@ -163,9 +162,9 @@ class TestValidator(TestCase):
 
         decoded = decode(tx)
 
-        error = tx_validator.check_tx_formatting(decoded, 'c' * 64)
+        error = transaction.check_tx_formatting(decoded, 'c' * 64)
 
-        self.assertEqual(error, tx_validator.TransactionProcessorInvalid)
+        self.assertEqual(error, transaction.TransactionProcessorInvalid)
 
     def test_check_tx_formatting_signature_fails(self):
         w = Wallet()
@@ -186,12 +185,12 @@ class TestValidator(TestCase):
         decoded = decode(tx)
         decoded['payload']['sender'] = 'a' * 64
 
-        error = tx_validator.check_tx_formatting(decoded, 'b' * 64)
+        error = transaction.check_tx_formatting(decoded, 'b' * 64)
 
-        self.assertEqual(error, tx_validator.TransactionSignatureInvalid)
+        self.assertEqual(error, transaction.TransactionSignatureInvalid)
 
     def test_get_nonces_when_none_exist_return_zeros(self):
-        n, p = tx_validator.get_nonces('a' * 64, 'b' * 64, self.driver)
+        n, p = transaction.get_nonces('a' * 64, 'b' * 64, self.driver)
         self.assertEqual(n, 0)
         self.assertEqual(p, 0)
 
@@ -211,7 +210,7 @@ class TestValidator(TestCase):
             nonce=3
         )
 
-        n, p = tx_validator.get_nonces(
+        n, p = transaction.get_nonces(
             sender=sender.hex(),
             processor=processor.hex(),
             driver=self.driver
@@ -220,7 +219,7 @@ class TestValidator(TestCase):
         self.assertEqual(p, 5)
 
     def test_get_pending_nonce_if_strict_increments(self):
-        new_pending_nonce = tx_validator.get_new_pending_nonce(
+        new_pending_nonce = transaction.get_new_pending_nonce(
             tx_nonce=2,
             nonce=1,
             pending_nonce=2
@@ -229,7 +228,7 @@ class TestValidator(TestCase):
         self.assertEqual(new_pending_nonce, 3)
 
     def test_get_pending_nonce_if_not_strict_is_highest_nonce(self):
-        new_pending_nonce = tx_validator.get_new_pending_nonce(
+        new_pending_nonce = transaction.get_new_pending_nonce(
             tx_nonce=3,
             nonce=1,
             pending_nonce=2,
@@ -239,7 +238,7 @@ class TestValidator(TestCase):
         self.assertEqual(new_pending_nonce, 4)
 
     def test_get_pending_nonce_if_strict_invalid(self):
-        with self.assertRaises(tx_validator.TransactionNonceInvalid):
+        with self.assertRaises(transaction.TransactionNonceInvalid):
             tx_validator.get_new_pending_nonce(
                 tx_nonce=3,
                 nonce=1,
@@ -248,7 +247,7 @@ class TestValidator(TestCase):
 
     def test_get_pending_nonce_if_not_strict_invalid(self):
         with self.assertRaises(tx_validator.TransactionNonceInvalid):
-            tx_validator.get_new_pending_nonce(
+            transaction.get_new_pending_nonce(
                 tx_nonce=1,
                 nonce=1,
                 pending_nonce=2,
@@ -256,39 +255,39 @@ class TestValidator(TestCase):
             )
 
     def test_get_pending_nonce_too_many_tx_per_block_raise_error(self):
-        with self.assertRaises(tx_validator.TransactionTooManyPendingException):
-            tx_validator.get_new_pending_nonce(
+        with self.assertRaises(transaction.TransactionTooManyPendingException):
+            transaction.get_new_pending_nonce(
                 tx_nonce=16,
                 nonce=0,
                 pending_nonce=0
             )
 
     def test_get_pending_nonce_too_many_tx_per_block_raise_error_pending(self):
-        with self.assertRaises(tx_validator.TransactionTooManyPendingException):
-            tx_validator.get_new_pending_nonce(
+        with self.assertRaises(transaction.TransactionTooManyPendingException):
+            transaction.get_new_pending_nonce(
                 tx_nonce=17,
                 nonce=0,
                 pending_nonce=1
             )
 
     def test_has_enough_stamps_passes(self):
-        tx_validator.has_enough_stamps(
+        transaction.has_enough_stamps(
             balance=10,
             stamp_per_balance=10000,
             stamps_supplied=1000,
         )
 
     def test_has_enough_stamps_fails(self):
-        with self.assertRaises(tx_validator.TransactionSenderTooFewStamps):
-            tx_validator.has_enough_stamps(
+        with self.assertRaises(transaction.TransactionSenderTooFewStamps):
+            transaction.has_enough_stamps(
                 balance=10,
                 stamp_per_balance=10000,
                 stamps_supplied=100001,
             )
 
     def test_has_enough_stamps_fails_minimum_stamps(self):
-        with self.assertRaises(tx_validator.TransactionSenderTooFewStamps):
-            tx_validator.has_enough_stamps(
+        with self.assertRaises(transaction.TransactionSenderTooFewStamps):
+            transaction.has_enough_stamps(
                 balance=10,
                 stamp_per_balance=10000,
                 stamps_supplied=100000,
@@ -298,15 +297,15 @@ class TestValidator(TestCase):
             )
 
     def test_contract_is_valid_passes(self):
-        tx_validator.contract_name_is_valid(
+        transaction.contract_name_is_valid(
             contract='submission',
             function='submit_contract',
             name='con_hello'
         )
 
     def test_contract_fails(self):
-        with self.assertRaises(tx_validator.TransactionContractNameInvalid):
-            tx_validator.contract_name_is_valid(
+        with self.assertRaises(transaction.TransactionContractNameInvalid):
+            transaction.contract_name_is_valid(
                 contract='submission',
                 function='submit_contract',
                 name='co_hello'

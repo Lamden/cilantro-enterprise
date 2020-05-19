@@ -2,7 +2,6 @@ import unittest
 import zmq.asyncio
 from cilantro_ee.contracts import sync
 from cilantro_ee.crypto.wallet import Wallet
-from cilantro_ee.storage.vkbook import VKBook
 from contracting.db.driver import ContractDriver
 from contracting.client import ContractingClient
 

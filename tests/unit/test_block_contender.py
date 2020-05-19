@@ -270,10 +270,12 @@ class TestCurrentContenders(TestCase):
     #     self.assertDictEqual(con.finished, {1: None})
 
 
-
 class TestAggregator(TestCase):
     def setUp(self):
         self.loop = asyncio.get_event_loop()
+
+    def tearDown(self):
+        self.loop = asyncio.new_event_loop()
 
     def test_gather_subblocks_all_same_blocks(self):
         a = Aggregator(driver=ContractDriver())

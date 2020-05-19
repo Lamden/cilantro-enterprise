@@ -397,13 +397,15 @@ class TestGovernanceOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        self.assertListEqual(o.masternodes[0].contacts.masternodes, [
+        self.assertListEqual(o.masternodes[0].client.get_var(
+            contract='masternodes', variable='S', arguments=['members']), [
             o.masternodes[0].wallet.verifying_key().hex(),
             o.masternodes[1].wallet.verifying_key().hex(),
             candidate.verifying_key().hex()
         ])
 
-        self.assertListEqual(o.masternodes[1].contacts.masternodes, [
+        self.assertListEqual(o.masternodes[1].client.get_var(
+            contract='masternodes', variable='S', arguments=['members']), [
             o.masternodes[0].wallet.verifying_key().hex(),
             o.masternodes[1].wallet.verifying_key().hex(),
             candidate.verifying_key().hex()

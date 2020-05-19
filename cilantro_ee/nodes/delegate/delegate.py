@@ -66,7 +66,7 @@ class Delegate(base.Node):
         self.executor = Executor(driver=self.driver)
 
         self.work_processor = WorkProcessor()
-        self.router.add_service(WORK_SERVICE, self.work_processor)
+        self.secure_router.add_service(WORK_SERVICE, self.work_processor)
 
         self.log = get_logger(f'DEL {self.wallet.vk_pretty[4:12]}')
 
@@ -139,7 +139,9 @@ class Delegate(base.Node):
         if storage.get_latest_block_height(self.driver) == 0:
             self.log.debug('Waiting for a new block')
             block = await self.new_block_processor.wait_for_next_nbn()
+            self.log.debug('Genesis block signal received.')
             self.process_new_block(block)
+
 
         while self.running:
             await self.loop()

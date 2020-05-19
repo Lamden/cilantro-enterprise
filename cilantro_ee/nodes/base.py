@@ -12,10 +12,10 @@ from cilantro_ee.logger.base import get_logger
 import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-BLOCK_SERVICE = 'service'
-NEW_BLOCK_SERVICE = 'new_blocks'
-WORK_SERVICE = 'work'
-CONTENDER_SERVICE = 'contenders'
+BLOCK_SERVICE = 'service'           # Unsecure
+NEW_BLOCK_SERVICE = 'new_blocks'    # Secure
+WORK_SERVICE = 'work'               # Secure
+CONTENDER_SERVICE = 'contenders'    # Secure
 
 GET_BLOCK = 'get_block'
 GET_HEIGHT = 'get_height'
@@ -78,8 +78,8 @@ class NewBlock(router.Processor):
 
 
 class Node:
-    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict,
-                 blocks=None, bootnodes=[], driver=ContractDriver(), debug=True, store=False):
+    def __init__(self, socket_base, secure_socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict,
+                 blocks=None, bootnodes=[], driver=ContractDriver(), debug=True, store=False, secure=True):
 
         self.driver = driver
         self.nonces = storage.NonceStorage()
@@ -116,7 +116,14 @@ class Node:
 
         self.router = router.Router(
             socket_id=socket_base,
-            ctx=self.ctx
+            ctx=self.ctx,
+        )
+
+        self.secure_router = router.Router(
+            socket_id=secure_socket_base,
+            ctx=self.ctx,
+            wallet=wallet,
+            secure=True
         )
 
         self.network = network.Network(
@@ -127,7 +134,7 @@ class Node:
         )
 
         self.new_block_processor = NewBlock(driver=self.driver)
-        self.router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
+        self.secure_router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
 
         self.running = False
 

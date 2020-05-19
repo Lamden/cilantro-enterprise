@@ -69,6 +69,8 @@ class TransactionBatcher:
             'input_hash': input_hash.hex()
         }
 
+        mn_logger.debug(f'Made new batch of {len(transactions)} transactions.')
+
         return batch
 
     def pack_current_queue(self, tx_number=100):
@@ -100,6 +102,8 @@ class Masternode(base.Node):
         self.aggregator = contender.Aggregator(
             driver=self.driver,
         )
+
+        self.secure_router.add_service(base.CONTENDER_SERVICE, self.aggregator.sbc_inbox)
 
         # Network upgrade flag
         self.active_upgrade = False
@@ -143,6 +147,7 @@ class Masternode(base.Node):
     async def broadcast_new_blockchain_started(self):
         # Check if it was us who recieved the first transaction.
         # If so, multicast a block notification to wake everyone up
+        mn_logger.debug('Sending new blockchain started signal.')
         if len(self.tx_batcher.queue) > 0:
             await router.secure_multicast(
                 msg=get_genesis_block(),

@@ -14,6 +14,8 @@ PROOF_EXPIRY = 15
 PEPPER = 'cilantroV1'
 LOGGER = get_logger('Network')
 
+JOIN_SERVICE = 'join'           # Unsecured
+IDENTITY_SERVICE = 'identity'   # Unsecured
 
 def verify_proof(proof, pepper):
     # Proofs expire after a minute
@@ -72,7 +74,7 @@ class JoinProcessor(Processor):
         if not primatives.check_format(msg, rules.JOIN_MESSAGE_RULES):
             return
 
-        response = await request(socket_str=msg.get('ip'), service='identity', msg={}, ctx=self.ctx)
+        response = await request(socket_str=msg.get('ip'), service=IDENTITY_SERVICE, msg={}, ctx=self.ctx)
 
         if response is None:
             return
@@ -94,7 +96,7 @@ class JoinProcessor(Processor):
             asyncio.ensure_future(
                 request(
                     socket_str=peer,
-                    service='join',
+                    service=JOIN_SERVICE,
                     msg=msg,
                     ctx=self.ctx
                 )
@@ -114,8 +116,8 @@ class Network:
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers)
         self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
 
-        router.add_service('join', self.join_processor)
-        router.add_service('identity', self.identity_processor)
+        router.add_service(JOIN_SERVICE, self.join_processor)
+        router.add_service(IDENTITY_SERVICE, self.identity_processor)
 
         self.join_msg = {
             'ip': ip_string,
@@ -125,7 +127,7 @@ class Network:
     async def start(self, bootnodes, vks):
         # Join all bootnodes
         while not self.all_vks_found(vks):
-            coroutines = [request(socket_str=node, service='join', msg=self.join_msg, ctx=self.ctx)
+            coroutines = [request(socket_str=node, service=JOIN_SERVICE, msg=self.join_msg, ctx=self.ctx)
                           for node in bootnodes]
 
             results = await asyncio.gather(*coroutines)

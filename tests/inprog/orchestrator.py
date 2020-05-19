@@ -44,6 +44,9 @@ def make_network(masternodes, delegates, ctx):
         port = 18000 + node_count
         tcp = f'tcp://127.0.0.1:{port}'
 
+        s_port = 19000 + node_count
+        stcp = f'tcp://127.0.0.1:{s_port}'
+
         if bootnodes is None:
             bootnodes = [tcp]
 
@@ -51,6 +54,7 @@ def make_network(masternodes, delegates, ctx):
             wallet=wallet,
             ctx=ctx,
             socket_base=tcp,
+            secure_socket_base=stcp,
             bootnodes=bootnodes,
             constitution=deepcopy(constitution),
             webserver_port=18080 + node_count,
@@ -66,10 +70,14 @@ def make_network(masternodes, delegates, ctx):
         port = 18000 + node_count
         tcp = f'tcp://127.0.0.1:{port}'
 
+        s_port = 19000 + node_count
+        stcp = f'tcp://127.0.0.1:{s_port}'
+
         dl = Delegate(
             wallet=wallet,
             ctx=ctx,
             socket_base=tcp,
+            secure_socket_base=stcp,
             constitution=deepcopy(constitution),
             bootnodes=bootnodes,
             driver=driver

@@ -48,8 +48,6 @@ class SBCInbox(router.Processor):
         super().__init__(*args, **kwargs)
 
     async def process_message(self, msg):
-        msg = decode(msg.decode())
-
         # Ignore bad message types
         # Ignore if not enough subblocks
         # Make sure all the contenders are valid

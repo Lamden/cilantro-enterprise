@@ -6,8 +6,7 @@ from contracting.db.encoder import encode
 
 from cilantro_ee.formatting import rules, primatives
 from cilantro_ee.crypto.wallet import Wallet, verify
-from cilantro_ee.router import Processor, Router, request
-
+from cilantro_ee import router
 from cilantro_ee.logger.base import get_logger
 
 PROOF_EXPIRY = 15
@@ -16,6 +15,7 @@ LOGGER = get_logger('Network')
 
 JOIN_SERVICE = 'join'           # Unsecured
 IDENTITY_SERVICE = 'identity'   # Unsecured
+
 
 def verify_proof(proof, pepper):
     # Proofs expire after a minute
@@ -34,7 +34,7 @@ def verify_proof(proof, pepper):
     return verify(proof['vk'], h.digest().hex(), proof['signature'])
 
 
-class IdentityProcessor(Processor):
+class IdentityProcessor(router.Processor):
     def __init__(self, wallet: Wallet, ip_string: str, pepper: str=PEPPER):
         self.pepper = pepper
         self.wallet = wallet
@@ -64,17 +64,19 @@ class IdentityProcessor(Processor):
         return proof
 
 
-class JoinProcessor(Processor):
-    def __init__(self, ctx, peers):
+class JoinProcessor(router.Processor):
+    def __init__(self, ctx, peers, wallet):
         self.ctx = ctx
         self.peers = peers
+        self.wallet = wallet
 
     async def process_message(self, msg):
         # Send ping to peer server to verify
         if not primatives.check_format(msg, rules.JOIN_MESSAGE_RULES):
             return
 
-        response = await request(socket_str=msg.get('ip'), service=IDENTITY_SERVICE, msg={}, ctx=self.ctx)
+        response = await router.secure_request(msg={}, service=IDENTITY_SERVICE, wallet=self.wallet, vk=msg.get('vk'),
+                                               ip=msg.get('ip'), ctx=self.ctx)
 
         if response is None:
             return
@@ -83,7 +85,7 @@ class JoinProcessor(Processor):
             return
 
         if msg.get('vk') not in self.peers:
-            await self.forward_to_peers(msg)
+            await router.secure_multicast(msg=msg, service=JOIN_SERVICE, peer_map=self.peers, ctx=self.ctx, wallet=self.wallet)
 
         self.peers[msg.get('vk')] = msg.get('ip')
 
@@ -91,20 +93,13 @@ class JoinProcessor(Processor):
             'peers': [{'vk': v, 'ip': i} for v, i in self.peers.items()]
         }
 
-    async def forward_to_peers(self, msg):
-        for peer in self.peers.values():
-            asyncio.ensure_future(
-                request(
-                    socket_str=peer,
-                    service=JOIN_SERVICE,
-                    msg=msg,
-                    ctx=self.ctx
-                )
-            )
-
+# Bootnodes:
+# {
+#    ip: vk
+# }
 
 class Network:
-    def __init__(self, wallet: Wallet, ip_string: str, ctx: zmq.asyncio.Context, router: Router, pepper: str=PEPPER):
+    def __init__(self, wallet: Wallet, ip_string: str, ctx: zmq.asyncio.Context, router: router.Router, pepper: str=PEPPER):
         self.wallet = wallet
         self.ctx = ctx
 
@@ -113,7 +108,9 @@ class Network:
         }
 
         # Add processors to router to accept and process networking messages
-        self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers)
+        self.ip = ip_string
+        self.vk = self.wallet.verifying_key().hex()
+        self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers, wallet=self.wallet)
         self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
 
         router.add_service(JOIN_SERVICE, self.join_processor)
@@ -124,11 +121,12 @@ class Network:
             'vk': self.wallet.verifying_key().hex()
         }
 
-    async def start(self, bootnodes, vks):
+    async def start(self, bootnodes: dict, vks: list):
         # Join all bootnodes
         while not self.all_vks_found(vks):
-            coroutines = [request(socket_str=node, service=JOIN_SERVICE, msg=self.join_msg, ctx=self.ctx)
-                          for node in bootnodes]
+
+            coroutines = [router.secure_request(msg=self.join_msg, service=JOIN_SERVICE, wallet=self.wallet,
+                                                ctx=self.ctx, ip=ip, vk=vk) for vk, ip, in bootnodes.items()]
 
             results = await asyncio.gather(*coroutines)
 

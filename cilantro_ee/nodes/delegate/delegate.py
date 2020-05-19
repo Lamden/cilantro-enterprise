@@ -66,15 +66,15 @@ class Delegate(base.Node):
         self.executor = Executor(driver=self.driver)
 
         self.work_processor = WorkProcessor()
-        self.secure_router.add_service(WORK_SERVICE, self.work_processor)
+        self.router.add_service(WORK_SERVICE, self.work_processor)
 
         self.log = get_logger(f'DEL {self.wallet.vk_pretty[4:12]}')
 
         self.masternode_contract = self.client.get_contract('masternodes')
 
-    async def start(self, bootnodes):
+    async def start(self):
         self.log.debug('Starting')
-        await super().start(bootnodes)
+        await super().start()
 
 
 
@@ -114,7 +114,7 @@ class Delegate(base.Node):
             driver=self.driver,
             work=filtered_work,
             wallet=self.wallet,
-            previous_block_hash=self.driver.latest_block_hash,
+            previous_block_hash=storage.get_latest_block_hash(self.driver),
             stamp_cost=self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
         )
 
@@ -136,11 +136,11 @@ class Delegate(base.Node):
 
     async def run(self):
         self.log.debug('Running...')
-        if storage.get_latest_block_height(self.driver) == 0:
-            self.log.debug('Waiting for a new block')
-            block = await self.new_block_processor.wait_for_next_nbn()
-            self.log.debug('Genesis block signal received.')
-            self.process_new_block(block)
+        # if storage.get_latest_block_height(self.driver) == 0:
+        #     self.log.debug('Waiting for a new block')
+        #     block = await self.new_block_processor.wait_for_next_nbn()
+        #     self.log.debug('Genesis block signal received.')
+        #     self.process_new_block(block)
 
 
         while self.running:

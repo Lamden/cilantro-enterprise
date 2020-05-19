@@ -103,17 +103,17 @@ class Masternode(base.Node):
             driver=self.driver,
         )
 
-        self.secure_router.add_service(base.CONTENDER_SERVICE, self.aggregator.sbc_inbox)
+        self.router.add_service(base.CONTENDER_SERVICE, self.aggregator.sbc_inbox)
 
         # Network upgrade flag
         self.active_upgrade = False
 
         self.masternode_contract = self.client.get_contract('masternodes')
 
-    async def start(self, bootnodes):
+    async def start(self):
         self.router.add_service(base.BLOCK_SERVICE, BlockService(self.blocks, self.driver))
 
-        await super().start(bootnodes=bootnodes)
+        await super().start()
 
         # Start the block server so others can run catchup using our node as a seed.
         # Start the block contender service to participate in consensus
@@ -274,7 +274,7 @@ class Masternode(base.Node):
 def get_genesis_block():
     block = {
         'hash': (b'\x00' * 32).hex(),
-        'blockNum': 0,
+        'number': 0,
         'previous': (b'\x00' * 32).hex(),
         'subblocks': []
     }

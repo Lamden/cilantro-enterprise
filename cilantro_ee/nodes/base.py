@@ -12,14 +12,15 @@ from cilantro_ee.logger.base import get_logger
 import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-BLOCK_SERVICE = 'service'           # Unsecure
-NEW_BLOCK_SERVICE = 'new_blocks'    # Secure
-WORK_SERVICE = 'work'               # Secure
-CONTENDER_SERVICE = 'contenders'    # Secure
+BLOCK_SERVICE = 'catchup'
+NEW_BLOCK_SERVICE = 'new_blocks'
+WORK_SERVICE = 'work'
+CONTENDER_SERVICE = 'contenders'
 
 GET_BLOCK = 'get_block'
 GET_HEIGHT = 'get_height'
 
+log = get_logger('Base')
 
 async def get_latest_block_height(ip_string: str, ctx: zmq.asyncio.Context):
     msg = {
@@ -74,12 +75,13 @@ class NewBlock(router.Processor):
 
     def clean(self):
         num = storage.get_latest_block_height(self.driver)
+        log.debug(self.q)
         self.q = [nbn for nbn in self.q if nbn['number'] > num]
 
 
 class Node:
-    def __init__(self, socket_base, secure_socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict,
-                 blocks=None, bootnodes=[], driver=ContractDriver(), debug=True, store=False, secure=True):
+    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes,
+                 blocks=None, driver=ContractDriver(), debug=True, store=False, secure=True):
 
         self.driver = driver
         self.nonces = storage.NonceStorage()
@@ -110,17 +112,14 @@ class Node:
             client=self.client
         )
 
-        self.socket_authenticator = authentication.SocketAuthenticator(ctx=self.ctx, client=self.client)
+        self.socket_authenticator = authentication.SocketAuthenticator(
+            bootnodes=self.bootnodes, ctx=self.ctx, client=self.client
+        )
 
         self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
 
         self.router = router.Router(
             socket_id=socket_base,
-            ctx=self.ctx,
-        )
-
-        self.secure_router = router.Router(
-            socket_id=secure_socket_base,
             ctx=self.ctx,
             wallet=wallet,
             secure=True
@@ -134,7 +133,7 @@ class Node:
         )
 
         self.new_block_processor = NewBlock(driver=self.driver)
-        self.secure_router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
+        self.router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
 
         self.running = False
 
@@ -147,7 +146,7 @@ class Node:
 
         self.log.info(f'Current: {current}, Latest: {latest}')
 
-        if latest == 0:
+        if latest == 0 or latest is None:
             return
 
         # Increment current by one. Don't count the genesis block.
@@ -165,6 +164,7 @@ class Node:
             self.update_state(block)
 
     def should_process(self, block):
+        log.debug(block)
         # Test if block failed immediately
         if block['hash'] == 'f' * 64:
             return False
@@ -225,14 +225,15 @@ class Node:
         # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager.version_check()
 
-    async def start(self, bootnodes):
+    async def start(self):
+
         asyncio.ensure_future(self.router.serve())
 
         # Get the set of VKs we are looking for from the constitution argument
         vks = self.constitution['masternodes'] + self.constitution['delegates']
 
         # Use it to boot up the network
-        await self.network.start(bootnodes=bootnodes, vks=vks)
+        await self.network.start(bootnodes=self.bootnodes, vks=vks)
 
         # Take a masternode vk from the constitution and look up its IP
         masternode = self.constitution['masternodes'][0]

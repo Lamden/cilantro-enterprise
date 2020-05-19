@@ -24,7 +24,6 @@ def make_ipc(p):
     except:
         pass
 
-
 def make_network(masternodes, delegates, ctx):
     mn_wallets = [Wallet() for _ in range(masternodes)]
     dl_wallets = [Wallet() for _ in range(delegates)]
@@ -36,7 +35,16 @@ def make_network(masternodes, delegates, ctx):
 
     mns = []
     dls = []
-    bootnodes = None
+
+    bootnodes = {}
+
+    for i in range(len(mn_wallets + dl_wallets)):
+        port = 18000 + i
+        tcp = f'tcp://127.0.0.1:{port}'
+
+        vk = (mn_wallets + dl_wallets)[i]
+        bootnodes[vk.verifying_key().hex()] = tcp
+
     node_count = 0
     for wallet in mn_wallets:
         driver = ContractDriver(driver=InMemDriver())
@@ -44,17 +52,10 @@ def make_network(masternodes, delegates, ctx):
         port = 18000 + node_count
         tcp = f'tcp://127.0.0.1:{port}'
 
-        s_port = 19000 + node_count
-        stcp = f'tcp://127.0.0.1:{s_port}'
-
-        if bootnodes is None:
-            bootnodes = [tcp]
-
         mn = Masternode(
             wallet=wallet,
             ctx=ctx,
             socket_base=tcp,
-            secure_socket_base=stcp,
             bootnodes=bootnodes,
             constitution=deepcopy(constitution),
             webserver_port=18080 + node_count,
@@ -70,14 +71,10 @@ def make_network(masternodes, delegates, ctx):
         port = 18000 + node_count
         tcp = f'tcp://127.0.0.1:{port}'
 
-        s_port = 19000 + node_count
-        stcp = f'tcp://127.0.0.1:{s_port}'
-
         dl = Delegate(
             wallet=wallet,
             ctx=ctx,
             socket_base=tcp,
-            secure_socket_base=stcp,
             constitution=deepcopy(constitution),
             bootnodes=bootnodes,
             driver=driver
@@ -90,17 +87,12 @@ def make_network(masternodes, delegates, ctx):
 
 
 def make_start_awaitable(mns, dls):
-    bootnodes = []
-    for i in range(len(mns+dls)):
-        port = 18000 + i
-        bootnodes.append(f'tcp://127.0.0.1:{port}')
-
     coros = []
     for mn in mns:
-        coros.append(mn.start(bootnodes=bootnodes))
+        coros.append(mn.start())
 
     for dl in dls:
-        coros.append(dl.start(bootnodes=bootnodes))
+        coros.append(dl.start())
 
     return asyncio.gather(*coros)
 

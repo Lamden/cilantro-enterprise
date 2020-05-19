@@ -116,12 +116,12 @@ def update_state_with_transaction(tx, driver: ContractDriver, nonces: NonceStora
             driver.driver.set(delta['key'], delta['value'])
 
             nonces.set_nonce(
-                sender=tx['transaction']['sender'],
-                processor=tx['transaction']['processor'],
-                value=tx['transaction']['nonce']
+                sender=tx['transaction']['payload']['sender'],
+                processor=tx['transaction']['payload']['processor'],
+                value=tx['transaction']['payload']['nonce']
             )
 
-            nonces_to_delete.append((tx['transaction']['sender'], tx['transaction']['processor']))
+            nonces_to_delete.append((tx['transaction']['payload']['sender'], tx['transaction']['payload']['processor']))
 
     for n in nonces_to_delete:
         nonces.set_pending_nonce(*n, value=None)

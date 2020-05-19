@@ -11,10 +11,11 @@ from cilantro_ee.logger.base import get_logger
 from contracting.client import ContractingClient
 
 CERT_DIR = 'cilsocks'
+DEFAULT_DIR = pathlib.Path.home() / CERT_DIR
 
 
 class SocketAuthenticator:
-    def __init__(self, client: ContractingClient, ctx: zmq.asyncio.Context,
+    def __init__(self, client: ContractingClient, ctx: zmq.asyncio.Context, bootnodes: dict={},
                  loop=asyncio.get_event_loop(), domain='*', cert_dir=CERT_DIR, debug=True):
 
         # Create the directory if it doesn't exist
@@ -36,6 +37,11 @@ class SocketAuthenticator:
         try:
             self.authenticator = AsyncioAuthenticator(context=self.ctx, loop=self.loop)
             self.authenticator.start()
+
+            # Add bootnodes
+            for node in bootnodes.keys():
+                self.add_verifying_key(node)
+
             self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
         except ZMQBaseError:
             pass

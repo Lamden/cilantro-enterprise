@@ -5,6 +5,14 @@ import zmq.asyncio
 from contracting.db.encoder import encode, decode
 from zmq.error import ZMQBaseError
 from zmq.auth.certs import load_certificate
+from cilantro_ee.logger.base import get_logger
+import pathlib
+
+CERT_DIR = 'cilsocks'
+DEFAULT_DIR = pathlib.Path.home() / CERT_DIR
+
+logger = get_logger('Router')
+
 # new block
 # work
 # sub block contenders
@@ -17,7 +25,6 @@ from zmq.auth.certs import load_certificate
 OK = {
     'response': 'ok'
 }
-
 
 def build_message(service, message):
     return {
@@ -150,11 +157,15 @@ class Router(JSONAsyncInbox):
         service = msg.get('service')
         request = msg.get('msg')
 
+        logger.debug(f'Message recieved for: {service}.')
+
         if service is None:
+            logger.debug('No service found for message.')
             await super().return_msg(_id, OK)
             return
 
         if request is None:
+            logger.debug('No request found in message.')
             await super().return_msg(_id, OK)
             return
 
@@ -188,7 +199,7 @@ def build_socket(socket_str: str, ctx: zmq.asyncio.Context, linger=500):
         return None
 
 
-async def secure_send(msg: dict, service, cert_dir, wallet: Wallet, vk, ip, ctx: zmq.asyncio.Context, linger=500):
+async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.asyncio.Context, linger=500, cert_dir=DEFAULT_DIR):
     socket = ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.LINGER, linger)
     socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
@@ -215,11 +226,51 @@ async def secure_send(msg: dict, service, cert_dir, wallet: Wallet, vk, ip, ctx:
     await socket.send(payload, flags=zmq.NOBLOCK)
 
 
-async def secure_multicast(msg: dict, service, cert_dir, wallet: Wallet, peer_map: dict, ctx: zmq.asyncio.Context, linger=500):
+async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: str, ctx: zmq.asyncio.Context,
+                         linger=500, timeout=1000, cert_dir=DEFAULT_DIR):
+
+    socket = ctx.socket(zmq.DEALER)
+    socket.setsockopt(zmq.LINGER, linger)
+    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
+
+    socket.curve_secretkey = wallet.curve_sk
+    socket.curve_publickey = wallet.curve_vk
+
+    server_pub, _ = load_certificate(str(cert_dir / f'{vk}.key'))
+
+    socket.curve_serverkey = server_pub
+
+    try:
+        socket.connect(ip)
+    except ZMQBaseError:
+        return None
+
+    message = {
+        'service': service,
+        'msg': msg
+    }
+
+    payload = encode(message).encode()
+
+    await socket.send(payload)
+
+    event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
+    msg = None
+    if event:
+        response = await socket.recv()
+
+        msg = decode(response)
+
+        socket.close()
+
+    return msg
+
+
+async def secure_multicast(msg: dict, service, wallet: Wallet, peer_map: dict, ctx: zmq.asyncio.Context, linger=500, cert_dir=DEFAULT_DIR):
     coroutines = []
     for vk, ip in peer_map.items():
         coroutines.append(
-            secure_send(msg, service, cert_dir, wallet, vk, ip, ctx, linger)
+            secure_send(msg=msg, service=service, cert_dir=cert_dir, wallet=wallet, vk=vk, ip=ip, ctx=ctx, linger=linger)
         )
 
     await asyncio.gather(*coroutines)

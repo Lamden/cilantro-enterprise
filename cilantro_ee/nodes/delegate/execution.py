@@ -6,7 +6,7 @@ from cilantro_ee.logger.base import get_logger
 from datetime import datetime
 import hashlib
 import heapq
-
+from cilantro_ee import storage
 
 log = get_logger('EXE')
 
@@ -51,8 +51,8 @@ def generate_environment(driver, timestamp, input_hash):
     )
 
     return {
-        'block_hash': driver.latest_block_hash,
-        'block_num': driver.latest_block_num + 1,
+        'block_hash': storage.get_latest_block_hash(driver),
+        'block_num': storage.get_latest_block_height(driver) + 1,
         '__input_hash': input_hash,  # Used for deterministic entropy for random games
         'now': now
     }

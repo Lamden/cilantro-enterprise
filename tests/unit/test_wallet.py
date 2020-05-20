@@ -36,11 +36,6 @@ class TestWallet(TestCase):
 
         self.assertTrue(isinstance(_h, str))
 
-    def test_sign_string_breaks(self):
-        w = Wallet()
-
-        with self.assertRaises(AssertionError):
-            w.sign('hello')
 
     def test_sign_bytes_returns_signature(self):
         w = Wallet()

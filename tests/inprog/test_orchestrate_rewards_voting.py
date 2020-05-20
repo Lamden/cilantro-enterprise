@@ -616,7 +616,8 @@ class TestGovernanceOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        self.assertListEqual(o.masternodes[0].contacts.delegates, [
+        self.assertListEqual(o.masternodes[0].client.get_var(
+            contract='delegates', variable='S', arguments=['members']), [
             o.delegates[0].wallet.verifying_key().hex(),
             o.delegates[1].wallet.verifying_key().hex(),
             o.delegates[2].wallet.verifying_key().hex(),
@@ -624,7 +625,8 @@ class TestGovernanceOrchestration(unittest.TestCase):
             candidate.verifying_key().hex()
         ])
 
-        self.assertListEqual(o.masternodes[1].contacts.delegates, [
+        self.assertListEqual(o.masternodes[0].client.get_var(
+            contract='delegates', variable='S', arguments=['members']), [
             o.delegates[0].wallet.verifying_key().hex(),
             o.delegates[1].wallet.verifying_key().hex(),
             o.delegates[2].wallet.verifying_key().hex(),
@@ -942,7 +944,6 @@ class TestGovernanceOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-
     def test_change_stamps_increases_reward_amounts(self):
         o = Orchestrator(2, 4, self.ctx)
 
@@ -1088,7 +1089,7 @@ class TestGovernanceOrchestration(unittest.TestCase):
         loop.run_until_complete(test())
 
     def test_one_by_one_network(self):
-        o = Orchestrator(1, 1, ctx=self.ctx, min_del_quorum=1, min_mn_quorum=1)
+        o = Orchestrator(1, 1, ctx=self.ctx)
 
         candidate = Wallet()
 

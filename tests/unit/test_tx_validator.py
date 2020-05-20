@@ -3,8 +3,7 @@ from cilantro_ee.crypto import transaction
 from cilantro_ee.crypto.transaction import build_transaction
 from cilantro_ee.crypto.wallet import Wallet, verify
 from contracting.db.encoder import encode, decode
-from contracting.db.driver import ContractDriver
-
+from cilantro_ee import storage
 
 class TestTransactionBuilder(TestCase):
     def test_init_valid_doesnt_assert(self):
@@ -97,7 +96,7 @@ class TestTransactionBuilder(TestCase):
 
 class TestValidator(TestCase):
     def setUp(self):
-        self.driver = ContractDriver()
+        self.driver = storage.NonceStorage()
         self.driver.flush()
 
     def test_check_tx_formatting_succeeds(self):
@@ -118,7 +117,7 @@ class TestValidator(TestCase):
 
         decoded = decode(tx)
 
-        error = tx_validator.check_tx_formatting(decoded, 'b' * 64)
+        error = transaction.check_tx_formatting(decoded, 'b' * 64)
         self.assertIsNone(error)
 
     def test_check_tx_formatting_not_formatted_fails(self):
@@ -195,24 +194,24 @@ class TestValidator(TestCase):
         self.assertEqual(p, 0)
 
     def test_get_nonces_correct_when_exist(self):
-        sender = b'a' * 32
-        processor = b'b' * 32
+        sender = 'a' * 32
+        processor = 'b' * 32
 
         self.driver.set_pending_nonce(
             sender=sender,
             processor=processor,
-            nonce=5
+            value=5
         )
 
         self.driver.set_nonce(
             sender=sender,
             processor=processor,
-            nonce=3
+            value=3
         )
 
         n, p = transaction.get_nonces(
-            sender=sender.hex(),
-            processor=processor.hex(),
+            sender=sender,
+            processor=processor,
             driver=self.driver
         )
         self.assertEqual(n, 3)
@@ -239,14 +238,14 @@ class TestValidator(TestCase):
 
     def test_get_pending_nonce_if_strict_invalid(self):
         with self.assertRaises(transaction.TransactionNonceInvalid):
-            tx_validator.get_new_pending_nonce(
+            transaction.get_new_pending_nonce(
                 tx_nonce=3,
                 nonce=1,
                 pending_nonce=2
             )
 
     def test_get_pending_nonce_if_not_strict_invalid(self):
-        with self.assertRaises(tx_validator.TransactionNonceInvalid):
+        with self.assertRaises(transaction.TransactionNonceInvalid):
             transaction.get_new_pending_nonce(
                 tx_nonce=1,
                 nonce=1,

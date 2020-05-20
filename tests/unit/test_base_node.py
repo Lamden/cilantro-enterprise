@@ -387,8 +387,12 @@ class TestNode(TestCase):
             store=False,
         )
 
-        bootnodes = [mn_bootnode, dl_bootnode]
         vks = [mn_wallet.verifying_key().hex(), dl_wallet.verifying_key().hex()]
+
+        bootnodes = {
+            mn_wallet.verifying_key().hex(): mn_bootnode,
+            dl_wallet.verifying_key().hex(): dl_bootnode
+        }
 
         tasks = asyncio.gather(
             self.r.serve(),

@@ -272,10 +272,11 @@ class TestCurrentContenders(TestCase):
 
 class TestAggregator(TestCase):
     def setUp(self):
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
 
     def tearDown(self):
-        self.loop = asyncio.new_event_loop()
+        self.loop.close()
 
     def test_gather_subblocks_all_same_blocks(self):
         a = Aggregator(driver=ContractDriver())

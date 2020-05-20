@@ -2,7 +2,6 @@ from unittest import TestCase
 from cilantro_ee.router import Router, QueueProcessor, OK, Processor
 import zmq.asyncio
 import asyncio
-from cilantro_ee.struct import _socket
 from contracting.db.encoder import encode, decode
 
 
@@ -22,7 +21,7 @@ class TestRouter(TestCase):
         self.loop.close()
 
     def test_add_service(self):
-        r = Router(socket_id=_socket('ipc:///tmp/router'), ctx=self.ctx, linger=50)
+        r = Router(socket_id='ipc:///tmp/router', ctx=self.ctx, linger=50)
         q = QueueProcessor()
 
         r.add_service('test', q)
@@ -30,7 +29,7 @@ class TestRouter(TestCase):
         self.assertEqual(r.services['test'], q)
 
     def test_inbox_none_returns_default_message(self):
-        r = Router(socket_id=_socket('ipc:///tmp/router'), ctx=self.ctx, linger=50)
+        r = Router(socket_id='ipc:///tmp/router', ctx=self.ctx, linger=50)
 
         async def request(msg):
             msg = encode(msg).encode()
@@ -62,7 +61,7 @@ class TestRouter(TestCase):
         self.assertEqual(res[1], OK)
 
     def test_request_none_returns_default_message(self):
-        r = Router(socket_id=_socket('ipc:///tmp/router'), ctx=self.ctx, linger=50)
+        r = Router(socket_id='ipc:///tmp/router', ctx=self.ctx, linger=50)
 
         async def request(msg):
             msg = encode(msg).encode()
@@ -95,7 +94,7 @@ class TestRouter(TestCase):
         self.assertEqual(res[1], OK)
 
     def test_no_processor_returns_default_message(self):
-        r = Router(socket_id=_socket('ipc:///tmp/router'), ctx=self.ctx, linger=50)
+        r = Router(socket_id='ipc:///tmp/router', ctx=self.ctx, linger=50)
 
         async def request(msg):
             msg = encode(msg).encode()
@@ -130,7 +129,7 @@ class TestRouter(TestCase):
         self.assertEqual(res[1], OK)
 
     def test_queue_processor_returns_default_message(self):
-        r = Router(socket_id=_socket('ipc:///tmp/router'), ctx=self.ctx, linger=50)
+        r = Router(socket_id='ipc:///tmp/router', ctx=self.ctx, linger=50)
         q = QueueProcessor()
 
         r.add_service('test', q)
@@ -173,7 +172,7 @@ class TestRouter(TestCase):
         self.assertListEqual(expected_q, q.q)
 
     def test_mock_processor_returns_custom_message(self):
-        r = Router(socket_id=_socket('ipc:///tmp/router'), ctx=self.ctx, linger=50)
+        r = Router(socket_id='ipc:///tmp/router', ctx=self.ctx, linger=50)
 
         class MockProcessor(Processor):
             async def process_message(self, msg):

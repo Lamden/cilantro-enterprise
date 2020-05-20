@@ -13,14 +13,7 @@ class TestRewards(TestCase):
         self.client.flush()
 
     def sync(self):
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
-        sync.submit_node_election_contracts(
-            initial_masternodes=['stu', 'raghu', 'steve'],
-            boot_mns=2,
-            initial_delegates=['tejas', 'alex'],
-            boot_dels=3,
-            client=self.client
-        )
+        sync.setup_genesis_contracts(['stu', 'raghu', 'steve'], ['tejas', 'alex'], client=self.client)
 
     def test_contract_exists_false_before_sync(self):
         self.assertFalse(rewards.contract_exists('stamp_cost', self.client))

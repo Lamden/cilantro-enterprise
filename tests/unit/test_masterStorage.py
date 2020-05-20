@@ -15,32 +15,17 @@ class TestMasterStorage(TestCase):
     def test_q_num(self):
         q = self.db.q(1)
 
-        self.assertEqual(q, {'blockNum': 1})
+        self.assertEqual(q, {'number': 1})
 
     def test_q_hash(self):
         q = self.db.q('1')
 
         self.assertEqual(q, {'hash': '1'})
 
-    def test_genesis_block_created(self):
-        block = self.db.get_block(0)
-
-        expected = {
-                'blockNum': 0,
-                'hash': b'\x00' * 32,
-                'blockOwners': [b'\x00' * 32]
-            }
-
-        self.assertEqual(block, expected)
-
-        index = self.db.get_index(0)
-
-        self.assertEqual(index, expected)
-
     def test_put_block(self):
         block = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 
@@ -51,7 +36,7 @@ class TestMasterStorage(TestCase):
     def test_get_block(self):
         block = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 
@@ -68,7 +53,7 @@ class TestMasterStorage(TestCase):
     def test_get_block_hash(self):
         block = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 
@@ -85,7 +70,7 @@ class TestMasterStorage(TestCase):
     def test_get_none_block(self):
         block = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 
@@ -102,7 +87,7 @@ class TestMasterStorage(TestCase):
     def test_got_none_block_num(self):
         block = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 
@@ -119,7 +104,7 @@ class TestMasterStorage(TestCase):
     def test_drop_collections_block(self):
         block = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'data': 'woop'
         }
 
@@ -135,21 +120,10 @@ class TestMasterStorage(TestCase):
 
         self.assertIsNone(got_block)
 
-    def test_put_index(self):
-        index = {
-            'hash': 'a',
-            'blockNum': 1,
-            'blockOwners': 'stu'
-        }
-
-        _id = self.db.put(index, BlockStorage.INDEX)
-
-        self.assertTrue(_id)
-
     def test_put_other(self):
         index = {
             'hash': 'a',
-            'blockNum': 1,
+            'number': 1,
             'blockOwners': 'stu'
         }
 
@@ -157,98 +131,53 @@ class TestMasterStorage(TestCase):
 
         self.assertFalse(_id)
 
-    def test_get_owners_num(self):
-        index = {
-            'hash': 'a',
-            'blockNum': 1,
-            'blockOwners': 'stu'
-        }
-
-        _id = self.db.put(index, BlockStorage.INDEX)
-
-        self.assertTrue(_id)
-
-        owners = self.db.get_owners(1)
-
-        self.assertEqual(owners, 'stu')
-
-    def test_get_owners_hash(self):
-        index = {
-            'hash': 'a',
-            'blockNum': 1,
-            'blockOwners': 'stu'
-        }
-
-        _id = self.db.put(index, BlockStorage.INDEX)
-
-        self.assertTrue(_id)
-
-        owners = self.db.get_owners('a')
-
-        self.assertEqual(owners, 'stu')
-
-    def test_get_owners_doesnt_exist(self):
-        index = {
-            'hash': 'a',
-            'blockNum': 1,
-            'blockOwners': 'stu'
-        }
-
-        _id = self.db.put(index, BlockStorage.INDEX)
-
-        self.assertTrue(_id)
-
-        owners = self.db.get_owners('b')
-
-        self.assertIsNone(owners)
-
     def test_get_last_n_blocks(self):
         blocks = []
 
-        blocks.append({'hash': 'a', 'blockNum': 1, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 2, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 3, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 4, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 5, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 1, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 2, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 3, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 4, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 5, 'data': 'woop'})
 
         for block in blocks:
             self.db.put(block)
 
         got_blocks = self.db.get_last_n(3, BlockStorage.BLOCK)
 
-        nums = [b['blockNum'] for b in got_blocks]
+        nums = [b['number'] for b in got_blocks]
 
         self.assertEqual(nums, [5, 4, 3])
 
     def test_get_last_n_index(self):
         blocks = []
 
-        blocks.append({'hash': 'a', 'blockNum': 1, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 2, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 3, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 4, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 5, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 1, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 2, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 3, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 4, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 5, 'data': 'woop'})
 
         for block in blocks:
-            self.db.put(block, BlockStorage.INDEX)
+            self.db.put(block, BlockStorage.BLOCK)
 
-        got_blocks = self.db.get_last_n(3, BlockStorage.INDEX)
+        got_blocks = self.db.get_last_n(3, BlockStorage.BLOCK)
 
-        nums = [b['blockNum'] for b in got_blocks]
+        nums = [b['number'] for b in got_blocks]
 
         self.assertEqual(nums, [5, 4, 3])
 
     def test_get_none_from_wrong_n_collection(self):
         blocks = []
 
-        blocks.append({'hash': 'a', 'blockNum': 1, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 2, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 3, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 4, 'data': 'woop'})
-        blocks.append({'hash': 'a', 'blockNum': 5, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 1, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 2, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 3, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 4, 'data': 'woop'})
+        blocks.append({'hash': 'a', 'number': 5, 'data': 'woop'})
 
         for block in blocks:
-            self.db.put(block, BlockStorage.INDEX)
+            self.db.put(block, BlockStorage.BLOCK)
 
         got_blocks = self.db.get_last_n(3, 5)
 

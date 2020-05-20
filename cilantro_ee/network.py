@@ -2,6 +2,9 @@ import time
 import hashlib
 import asyncio
 import zmq.asyncio
+from zmq.error import ZMQBaseError
+from zmq.utils import z85
+from nacl.bindings import crypto_sign_ed25519_pk_to_curve25519
 from contracting.db.encoder import encode
 
 from cilantro_ee.formatting import rules, primatives
@@ -103,9 +106,7 @@ class Network:
         self.wallet = wallet
         self.ctx = ctx
 
-        self.peers = {
-            self.wallet.verifying_key().hex(): ip_string
-        }
+        self.peers = dict()
 
         # Add processors to router to accept and process networking messages
         self.ip = ip_string
@@ -122,11 +123,20 @@ class Network:
         }
 
     async def start(self, bootnodes: dict, vks: list):
-        # Join all bootnodes
+        # This can be made less redundant by building a do while loop
+        # Connect to all bootnodes
+        connected_bootnodes = {}
+        for vk, ip in bootnodes.items():
+            socket = self.build_socket(ip, vk)
+            if socket is None:
+                continue
+            connected_bootnodes[vk] = socket
+
+        # Then ping them all
         while not self.all_vks_found(vks):
 
-            coroutines = [router.secure_request(msg=self.join_msg, service=JOIN_SERVICE, wallet=self.wallet,
-                                                ctx=self.ctx, ip=ip, vk=vk) for vk, ip, in bootnodes.items()]
+            coroutines = [router.secure_request(
+                msg=self.join_msg, service=JOIN_SERVICE, socket=ip) for vk, ip, in connected_bootnodes.items()]
 
             results = await asyncio.gather(*coroutines)
 
@@ -135,8 +145,41 @@ class Network:
                     continue
 
                 for peer in result['peers']:
-                    if self.peers.get(peer['vk']) is None:
-                        self.peers[peer['vk']] = peer['ip']
+                    if self.peers.get(peer['vk']) is not None:
+                        continue
+
+                    socket = self.build_socket(peer['ip'], peer['vk'])
+
+                    if socket is None:
+                        continue
+
+                    self.peers[peer['vk']] = socket
+
+        # Disconnect from the connected bootnodes
+        for vk, ip in connected_bootnodes.items():
+            ip.close()
+
+    def build_socket(self, ip, peer_vk):
+        socket = self.ctx.socket(zmq.DEALER)
+        socket.curve_secretkey = self.wallet.curve_sk
+        socket.curve_publickey = self.wallet.curve_vk
+
+        try:
+            pk = crypto_sign_ed25519_pk_to_curve25519(bytes.fromhex(peer_vk))
+        # Error is thrown if the VK is not within the possibility space of the ED25519 algorithm
+        except RuntimeError:
+            return None
+
+        zvk = z85.encode(pk)
+
+        socket.curve_serverkey = zvk
+
+        try:
+            socket.connect(ip)
+        except ZMQBaseError:
+            return None
+
+        return socket
 
     def all_vks_found(self, vks):
         for vk in vks:

@@ -2,7 +2,7 @@ import time
 
 from cilantro_ee.crypto.canonical import format_dictionary
 from cilantro_ee.crypto.wallet import sign
-from cilantro_ee.formatting import check_format, rules
+from cilantro_ee.formatting import check_format, rules, primatives
 from contracting.db.encoder import encode
 from cilantro_ee import storage
 from cilantro_ee.crypto import wallet
@@ -123,9 +123,9 @@ def has_enough_stamps(balance, stamp_per_balance, stamps_supplied, contract=None
             raise TransactionSenderTooFewStamps
 
 
-# def contract_name_is_valid(contract, function, name):
-#     if contract == 'submission' and function == 'submit_contract' and not contract_name_is_formatted(name):
-#         raise TransactionContractNameInvalid
+def contract_name_is_valid(contract, function, name):
+    if contract == 'submission' and function == 'submit_contract' and not primatives.contract_name_is_formatted(name):
+        raise TransactionContractNameInvalid
 
 
 def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce: int, processor: str, stamps: int):

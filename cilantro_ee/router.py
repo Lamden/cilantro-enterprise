@@ -26,6 +26,7 @@ OK = {
     'response': 'ok'
 }
 
+
 def build_message(service, message):
     return {
         'service': service,
@@ -226,24 +227,7 @@ async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.async
     await socket.send(payload, flags=zmq.NOBLOCK)
 
 
-async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: str, ctx: zmq.asyncio.Context,
-                         linger=500, timeout=1000, cert_dir=DEFAULT_DIR):
-
-    socket = ctx.socket(zmq.DEALER)
-    socket.setsockopt(zmq.LINGER, linger)
-    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-
-    socket.curve_secretkey = wallet.curve_sk
-    socket.curve_publickey = wallet.curve_vk
-
-    server_pub, _ = load_certificate(str(cert_dir / f'{vk}.key'))
-
-    socket.curve_serverkey = server_pub
-
-    try:
-        socket.connect(ip)
-    except ZMQBaseError:
-        return None
+async def secure_request(msg: dict, service: str, socket, timeout=1000):
 
     message = {
         'service': service,

@@ -7,17 +7,26 @@ from cilantro_ee.router import Router
 
 import asyncio
 import zmq.asyncio
+from zmq.auth.asyncio import AsyncioAuthenticator
 
+import pathlib
+
+CERT_DIR = 'cilsocks'
+DEFAULT_DIR = pathlib.Path.home() / CERT_DIR
 
 class TestProcessors(TestCase):
     def setUp(self):
         self.ctx = zmq.asyncio.Context()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
+        self.authenticator = AsyncioAuthenticator(context=self.ctx, loop=self.loop)
+        self.authenticator.start()
+        self.authenticator.configure_curve(domain='*', location=DEFAULT_DIR)
 
     def tearDown(self):
         self.ctx.destroy()
         self.loop.close()
+        self.authenticator.stop()
 
     def test_identity_processor_create_proof(self):
         w = Wallet()

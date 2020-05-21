@@ -78,8 +78,8 @@ class JoinProcessor(router.Processor):
         if not primatives.check_format(msg, rules.JOIN_MESSAGE_RULES):
             return
 
-        response = await router.secure_request(msg={}, service=IDENTITY_SERVICE, wallet=self.wallet, vk=msg.get('vk'),
-                                               ip=msg.get('ip'), ctx=self.ctx)
+        response = await router.request(msg={}, service=IDENTITY_SERVICE, wallet=self.wallet, vk=msg.get('vk'),
+                                        ip=msg.get('ip'), ctx=self.ctx)
 
         if response is None:
             return
@@ -114,8 +114,9 @@ class Network:
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers, wallet=self.wallet)
         self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
 
-        router.add_service(JOIN_SERVICE, self.join_processor)
-        router.add_service(IDENTITY_SERVICE, self.identity_processor)
+        self.router = router
+        self.router.add_service(JOIN_SERVICE, self.join_processor)
+        self.router.add_service(IDENTITY_SERVICE, self.identity_processor)
 
         self.join_msg = {
             'ip': ip_string,
@@ -135,7 +136,7 @@ class Network:
         # Then ping them all
         while not self.all_vks_found(vks):
 
-            coroutines = [router.secure_request(
+            coroutines = [router.request(
                 msg=self.join_msg, service=JOIN_SERVICE, socket=ip) for vk, ip, in connected_bootnodes.items()]
 
             results = await asyncio.gather(*coroutines)
@@ -161,18 +162,20 @@ class Network:
 
     def build_socket(self, ip, peer_vk):
         socket = self.ctx.socket(zmq.DEALER)
-        socket.curve_secretkey = self.wallet.curve_sk
-        socket.curve_publickey = self.wallet.curve_vk
 
-        try:
-            pk = crypto_sign_ed25519_pk_to_curve25519(bytes.fromhex(peer_vk))
-        # Error is thrown if the VK is not within the possibility space of the ED25519 algorithm
-        except RuntimeError:
-            return None
+        if self.router.secure:
+            socket.curve_secretkey = self.wallet.curve_sk
+            socket.curve_publickey = self.wallet.curve_vk
 
-        zvk = z85.encode(pk)
+            try:
+                pk = crypto_sign_ed25519_pk_to_curve25519(bytes.fromhex(peer_vk))
+            # Error is thrown if the VK is not within the possibility space of the ED25519 algorithm
+            except RuntimeError:
+                return None
 
-        socket.curve_serverkey = zvk
+            zvk = z85.encode(pk)
+
+            socket.curve_serverkey = zvk
 
         try:
             socket.connect(ip)

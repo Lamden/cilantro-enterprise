@@ -227,7 +227,7 @@ async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.async
     await socket.send(payload, flags=zmq.NOBLOCK)
 
 
-async def secure_request(msg: dict, service: str, socket, timeout=1000):
+async def request(msg: dict, service: str, socket, timeout=1000):
 
     message = {
         'service': service,
@@ -258,35 +258,4 @@ async def secure_multicast(msg: dict, service, wallet: Wallet, peer_map: dict, c
         )
 
     await asyncio.gather(*coroutines)
-
-
-async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Context, timeout=1000, linger=500):
-    socket = ctx.socket(zmq.DEALER)
-    socket.setsockopt(zmq.LINGER, linger)
-    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-
-    try:
-        socket.connect(socket_str)
-    except ZMQBaseError:
-        return None
-
-    message = {
-        'service': service,
-        'msg': msg
-    }
-
-    payload = encode(message).encode()
-
-    await socket.send(payload)
-
-    event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
-    msg = None
-    if event:
-        response = await socket.recv()
-
-        msg = decode(response)
-
-        socket.close()
-
-    return msg
 

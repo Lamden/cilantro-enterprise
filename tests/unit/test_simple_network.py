@@ -3,7 +3,10 @@ from cilantro_ee.network import *
 from cilantro_ee.crypto.wallet import Wallet
 
 from contracting.db.encoder import encode, decode
+from contracting.client import ContractingClient
 from cilantro_ee.router import Router
+
+from cilantro_ee import authentication
 
 import asyncio
 import zmq.asyncio
@@ -15,7 +18,15 @@ class TestProcessors(TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+        self.base_tcp = 'tcp://127.0.0.1:19000'
+        self.base_wallet = Wallet()
+
+        self.router = Router(socket_id=self.base_tcp, ctx=self.ctx, wallet=self.base_wallet)
+
+        self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
+
     def tearDown(self):
+        self.authenticator.authenticator.stop()
         self.ctx.destroy()
         self.loop.close()
 
@@ -89,8 +100,13 @@ class TestProcessors(TestCase):
         self.assertIsNone(res)
 
     def test_join_processor_good_message_offline_returns_none(self):
+        w = Wallet()
+
+        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.configure()
+
         msg = {
-            'vk': '0' * 64,
+            'vk': w.verifying_key().hex(),
             'ip': 'tcp://127.0.0.1:18000'
         }
 
@@ -138,6 +154,10 @@ class TestProcessors(TestCase):
 
     def test_join_processor_good_message_adds_to_peers(self):
         peer_to_add = Wallet()
+
+
+        # other_router = Router()
+
         i = IdentityProcessor(
             wallet=peer_to_add,
             pepper='cilantroV1',
@@ -300,10 +320,15 @@ class TestNetwork(TestCase):
             'peers': [{'vk': w_2.verifying_key().hex(), 'ip': bootnodes[1]}]
         }
 
+        real_bootnodes = {
+            w_1.verifying_key().hex(): bootnodes[0],
+            w_2.verifying_key().hex(): bootnodes[1]
+        }
+
         tasks = asyncio.gather(
             reply(bootnodes[0], peers_1),
             reply(bootnodes[1], peers_2),
-            n.start(bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()])
+            n.start(real_bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()])
         )
 
         self.loop.run_until_complete(tasks)
@@ -317,45 +342,52 @@ class TestNetwork(TestCase):
         self.assertDictEqual(n.peers, expected)
 
     def test_mock_multiple_networks(self):
-        bootnodes = ['tcp://127.0.0.1:18001',
-                     'tcp://127.0.0.1:18002',
-                     'tcp://127.0.0.1:18003']
-
         w1 = Wallet()
+        w2 = Wallet()
+        w3 = Wallet()
+
+        ips = ['tcp://127.0.0.1:18001',
+               'tcp://127.0.0.1:18002',
+               'tcp://127.0.0.1:18003']
+
+        bootnodes = {
+            w1.verifying_key().hex(): ips[0],
+            w2.verifying_key().hex(): ips[1],
+            w3.verifying_key().hex(): ips[2],
+        }
+
         r1 = Router(
-            socket_id=bootnodes[0],
+            socket_id=ips[0],
             ctx=self.ctx,
             wallet=w1
         )
         n1 = Network(
             wallet=w1,
-            ip_string=bootnodes[0],
+            ip_string=ips[0],
             ctx=self.ctx,
             router=r1
         )
 
-        w2 = Wallet()
         r2 = Router(
-            socket_id=bootnodes[1],
+            socket_id=ips[1],
             ctx=self.ctx,
             wallet=w1
         )
         n2 = Network(
             wallet=w2,
-            ip_string=bootnodes[1],
+            ip_string=ips[1],
             ctx=self.ctx,
             router=r2
         )
 
-        w3 = Wallet()
         r3 = Router(
-            socket_id=bootnodes[2],
+            socket_id=ips[2],
             ctx=self.ctx,
             wallet=w1
         )
         n3 = Network(
             wallet=w3,
-            ip_string=bootnodes[2],
+            ip_string=ips[2],
             ctx=self.ctx,
             router=r3
         )

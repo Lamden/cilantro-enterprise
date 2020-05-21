@@ -7,6 +7,7 @@ from zmq.error import ZMQBaseError
 from zmq.auth.certs import load_certificate
 from cilantro_ee.logger.base import get_logger
 import pathlib
+from cilantro_ee import authentication
 
 CERT_DIR = 'cilsocks'
 DEFAULT_DIR = pathlib.Path.home() / CERT_DIR
@@ -122,6 +123,7 @@ class AsyncInbox:
 class JSONAsyncInbox(AsyncInbox):
     def __init__(self, secure=False, *args, **kwargs):
         self.secure = secure
+
         super().__init__(*args, **kwargs)
 
     def setup_socket(self):

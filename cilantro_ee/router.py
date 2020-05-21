@@ -1,10 +1,7 @@
 import asyncio
-from cilantro_ee.crypto.wallet import Wallet
 import zmq
 import zmq.asyncio
 from contracting.db.encoder import encode, decode
-from zmq.error import ZMQBaseError
-from zmq.auth.certs import load_certificate
 from cilantro_ee.logger.base import get_logger
 import pathlib
 
@@ -188,41 +185,15 @@ class Router(JSONAsyncInbox):
         self.services[name] = processor
 
 
-def build_socket(socket_str: str, ctx: zmq.asyncio.Context, linger=500):
-    socket = ctx.socket(zmq.DEALER)
-    socket.setsockopt(zmq.LINGER, linger)
-    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-
-    try:
-        socket.connect(socket_str)
-        return socket
-    except ZMQBaseError:
-        return None
-
-
-async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.asyncio.Context, linger=500, cert_dir=DEFAULT_DIR):
-    socket = ctx.socket(zmq.DEALER)
-    socket.setsockopt(zmq.LINGER, linger)
-    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-
-    socket.curve_secretkey = wallet.curve_sk
-    socket.curve_publickey = wallet.curve_vk
-
-    server_pub, _ = load_certificate(str(cert_dir / f'{vk}.key'))
-
-    socket.curve_serverkey = server_pub
-
-    try:
-        socket.connect(ip)
-    except ZMQBaseError:
-        return None
-
+async def send(msg: dict, service: str, socket, timeout=1000):
     message = {
         'service': service,
         'msg': msg
     }
 
     payload = encode(message).encode()
+
+    print(socket)
 
     await socket.send(payload, flags=zmq.NOBLOCK)
 
@@ -250,11 +221,11 @@ async def request(msg: dict, service: str, socket, timeout=1000):
     return msg
 
 
-async def secure_multicast(msg: dict, service, wallet: Wallet, peer_map: dict, ctx: zmq.asyncio.Context, linger=500, cert_dir=DEFAULT_DIR):
+async def multicast(msg: dict, service, sockets: list):
     coroutines = []
-    for vk, ip in peer_map.items():
+    for socket in sockets:
         coroutines.append(
-            secure_send(msg=msg, service=service, cert_dir=cert_dir, wallet=wallet, vk=vk, ip=ip, ctx=ctx, linger=linger)
+            send(msg=msg, service=service, socket=socket)
         )
 
     await asyncio.gather(*coroutines)

@@ -120,7 +120,7 @@ class Delegate(base.Node):
 
         print(results)
 
-        await router.secure_multicast(
+        await router.multicast(
             msg=results,
             service=base.CONTENDER_SERVICE,
             cert_dir=self.socket_authenticator.cert_dir,

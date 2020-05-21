@@ -19,6 +19,9 @@ LOGGER = get_logger('Network')
 JOIN_SERVICE = 'join'           # Unsecured
 IDENTITY_SERVICE = 'identity'   # Unsecured
 
+PEERS = dict()
+VK_IP = dict()
+
 
 def verify_proof(proof, pepper):
     # Proofs expire after a minute
@@ -68,18 +71,24 @@ class IdentityProcessor(router.Processor):
 
 
 class JoinProcessor(router.Processor):
-    def __init__(self, ctx, peers, wallet):
+    def __init__(self, ctx, peers, wallet, secure=False):
         self.ctx = ctx
         self.peers = peers
         self.wallet = wallet
+        self.secure = secure
 
     async def process_message(self, msg):
         # Send ping to peer server to verify
         if not primatives.check_format(msg, rules.JOIN_MESSAGE_RULES):
             return
 
-        response = await router.request(msg={}, service=IDENTITY_SERVICE, wallet=self.wallet, vk=msg.get('vk'),
-                                        ip=msg.get('ip'), ctx=self.ctx)
+        socket = build_socket(
+            ctx=self.ctx, ip=msg.get('ip'), peer_vk=msg.get('vk'), secure=self.secure, wallet=self.wallet
+        )
+        if socket is None:
+            return
+
+        response = await router.request(msg={}, service=IDENTITY_SERVICE, socket=socket)
 
         if response is None:
             return
@@ -88,12 +97,13 @@ class JoinProcessor(router.Processor):
             return
 
         if msg.get('vk') not in self.peers:
-            await router.secure_multicast(msg=msg, service=JOIN_SERVICE, peer_map=self.peers, ctx=self.ctx, wallet=self.wallet)
+            await router.multicast(msg=msg, service=JOIN_SERVICE, sockets=self.peers.values())
 
-        self.peers[msg.get('vk')] = msg.get('ip')
+        self.peers[msg.get('vk')] = socket
+        VK_IP[msg.get('vk')] = msg.get('vk')
 
         return {
-            'peers': [{'vk': v, 'ip': i} for v, i in self.peers.items()]
+            'peers': [{'vk': v, 'ip': i} for v, i in VK_IP.items()]
         }
 
 # Bootnodes:
@@ -101,17 +111,16 @@ class JoinProcessor(router.Processor):
 #    ip: vk
 # }
 
+
 class Network:
     def __init__(self, wallet: Wallet, ip_string: str, ctx: zmq.asyncio.Context, router: router.Router, pepper: str=PEPPER):
         self.wallet = wallet
         self.ctx = ctx
 
-        self.peers = dict()
-
         # Add processors to router to accept and process networking messages
         self.ip = ip_string
         self.vk = self.wallet.verifying_key().hex()
-        self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers, wallet=self.wallet)
+        self.join_processor = JoinProcessor(ctx=self.ctx, peers=PEERS, wallet=self.wallet)
         self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
 
         self.router = router
@@ -128,7 +137,9 @@ class Network:
         # Connect to all bootnodes
         connected_bootnodes = {}
         for vk, ip in bootnodes.items():
-            socket = self.build_socket(ip, vk)
+            socket = build_socket(
+                ctx=self.ctx, ip=ip, peer_vk=vk, secure=self.router.secure, wallet=self.wallet)
+
             if socket is None:
                 continue
             connected_bootnodes[vk] = socket
@@ -146,46 +157,49 @@ class Network:
                     continue
 
                 for peer in result['peers']:
-                    if self.peers.get(peer['vk']) is not None:
+                    if PEERS.get(peer['vk']) is not None:
                         continue
 
-                    socket = self.build_socket(peer['ip'], peer['vk'])
+                    socket = build_socket(
+                        ctx=self.ctx, ip=peer['ip'], peer_vk=peer['vk'], secure=self.router.secure, wallet=self.wallet)
 
                     if socket is None:
                         continue
 
-                    self.peers[peer['vk']] = socket
+                    PEERS[peer['vk']] = socket
+                    VK_IP[peer['vk']] = peer['ip']
 
         # Disconnect from the connected bootnodes
         for vk, ip in connected_bootnodes.items():
             ip.close()
 
-    def build_socket(self, ip, peer_vk):
-        socket = self.ctx.socket(zmq.DEALER)
-
-        if self.router.secure:
-            socket.curve_secretkey = self.wallet.curve_sk
-            socket.curve_publickey = self.wallet.curve_vk
-
-            try:
-                pk = crypto_sign_ed25519_pk_to_curve25519(bytes.fromhex(peer_vk))
-            # Error is thrown if the VK is not within the possibility space of the ED25519 algorithm
-            except RuntimeError:
-                return None
-
-            zvk = z85.encode(pk)
-
-            socket.curve_serverkey = zvk
-
-        try:
-            socket.connect(ip)
-        except ZMQBaseError:
-            return None
-
-        return socket
-
     def all_vks_found(self, vks):
         for vk in vks:
-            if self.peers.get(vk) is None:
+            if VK_IP.get(vk) is None:
                 return False
         return True
+
+
+def build_socket(ctx, ip, peer_vk, secure=False, wallet=None):
+    socket = ctx.socket(zmq.DEALER)
+
+    if secure:
+        socket.curve_secretkey = wallet.curve_sk
+        socket.curve_publickey = wallet.curve_vk
+
+        try:
+            pk = crypto_sign_ed25519_pk_to_curve25519(bytes.fromhex(peer_vk))
+        # Error is thrown if the VK is not within the possibility space of the ED25519 algorithm
+        except RuntimeError:
+            return None
+
+        zvk = z85.encode(pk)
+
+        socket.curve_serverkey = zvk
+
+    try:
+        socket.connect(ip)
+    except ZMQBaseError:
+        return None
+
+    return socket

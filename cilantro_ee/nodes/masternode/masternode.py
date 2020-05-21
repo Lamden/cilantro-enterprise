@@ -149,7 +149,7 @@ class Masternode(base.Node):
         # If so, multicast a block notification to wake everyone up
         mn_logger.debug('Sending new blockchain started signal.')
         if len(self.tx_batcher.queue) > 0:
-            await router.secure_multicast(
+            await router.multicast(
                 msg=get_genesis_block(),
                 service=base.NEW_BLOCK_SERVICE,
                 cert_dir=self.socket_authenticator.cert_dir,
@@ -218,7 +218,7 @@ class Masternode(base.Node):
             self.log.error('No one online!')
             return
 
-        await router.secure_multicast(
+        await router.multicast(
             msg=tx_batch,
             service=base.WORK_SERVICE,
             cert_dir=self.socket_authenticator.cert_dir,
@@ -246,7 +246,7 @@ class Masternode(base.Node):
         return block
 
     async def confirm_new_block(self, block):
-        await router.secure_multicast(
+        await router.multicast(
             msg=block,
             service=base.NEW_BLOCK_SERVICE,
             cert_dir=self.socket_authenticator.cert_dir,

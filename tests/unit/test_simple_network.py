@@ -24,6 +24,8 @@ class TestProcessors(TestCase):
         self.router = Router(socket_id=self.base_tcp, ctx=self.ctx, wallet=self.base_wallet)
 
         self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
+        self.authenticator.add_verifying_key(self.base_wallet.verifying_key().hex())
+        self.authenticator.configure()
 
     def tearDown(self):
         self.authenticator.authenticator.stop()
@@ -120,8 +122,13 @@ class TestProcessors(TestCase):
         self.assertIsNone(res)
 
     def test_join_processor_good_message_bad_proof_returns_none(self):
+        w = Wallet()
+
+        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.configure()
+
         msg = {
-            'vk': '0' * 64,
+            'vk': w.verifying_key().hex(),
             'ip': 'tcp://127.0.0.1:18000'
         }
 
@@ -132,13 +139,13 @@ class TestProcessors(TestCase):
         )
 
         async def get():
-            socket = self.ctx.socket(zmq.ROUTER)
-            socket.bind('tcp://127.0.0.1:18000')
-
-            res = await socket.recv_multipart()
-            msg = b'{"howdy": 123}'
-            await socket.send_multipart(
-                [res[0], msg]
+            res = await router.secure_request(
+                msg={"howdy": 123},
+                service=JOIN_SERVICE,
+                wallet=w,
+                vk=self.base_wallet.verifying_key().hex(),
+                ip=self.base_tcp,
+                ctx=self.ctx
             )
 
             return res

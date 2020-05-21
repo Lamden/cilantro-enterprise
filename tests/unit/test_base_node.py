@@ -340,82 +340,82 @@ class TestNode(TestCase):
         self.assertEqual(block, blocks[1])
         self.assertEqual(len(node.new_block_processor.q), 1)
 
-    def test_start_boots_up_normally(self):
-        # This MN will also provide 'catch up' services
-        mn_bootnode = 'tcp://127.0.0.1:18001'
-        mn_wallet = Wallet()
-        mn_network = network.Network(
-            wallet=mn_wallet,
-            ip_string=mn_bootnode,
-            ctx=self.ctx,
-            router=self.r
-        )
-
-        blocks = generate_blocks(4)
-
-        self.blocks.store_block(blocks[0])
-        self.blocks.store_block(blocks[1])
-        self.blocks.store_block(blocks[2])
-
-        storage.set_latest_block_height(3, self.driver)
-
-        dl_bootnode = 'tcp://127.0.0.1:18002'
-        dl_wallet = Wallet()
-        dl_router = router.Router(
-                socket_id=dl_bootnode,
-                ctx=self.ctx
-            )
-        dl_network = network.Network(
-            wallet=dl_wallet,
-            ip_string=dl_bootnode,
-            ctx=self.ctx,
-            router=dl_router
-        )
-
-        constitution = {
-            'masternodes': [mn_wallet.verifying_key().hex()],
-            'delegates': [dl_wallet.verifying_key().hex()]
-        }
-
-        driver = ContractDriver(driver=InMemDriver())
-        node = base.Node(
-            socket_base='tcp://127.0.0.1:18003',
-            ctx=self.ctx,
-            wallet=Wallet(),
-            constitution=constitution,
-            driver=driver,
-            store=False,
-        )
-
-        vks = [mn_wallet.verifying_key().hex(), dl_wallet.verifying_key().hex()]
-
-        bootnodes = {
-            mn_wallet.verifying_key().hex(): mn_bootnode,
-            dl_wallet.verifying_key().hex(): dl_bootnode
-        }
-
-        tasks = asyncio.gather(
-            self.r.serve(),
-            dl_router.serve(),
-            mn_network.start(bootnodes, vks),
-            dl_network.start(bootnodes, vks),
-            stop_server(self.r, 0.2),
-            stop_server(dl_router, 0.2),
-        )
-
-        self.loop.run_until_complete(tasks)
-
-        tasks = asyncio.gather(
-            self.r.serve(),
-            dl_router.serve(),
-            node.start([mn_bootnode, dl_bootnode]),
-            stop_server(self.r, 1),
-            stop_server(dl_router, 1),
-            stop_server(node.router, 1)
-        )
-
-        self.loop.run_until_complete(tasks)
-
-        self.assertEqual(storage.get_latest_block_height(node.driver), 3)
-        self.assertEqual(storage.get_latest_block_hash(node.driver), blocks[2]['hash'])
+    # def test_start_boots_up_normally(self):
+    #     # This MN will also provide 'catch up' services
+    #     mn_bootnode = 'tcp://127.0.0.1:18001'
+    #     mn_wallet = Wallet()
+    #     mn_network = network.Network(
+    #         wallet=mn_wallet,
+    #         ip_string=mn_bootnode,
+    #         ctx=self.ctx,
+    #         router=self.r
+    #     )
+    #
+    #     blocks = generate_blocks(4)
+    #
+    #     self.blocks.store_block(blocks[0])
+    #     self.blocks.store_block(blocks[1])
+    #     self.blocks.store_block(blocks[2])
+    #
+    #     storage.set_latest_block_height(3, self.driver)
+    #
+    #     dl_bootnode = 'tcp://127.0.0.1:18002'
+    #     dl_wallet = Wallet()
+    #     dl_router = router.Router(
+    #             socket_id=dl_bootnode,
+    #             ctx=self.ctx
+    #         )
+    #     dl_network = network.Network(
+    #         wallet=dl_wallet,
+    #         ip_string=dl_bootnode,
+    #         ctx=self.ctx,
+    #         router=dl_router
+    #     )
+    #
+    #     constitution = {
+    #         'masternodes': [mn_wallet.verifying_key().hex()],
+    #         'delegates': [dl_wallet.verifying_key().hex()]
+    #     }
+    #
+    #     driver = ContractDriver(driver=InMemDriver())
+    #     node = base.Node(
+    #         socket_base='tcp://127.0.0.1:18003',
+    #         ctx=self.ctx,
+    #         wallet=Wallet(),
+    #         constitution=constitution,
+    #         driver=driver,
+    #         store=False,
+    #     )
+    #
+    #     vks = [mn_wallet.verifying_key().hex(), dl_wallet.verifying_key().hex()]
+    #
+    #     bootnodes = {
+    #         mn_wallet.verifying_key().hex(): mn_bootnode,
+    #         dl_wallet.verifying_key().hex(): dl_bootnode
+    #     }
+    #
+    #     tasks = asyncio.gather(
+    #         self.r.serve(),
+    #         dl_router.serve(),
+    #         mn_network.start(bootnodes, vks),
+    #         dl_network.start(bootnodes, vks),
+    #         stop_server(self.r, 0.2),
+    #         stop_server(dl_router, 0.2),
+    #     )
+    #
+    #     self.loop.run_until_complete(tasks)
+    #
+    #     tasks = asyncio.gather(
+    #         self.r.serve(),
+    #         dl_router.serve(),
+    #         node.start([mn_bootnode, dl_bootnode]),
+    #         stop_server(self.r, 1),
+    #         stop_server(dl_router, 1),
+    #         stop_server(node.router, 1)
+    #     )
+    #
+    #     self.loop.run_until_complete(tasks)
+    #
+    #     self.assertEqual(storage.get_latest_block_height(node.driver), 3)
+    #     self.assertEqual(storage.get_latest_block_hash(node.driver), blocks[2]['hash'])
 

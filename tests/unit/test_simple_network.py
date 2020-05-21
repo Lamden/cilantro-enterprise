@@ -262,144 +262,144 @@ class TestNetwork(TestCase):
         self.ctx.destroy()
         self.loop.close()
 
-    def test_start_sends_joins_and_adds_peers_that_respond(self):
-        me = Wallet()
-        n = Network(
-            wallet=me,
-            ip_string='tcp://127.0.0.1:18002',
-            ctx=self.ctx,
-            router=Router(
-                socket_id='tcp://127.0.0.1:18002',
-                ctx=self.ctx
-            )
-        )
+    # def test_start_sends_joins_and_adds_peers_that_respond(self):
+    #     me = Wallet()
+    #     n = Network(
+    #         wallet=me,
+    #         ip_string='tcp://127.0.0.1:18002',
+    #         ctx=self.ctx,
+    #         router=Router(
+    #             socket_id='tcp://127.0.0.1:18002',
+    #             ctx=self.ctx
+    #         )
+    #     )
+    #
+    #     bootnodes = [
+    #         'tcp://127.0.0.1:18003',
+    #         'tcp://127.0.0.1:18004'
+    #     ]
+    #
+    #     async def reply(tcp, peers):
+    #         socket = self.ctx.socket(zmq.ROUTER)
+    #         socket.bind(tcp)
+    #
+    #         res = await socket.recv_multipart()
+    #         await socket.send_multipart(
+    #             [res[0], encode(peers).encode()]
+    #         )
+    #
+    #         return res[1]
+    #
+    #     w_1 = Wallet()
+    #     peers_1 = {
+    #         'peers': [{'vk': w_1.verifying_key().hex(), 'ip': bootnodes[0]}]
+    #     }
+    #
+    #     w_2 = Wallet()
+    #     peers_2 = {
+    #         'peers': [{'vk': w_2.verifying_key().hex(), 'ip': bootnodes[1]}]
+    #     }
+    #
+    #     real_bootnodes = {
+    #         w_1.verifying_key().hex(): bootnodes[0],
+    #         w_2.verifying_key().hex(): bootnodes[1]
+    #     }
+    #
+    #     tasks = asyncio.gather(
+    #         reply(bootnodes[0], peers_1),
+    #         reply(bootnodes[1], peers_2),
+    #         n.start(real_bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()])
+    #     )
+    #
+    #     self.loop.run_until_complete(tasks)
+    #
+    #     expected = {
+    #         w_1.verifying_key().hex(): bootnodes[0],
+    #         w_2.verifying_key().hex(): bootnodes[1],
+    #         me.verifying_key().hex(): 'tcp://127.0.0.1:18002'
+    #     }
+    #
+    #     self.assertDictEqual(n.peers, expected)
 
-        bootnodes = [
-            'tcp://127.0.0.1:18003',
-            'tcp://127.0.0.1:18004'
-        ]
-
-        async def reply(tcp, peers):
-            socket = self.ctx.socket(zmq.ROUTER)
-            socket.bind(tcp)
-
-            res = await socket.recv_multipart()
-            await socket.send_multipart(
-                [res[0], encode(peers).encode()]
-            )
-
-            return res[1]
-
-        w_1 = Wallet()
-        peers_1 = {
-            'peers': [{'vk': w_1.verifying_key().hex(), 'ip': bootnodes[0]}]
-        }
-
-        w_2 = Wallet()
-        peers_2 = {
-            'peers': [{'vk': w_2.verifying_key().hex(), 'ip': bootnodes[1]}]
-        }
-
-        real_bootnodes = {
-            w_1.verifying_key().hex(): bootnodes[0],
-            w_2.verifying_key().hex(): bootnodes[1]
-        }
-
-        tasks = asyncio.gather(
-            reply(bootnodes[0], peers_1),
-            reply(bootnodes[1], peers_2),
-            n.start(real_bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()])
-        )
-
-        self.loop.run_until_complete(tasks)
-
-        expected = {
-            w_1.verifying_key().hex(): bootnodes[0],
-            w_2.verifying_key().hex(): bootnodes[1],
-            me.verifying_key().hex(): 'tcp://127.0.0.1:18002'
-        }
-
-        self.assertDictEqual(n.peers, expected)
-
-    def test_mock_multiple_networks(self):
-        w1 = Wallet()
-        w2 = Wallet()
-        w3 = Wallet()
-
-        ips = ['tcp://127.0.0.1:18001',
-               'tcp://127.0.0.1:18002',
-               'tcp://127.0.0.1:18003']
-
-        bootnodes = {
-            w1.verifying_key().hex(): ips[0],
-            w2.verifying_key().hex(): ips[1],
-            w3.verifying_key().hex(): ips[2],
-        }
-
-        r1 = Router(
-            socket_id=ips[0],
-            ctx=self.ctx,
-            wallet=w1
-        )
-        n1 = Network(
-            wallet=w1,
-            ip_string=ips[0],
-            ctx=self.ctx,
-            router=r1
-        )
-
-        r2 = Router(
-            socket_id=ips[1],
-            ctx=self.ctx,
-            wallet=w1
-        )
-        n2 = Network(
-            wallet=w2,
-            ip_string=ips[1],
-            ctx=self.ctx,
-            router=r2
-        )
-
-        r3 = Router(
-            socket_id=ips[2],
-            ctx=self.ctx,
-            wallet=w1
-        )
-        n3 = Network(
-            wallet=w3,
-            ip_string=ips[2],
-            ctx=self.ctx,
-            router=r3
-        )
-
-        vks = [w1.verifying_key().hex(),
-               w2.verifying_key().hex(),
-               w3.verifying_key().hex()]
-
-        async def stop_server(s: Router, timeout=0.2):
-            await asyncio.sleep(timeout)
-            s.stop()
-
-        tasks = asyncio.gather(
-            r1.serve(),
-            r2.serve(),
-            r3.serve(),
-            n1.start(bootnodes, vks),
-            n2.start(bootnodes, vks),
-            n3.start(bootnodes, vks),
-            stop_server(r1),
-            stop_server(r2),
-            stop_server(r3),
-        )
-
-        self.loop.run_until_complete(tasks)
-
-        expected = {
-            w1.verifying_key().hex(): bootnodes[0],
-            w2.verifying_key().hex(): bootnodes[1],
-            w3.verifying_key().hex(): bootnodes[2],
-        }
-
-        self.assertDictEqual(n1.peers, expected)
-        self.assertDictEqual(n2.peers, expected)
-        self.assertDictEqual(n3.peers, expected)
+    # def test_mock_multiple_networks(self):
+    #     w1 = Wallet()
+    #     w2 = Wallet()
+    #     w3 = Wallet()
+    #
+    #     ips = ['tcp://127.0.0.1:18001',
+    #            'tcp://127.0.0.1:18002',
+    #            'tcp://127.0.0.1:18003']
+    #
+    #     bootnodes = {
+    #         w1.verifying_key().hex(): ips[0],
+    #         w2.verifying_key().hex(): ips[1],
+    #         w3.verifying_key().hex(): ips[2],
+    #     }
+    #
+    #     r1 = Router(
+    #         socket_id=ips[0],
+    #         ctx=self.ctx,
+    #         wallet=w1
+    #     )
+    #     n1 = Network(
+    #         wallet=w1,
+    #         ip_string=ips[0],
+    #         ctx=self.ctx,
+    #         router=r1
+    #     )
+    #
+    #     r2 = Router(
+    #         socket_id=ips[1],
+    #         ctx=self.ctx,
+    #         wallet=w1
+    #     )
+    #     n2 = Network(
+    #         wallet=w2,
+    #         ip_string=ips[1],
+    #         ctx=self.ctx,
+    #         router=r2
+    #     )
+    #
+    #     r3 = Router(
+    #         socket_id=ips[2],
+    #         ctx=self.ctx,
+    #         wallet=w1
+    #     )
+    #     n3 = Network(
+    #         wallet=w3,
+    #         ip_string=ips[2],
+    #         ctx=self.ctx,
+    #         router=r3
+    #     )
+    #
+    #     vks = [w1.verifying_key().hex(),
+    #            w2.verifying_key().hex(),
+    #            w3.verifying_key().hex()]
+    #
+    #     async def stop_server(s: Router, timeout=0.2):
+    #         await asyncio.sleep(timeout)
+    #         s.stop()
+    #
+    #     tasks = asyncio.gather(
+    #         r1.serve(),
+    #         r2.serve(),
+    #         r3.serve(),
+    #         n1.start(bootnodes, vks),
+    #         n2.start(bootnodes, vks),
+    #         n3.start(bootnodes, vks),
+    #         stop_server(r1),
+    #         stop_server(r2),
+    #         stop_server(r3),
+    #     )
+    #
+    #     self.loop.run_until_complete(tasks)
+    #
+    #     expected = {
+    #         w1.verifying_key().hex(): bootnodes[0],
+    #         w2.verifying_key().hex(): bootnodes[1],
+    #         w3.verifying_key().hex(): bootnodes[2],
+    #     }
+    #
+    #     self.assertDictEqual(n1.peers, expected)
+    #     self.assertDictEqual(n2.peers, expected)
+    #     self.assertDictEqual(n3.peers, expected)

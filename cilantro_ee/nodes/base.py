@@ -80,7 +80,7 @@ class NewBlock(router.Processor):
 
 
 class Node:
-    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes,
+    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={},
                  blocks=None, driver=ContractDriver(), debug=True, store=False, secure=True):
 
         self.driver = driver

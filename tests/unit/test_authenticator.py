@@ -14,17 +14,15 @@ class TestAuthenticator(TestCase):
         self.ctx = zmq.asyncio.Context()
         self.w = Wallet()
 
-        masternodes = [Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), ]
-        delegates = [Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), ]
+        self.masternodes = [Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), Wallet().verifying_key().hex()]
+        self.delegates = [Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), Wallet().verifying_key().hex()]
 
         self.c = ContractingClient()
         self.c.flush()
 
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.c)
-        sync.submit_node_election_contracts(initial_masternodes=masternodes, boot_mns=1,
-                                            initial_delegates=delegates, boot_dels=1, client=self.c)
+        sync.setup_genesis_contracts(self.masternodes, self.delegates, client=self.c)
 
-        self.s = SocketAuthenticator(ctx=self.ctx)
+        self.s = SocketAuthenticator(client=self.c, ctx=self.ctx)
 
     def tearDown(self):
         self.ctx.destroy()
@@ -52,6 +50,13 @@ class TestAuthenticator(TestCase):
             Wallet().verifying_key().hex()
         ]
 
+        self.c.set_var(
+            contract='masternodes',
+            variable='S',
+            arguments=['members'],
+            value=fake_mns
+        )
+
         fake_od_m = Wallet().verifying_key().hex()
 
         fake_dels = [
@@ -59,13 +64,28 @@ class TestAuthenticator(TestCase):
             Wallet().verifying_key().hex()
         ]
 
+        self.c.set_var(
+            contract='delegates',
+            variable='S',
+            arguments=['members'],
+            value=fake_dels
+        )
+
         fake_od_d = Wallet().verifying_key().hex()
 
-        self.s.refresh_governance_sockets(masternode_list=fake_mns,
-                                          on_deck_masternode=fake_od_m,
-                                          delegate_list=fake_dels,
-                                          on_deck_delegate=fake_od_d
-                                          )
+        self.c.set_var(
+            contract='elect_masternodes',
+            variable='top_candidate',
+            value=fake_od_m
+        )
+
+        self.c.set_var(
+            contract='elect_delegates',
+            variable='top_candidate',
+            value=fake_od_d
+        )
+
+        self.s.refresh_governance_sockets()
 
         for m in fake_mns:
             self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{m}.key')))

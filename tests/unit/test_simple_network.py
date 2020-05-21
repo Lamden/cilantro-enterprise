@@ -80,7 +80,8 @@ class TestProcessors(TestCase):
 
         j = JoinProcessor(
             ctx=self.ctx,
-            peers={}
+            peers={},
+            wallet=Wallet()
         )
 
         res = self.loop.run_until_complete(j.process_message(msg))
@@ -95,7 +96,8 @@ class TestProcessors(TestCase):
 
         j = JoinProcessor(
             ctx=self.ctx,
-            peers={}
+            peers={},
+            wallet=Wallet()
         )
 
         res = self.loop.run_until_complete(j.process_message(msg))
@@ -109,7 +111,8 @@ class TestProcessors(TestCase):
 
         j = JoinProcessor(
             ctx=self.ctx,
-            peers={}
+            peers={},
+            wallet=Wallet()
         )
 
         async def get():
@@ -147,7 +150,8 @@ class TestProcessors(TestCase):
 
         j = JoinProcessor(
             ctx=self.ctx,
-            peers=peers
+            peers=peers,
+            wallet=Wallet()
         )
 
         async def get():
@@ -190,7 +194,8 @@ class TestProcessors(TestCase):
 
         j = JoinProcessor(
             ctx=self.ctx,
-            peers=peers
+            peers=peers,
+            wallet=Wallet()
         )
 
         # Joiner

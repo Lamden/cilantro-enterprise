@@ -12,6 +12,13 @@ class MockWork:
 
 
 class TestWork(TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+
     def test_gather_work_waits_for_all(self):
         q = {}
 

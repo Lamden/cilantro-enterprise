@@ -25,12 +25,6 @@ class TestAsyncServer(TestCase):
         w = Wallet()
         cilantro_ee.router.AsyncInbox('tcp://127.0.0.1:10000', self.ctx)
 
-    def test_addresses_correct(self):
-        w = Wallet()
-        m = cilantro_ee.router.AsyncInbox('tcp://127.0.0.1:10000', self.ctx)
-
-        self.assertEqual(m.address, 'tcp://*:10000')
-
     def test_sockets_are_initially_none(self):
         w = Wallet()
         m = cilantro_ee.router.AsyncInbox('tcp://127.0.0.1:10000', self.ctx)
@@ -82,27 +76,22 @@ class TestJSONAsyncInbox(TestCase):
         self.loop.close()
 
     def test_init(self):
-        JSONAsyncInbox('tcp://127.0.0.1:10000', ctx=self.ctx)
-
-    def test_addresses_correct(self):
-        m = JSONAsyncInbox('tcp://127.0.0.1:10000', ctx=self.ctx)
-
-        self.assertEqual(m.address, 'tcp://*:10000')
+        JSONAsyncInbox(socket_id='tcp://127.0.0.1:10000', ctx=self.ctx)
 
     def test_sockets_are_initially_none(self):
-        m = JSONAsyncInbox('tcp://127.0.0.1:10000', ctx=self.ctx)
+        m = JSONAsyncInbox(socket_id='tcp://127.0.0.1:10000', ctx=self.ctx)
 
         self.assertIsNone(m.socket)
 
     def test_setup_frontend_creates_socket(self):
-        m = JSONAsyncInbox('tcp://127.0.0.1:10000', ctx=self.ctx)
+        m = JSONAsyncInbox(socket_id='tcp://127.0.0.1:10000', ctx=self.ctx)
         m.setup_socket()
 
         self.assertEqual(m.socket.type, zmq.ROUTER)
         self.assertEqual(m.socket.getsockopt(zmq.LINGER), m.linger)
 
     def test_sending_message_returns_it(self):
-        m = JSONAsyncInbox('tcp://127.0.0.1:10000', self.ctx, linger=2000, poll_timeout=50)
+        m = JSONAsyncInbox(socket_id='tcp://127.0.0.1:10000', ctx=self.ctx, linger=2000, poll_timeout=50)
 
         async def get(msg):
             socket = self.ctx.socket(zmq.DEALER)

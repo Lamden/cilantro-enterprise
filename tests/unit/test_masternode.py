@@ -214,9 +214,11 @@ class TestMasternode(TestCase):
                         }
                     ],
                     'transaction': {
-                        'sender': 'jeff',
-                        'nonce': 0,
-                        'processor': 'stu'
+                        'payload': {
+                            'sender': 'jeff',
+                            'nonce': 0,
+                            'processor': 'stu'
+                        }
                     }
                 }
             ]
@@ -235,9 +237,11 @@ class TestMasternode(TestCase):
                         }
                     ],
                     'transaction': {
-                        'sender': 'jeff',
-                        'nonce': 1,
-                        'processor': 'stu'
+                        'payload': {
+                            'sender': 'jeff',
+                            'nonce': 0,
+                            'processor': 'stu'
+                        }
                     }
                 }
             ]

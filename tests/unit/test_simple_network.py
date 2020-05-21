@@ -209,52 +209,70 @@ class TestProcessors(TestCase):
 
         self.loop.run_until_complete(tasks)
 
-        print(peers)
-
         self.assertEqual(peers[peer_to_add.verifying_key().hex()], 'tcp://127.0.0.1:18000')
 
     def test_join_processor_good_message_forwards_to_peers_and_returns_to_sender(self):
+        # JOINER PEER
         peer_to_add = Wallet()
+        self.authenticator.add_verifying_key(peer_to_add.verifying_key().hex())
+        self.authenticator.configure()
+
+        other_router = Router(
+            socket_id='tcp://127.0.0.1:18000',
+            ctx=self.ctx,
+            wallet=peer_to_add,
+            secure=True
+        )
+
         i = IdentityProcessor(
             wallet=peer_to_add,
             pepper='cilantroV1',
             ip_string='tcp://127.0.0.1:18000'
         )
 
+        other_router.add_service(IDENTITY_SERVICE, i)
+        ###
+
+        existing_peer = Wallet()
         peers = {
-            'f' * 64: 'tcp://127.0.0.1:18001'
+            existing_peer.verifying_key().hex(): 'tcp://127.0.0.1:18001'
         }
 
-        j = JoinProcessor(
+        # EXISTING PEER
+        self.authenticator.add_verifying_key(existing_peer.verifying_key().hex())
+        self.authenticator.configure()
+
+        existing_router = Router(
+            socket_id='tcp://127.0.0.1:18001',
             ctx=self.ctx,
-            peers=peers,
-            wallet=Wallet()
+            wallet=existing_peer,
+            secure=True
         )
 
-        # Joiner
-        async def get():
-            socket = self.ctx.socket(zmq.ROUTER)
-            socket.bind('tcp://127.0.0.1:18000')
+        i2 = IdentityProcessor(
+            wallet=existing_peer,
+            pepper='cilantroV1',
+            ip_string='tcp://127.0.0.1:18001'
+        )
 
-            res = await socket.recv_multipart()
-            msg = encode(i.create_proof()).encode()
-            await socket.send_multipart(
-                [res[0], msg]
-            )
+        j2 = JoinProcessor(
+            ctx=self.ctx,
+            peers=peers,
+            wallet=existing_peer
+        )
 
-            return res
+        existing_router.add_service(IDENTITY_SERVICE, i2)
+        existing_router.add_service(JOIN_SERVICE, j2)
+        ###
 
-        # Existing Peer
-        async def reply():
-            socket = self.ctx.socket(zmq.ROUTER)
-            socket.bind('tcp://127.0.0.1:18001')
-
-            res = await socket.recv_multipart()
-            await socket.send_multipart(
-                [res[0], b'{}']
-            )
-
-            return res[1]
+        peers_2 = {
+            existing_peer.verifying_key().hex(): 'tcp://127.0.0.1:18001'
+        }
+        j = JoinProcessor(
+            ctx=self.ctx,
+            peers=peers_2,
+            wallet=self.base_wallet
+        )
 
         msg = {
             'vk': peer_to_add.verifying_key().hex(),
@@ -262,27 +280,23 @@ class TestProcessors(TestCase):
         }
 
         tasks = asyncio.gather(
-            get(),
+            other_router.serve(),
+            existing_router.serve(),
             j.process_message(msg),
-            reply()
+            stop_server(other_router, 1),
+            stop_server(existing_router, 1)
         )
 
         res = self.loop.run_until_complete(tasks)
 
-        response = decode(res[-1])
+        # response = decode(res[2])
 
-        expected = {
-            'service': 'join',
-            'msg': msg
-        }
+        expected = {}
+        for p in res[2]['peers']:
+            expected[p['vk']] = p['ip']
 
-        self.assertDictEqual(response, expected)
-
-        expected_return = {
-            'peers': peers
-        }
-
-        self.assertDictEqual(res[1], expected_return)
+        self.assertDictEqual(peers, expected)
+        self.assertDictEqual(peers_2, expected)
 
 
 class TestNetwork(TestCase):

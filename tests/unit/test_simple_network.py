@@ -305,7 +305,10 @@ class TestNetwork(TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+        self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
+
     def tearDown(self):
+        self.authenticator.authenticator.stop()
         self.ctx.destroy()
         self.loop.close()
 
@@ -383,41 +386,19 @@ class TestNetwork(TestCase):
             w3.verifying_key().hex(): ips[2],
         }
 
-        r1 = Router(
-            socket_id=ips[0],
-            ctx=self.ctx,
-            wallet=w1
-        )
-        n1 = Network(
-            wallet=w1,
-            ip_string=ips[0],
-            ctx=self.ctx,
-            router=r1
-        )
+        for vk in bootnodes.keys():
+            self.authenticator.add_verifying_key(vk)
 
-        r2 = Router(
-            socket_id=ips[1],
-            ctx=self.ctx,
-            wallet=w1
-        )
-        n2 = Network(
-            wallet=w2,
-            ip_string=ips[1],
-            ctx=self.ctx,
-            router=r2
-        )
+        self.authenticator.configure()
 
-        r3 = Router(
-            socket_id=ips[2],
-            ctx=self.ctx,
-            wallet=w1
-        )
-        n3 = Network(
-            wallet=w3,
-            ip_string=ips[2],
-            ctx=self.ctx,
-            router=r3
-        )
+        r1 = Router(socket_id=ips[0], ctx=self.ctx, wallet=w1, secure=True)
+        n1 = Network(wallet=w1, ip_string=ips[0], ctx=self.ctx, router=r1)
+
+        r2 = Router(socket_id=ips[1], ctx=self.ctx, wallet=w2, secure=True)
+        n2 = Network(wallet=w2, ip_string=ips[1], ctx=self.ctx, router=r2)
+
+        r3 = Router(socket_id=ips[2], ctx=self.ctx, wallet=w3, secure=True)
+        n3 = Network(wallet=w3, ip_string=ips[2], ctx=self.ctx, router=r3)
 
         vks = [w1.verifying_key().hex(),
                w2.verifying_key().hex(),
@@ -441,12 +422,6 @@ class TestNetwork(TestCase):
 
         self.loop.run_until_complete(tasks)
 
-        expected = {
-            w1.verifying_key().hex(): bootnodes[0],
-            w2.verifying_key().hex(): bootnodes[1],
-            w3.verifying_key().hex(): bootnodes[2],
-        }
-
-        self.assertDictEqual(n1.peers, expected)
-        self.assertDictEqual(n2.peers, expected)
-        self.assertDictEqual(n3.peers, expected)
+        self.assertDictEqual(n1.peers, bootnodes)
+        self.assertDictEqual(n2.peers, bootnodes)
+        self.assertDictEqual(n3.peers, bootnodes)

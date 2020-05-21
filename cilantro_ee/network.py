@@ -79,9 +79,11 @@ class JoinProcessor(router.Processor):
                                                ip=msg.get('ip'), ctx=self.ctx)
 
         if response is None:
+            LOGGER.error(f'No response for identity proof for {msg.get("ip")}')
             return
 
         if not verify_proof(response, PEPPER):
+            LOGGER.error(f'Bad proof verification for identity proof for {msg.get("ip")}')
             return
 
         if msg.get('vk') not in self.peers:
@@ -137,6 +139,8 @@ class Network:
                 for peer in result['peers']:
                     if self.peers.get(peer['vk']) is None:
                         self.peers[peer['vk']] = peer['ip']
+
+            LOGGER.debug(self.peers)
 
     def all_vks_found(self, vks):
         for vk in vks:

@@ -245,6 +245,7 @@ async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: s
     try:
         socket.connect(ip)
     except ZMQBaseError:
+        logger.debug(f'Could not connect to {ip}')
         return None
 
     message = {
@@ -259,6 +260,7 @@ async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: s
     event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
     msg = None
     if event:
+        logger.debug(f'Message received on {ip}')
         response = await socket.recv()
 
         msg = decode(response)

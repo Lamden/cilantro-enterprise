@@ -12,6 +12,11 @@ import asyncio
 import zmq.asyncio
 
 
+async def stop_server(s, timeout):
+    await asyncio.sleep(timeout)
+    s.stop()
+
+
 class TestProcessors(TestCase):
     def setUp(self):
         self.ctx = zmq.asyncio.Context()
@@ -21,7 +26,7 @@ class TestProcessors(TestCase):
         self.base_tcp = 'tcp://127.0.0.1:19000'
         self.base_wallet = Wallet()
 
-        self.router = Router(socket_id=self.base_tcp, ctx=self.ctx, wallet=self.base_wallet)
+        self.router = Router(socket_id=self.base_tcp, ctx=self.ctx, wallet=self.base_wallet, secure=True)
 
         self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
         self.authenticator.add_verifying_key(self.base_wallet.verifying_key().hex())
@@ -160,10 +165,17 @@ class TestProcessors(TestCase):
         self.assertIsNone(res[1])
 
     def test_join_processor_good_message_adds_to_peers(self):
+        # Create a new peer (router and service)
         peer_to_add = Wallet()
+        self.authenticator.add_verifying_key(peer_to_add.verifying_key().hex())
+        self.authenticator.configure()
 
-
-        # other_router = Router()
+        other_router = Router(
+            socket_id='tcp://127.0.0.1:18000',
+            ctx=self.ctx,
+            wallet=peer_to_add,
+            secure=True
+        )
 
         i = IdentityProcessor(
             wallet=peer_to_add,
@@ -171,27 +183,18 @@ class TestProcessors(TestCase):
             ip_string='tcp://127.0.0.1:18000'
         )
 
+        other_router.add_service(IDENTITY_SERVICE, i)
+        ###
+
         peers = {
-            'f' * 64: 'tcp://127.0.0.1:18001'
+            self.base_wallet.verifying_key().hex(): 'tcp://127.0.0.1:18001'
         }
 
         j = JoinProcessor(
             ctx=self.ctx,
             peers=peers,
-            wallet=Wallet()
+            wallet=self.base_wallet
         )
-
-        async def get():
-            socket = self.ctx.socket(zmq.ROUTER)
-            socket.bind('tcp://127.0.0.1:18000')
-
-            res = await socket.recv_multipart()
-            msg = encode(i.create_proof()).encode()
-            await socket.send_multipart(
-                [res[0], msg]
-            )
-
-            return res
 
         msg = {
             'vk': peer_to_add.verifying_key().hex(),
@@ -199,11 +202,14 @@ class TestProcessors(TestCase):
         }
 
         tasks = asyncio.gather(
-            get(),
-            j.process_message(msg)
+            other_router.serve(),
+            j.process_message(msg),
+            stop_server(other_router, 1)
         )
 
         self.loop.run_until_complete(tasks)
+
+        print(peers)
 
         self.assertEqual(peers[peer_to_add.verifying_key().hex()], 'tcp://127.0.0.1:18000')
 

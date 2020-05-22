@@ -43,14 +43,14 @@ def run(*args):
     return subprocess.check_call(['git'] + list(args))
 
 
-def version_reboot():
+def version_reboot(new_branch_name):
 
     try:
         path = os.environ.get('CIL_PATH')
         os.chdir(path)
 
         # get latest release
-        rel = input("Enter New Release branch:")
+        rel = new_branch_name  # input("Enter New Release branch:")
         br = f'{rel}'
 
         run("checkout", "-b", br)
@@ -58,14 +58,14 @@ def version_reboot():
         print("OS error: {0}".format(err))
     except:
         print("Unexpected error:", sys.exc_info())
-        raise
 
+    return True
     # Find cil process
-    PNAME = 'cil'
-    for proc in psutil.process_iter():
-        # check whether the process name matches
-        if proc.name() == PNAME:
-            proc.kill()
+    # PNAME = 'cil'
+    # for proc in psutil.process_iter():
+    #     # check whether the process name matches
+    #     if proc.name() == PNAME:
+    #         proc.kill()
 
 
 

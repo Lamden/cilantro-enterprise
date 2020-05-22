@@ -76,11 +76,17 @@ class TestUpdateContractFix(TestCase):
         upgrade.vote(vk=self.dn_wallets[1])
         master_votes = upgrade.quick_read(variable='mn_vote')
         del_votes = upgrade.quick_read(variable='dl_vote')
+        br_name_contract = upgrade.quick_read(variable='branch_name')
+        self.assertEqual(br_name, br_name_contract)
         self.assertEqual(master_votes, 1)
         self.assertEqual(del_votes, 4)
         result = upgrade.quick_read(variable='upg_consensus')
 
         self.assertEqual(result, True)
+
+    def test_build_pepper(self):
+        p = build_pepper()
+        self.assertEqual(p, p)
 
 
 if __name__ == '__main__':

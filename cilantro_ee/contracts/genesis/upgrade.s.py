@@ -14,6 +14,7 @@ upg_init_time = Variable()
 upg_pepper = Variable()
 upg_window = Variable()
 branch_name = Variable()
+test_name = Variable()
 
 mn_vote = Variable()
 dl_vote = Variable()
@@ -37,10 +38,12 @@ def seed():
 
 @export
 def trigger_upgrade(git_branch_name: str, pepper: str, initiator_vk: str):
+    test_name.set(git_branch_name)
     if upg_lock.get() is True:
         assert_parallel_upg_check()
 
     # for now only master's trigger upgrade
+    # test_name.set(election_house.current_value_for_policy('masternodes')[0])
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
         upg_lock.set(True)
         #upg_init_time.set(now)

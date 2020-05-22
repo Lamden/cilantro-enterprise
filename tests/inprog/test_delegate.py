@@ -119,7 +119,7 @@ def seed():
     v.set('hello')
 
 @export
-def set(var):
+def set(var: str):
     v.set(var)
 
 @export

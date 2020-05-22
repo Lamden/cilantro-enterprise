@@ -9,6 +9,7 @@ from cilantro_ee.networking.parameters import Parameters, ServiceType, NetworkPa
 import cilantro_ee
 import zmq.asyncio
 import asyncio
+import os
 
 from cilantro_ee.sockets.authentication import SocketAuthenticator
 from cilantro_ee.storage.contract import BlockchainDriver
@@ -16,6 +17,7 @@ from contracting.client import ContractingClient
 
 from cilantro_ee.nodes.rewards import RewardManager
 from cilantro_ee.cli.utils import version_reboot
+from cilantro_ee.cli.utils import build_pepper
 
 from cilantro_ee.logger.base import get_logger
 
@@ -101,6 +103,7 @@ class Node:
         self.all_votes = self.tol_mn + self.tot_dl
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
+        self.pepper = None
         # self.pending_cnt = self.all_votes - self.vote_cnt
         # stuff
 
@@ -248,6 +251,7 @@ class Node:
         self.version_state = self.client.get_contract('upgrade')
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
+        test_name = self.version_state.quick_read('test_name')
 
         self.get_update_state()
 
@@ -255,12 +259,23 @@ class Node:
             self.log.info('Waiting for Consensys on vote')
             self.log.info('num masters voted -> {}'.format(self.mn_votes))
             self.log.info('num delegates voted -> {}'.format(self.dl_votes))
+            self.log.info('test_name -> {}'.format(test_name))
+
 
             # check for vote consensys
             vote_consensus = self.version_state.quick_read('upg_consensus')
             if vote_consensus:
-                self.log.info('Rebooting Node with new verion')
-                version_reboot()
+                branch_name= self.version_state.quick_read('branch_name')
+                self.log.info(f'Rebooting Node with new verion {branch_name}')
+                cil_path = os.environ.get("CIL_PATH") + '/cilantro_ee'
+                self.log.info(f'CIL_PATH={cil_path}')
+                if version_reboot(branch_name):
+                    p = build_pepper(cil_path)
+                    if self.pepper != p:
+                        self.log.error(f'peppers mismatch {self.pepper} {p}')
+                    else:
+                        self.log.info('Pepper OK. restart new version')
+
             else:
                 self.log.info('waiting for vote on upgrade')
 
@@ -271,7 +286,7 @@ class Node:
         self.active_upgrade = self.version_state.quick_read('upg_lock')
         start_time = self.version_state.quick_read('upg_init_time')
         window = self.version_state.quick_read('upg_window')
-        pepper = self.version_state.quick_read('upg_pepper')
+        self.pepper = self.version_state.quick_read('upg_pepper')
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
         consensus = self.version_state.quick_read('upg_consensus')
@@ -285,7 +300,7 @@ class Node:
               "DL-Votes     -> {}\n "
               "Consensus    -> {}\n"
               .format(self.active_upgrade,
-                      pepper, start_time, window, self.tol_mn,
+                      self.pepper, start_time, window, self.tol_mn,
                       self.tot_dl, self.all_votes,
                       self.mn_votes, self.dl_votes,
                       consensus))

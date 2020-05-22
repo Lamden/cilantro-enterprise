@@ -10,6 +10,7 @@ import cilantro_ee
 import zmq.asyncio
 import asyncio
 import os
+import importlib
 
 from cilantro_ee.sockets.authentication import SocketAuthenticator
 from cilantro_ee.storage.contract import BlockchainDriver
@@ -17,7 +18,7 @@ from contracting.client import ContractingClient
 
 from cilantro_ee.nodes.rewards import RewardManager
 from cilantro_ee.cli.utils import version_reboot
-from cilantro_ee.cli.utils import build_pepper
+from cilantro_ee.cli.utils import build_pepper, run_install
 
 from cilantro_ee.logger.base import get_logger
 
@@ -275,7 +276,9 @@ class Node:
                         self.log.error(f'peppers mismatch {self.pepper} {p}')
                     else:
                         self.log.info('Pepper OK. restart new version')
-
+                        run_install()
+                        importlib.reload(cilantro_ee)
+                        self.log.info(f'New branch {branch_name} was reloaded OK.')
             else:
                 self.log.info('waiting for vote on upgrade')
 

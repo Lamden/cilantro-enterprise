@@ -333,3 +333,20 @@ class TestUpgradeOrchestration(unittest.TestCase):
         loop.run_until_complete(test())
 
         print('OK')
+
+    def test_impor(self):
+        import importlib
+        import os
+        import A
+
+        A.a()
+
+        os.rename('A.py', 'A_change.py')
+        os.rename('B.py', 'A.py')
+
+        importlib.reload(A)
+
+        A.a()
+
+        os.rename('A.py', 'B.py')
+        os.rename('A_change.py', 'A.py')

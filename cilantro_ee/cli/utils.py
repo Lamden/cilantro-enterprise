@@ -42,6 +42,11 @@ def verify_cil_pkg(pkg_hash):
 def run(*args):
     return subprocess.check_call(['git'] + list(args))
 
+def run_install():
+    path = os.environ.get('CIL_PATH')
+    os.chdir(f'{path}/cilantro-enterprise')
+    return subprocess.check_call(['python3', "setup.py", "install"])
+
 
 def version_reboot(new_branch_name):
 
@@ -52,8 +57,11 @@ def version_reboot(new_branch_name):
         # get latest release
         rel = new_branch_name  # input("Enter New Release branch:")
         br = f'{rel}'
-
         run("checkout", "-b", br)
+        #
+        path = os.environ.get('CIL_PATH')
+        os.chdir(f'{path}/cilantro-enterprise')
+        subprocess.check_call(['python3', "setup.py", "install"])
     except OSError as err:
         print("OS error: {0}".format(err))
     except:

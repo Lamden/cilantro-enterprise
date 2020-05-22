@@ -89,3 +89,14 @@ class TestWork(TestCase):
         self.assertEqual(d['sender'], '45')
         self.assertEqual(d['input_hash'], "45")
 
+    def test_pad_work_adds_placeholder_for_missing_master(self):
+        pass
+
+    def test_filter_work_gets_rid_of_nones(self):
+        pass
+
+    def test_filter_sorts_by_time_stamp(self):
+        pass
+
+class TestExecution(TestCase):
+    pass

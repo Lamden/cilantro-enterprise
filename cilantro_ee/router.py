@@ -189,18 +189,6 @@ class Router(JSONAsyncInbox):
         self.services[name] = processor
 
 
-def build_socket(socket_str: str, ctx: zmq.asyncio.Context, linger=500):
-    socket = ctx.socket(zmq.DEALER)
-    socket.setsockopt(zmq.LINGER, linger)
-    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-
-    try:
-        socket.connect(socket_str)
-        return socket
-    except ZMQBaseError:
-        return None
-
-
 async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.asyncio.Context, linger=500, cert_dir=DEFAULT_DIR):
     socket = ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.LINGER, linger)

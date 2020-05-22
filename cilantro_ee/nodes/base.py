@@ -7,6 +7,7 @@ from cilantro_ee.storage import VKBook
 from cilantro_ee.contracts import sync
 from cilantro_ee.networking.parameters import Parameters, ServiceType, NetworkParameters
 import cilantro_ee
+import contracting
 import zmq.asyncio
 import asyncio
 import os
@@ -268,7 +269,7 @@ class Node:
             if vote_consensus:
                 branch_name= self.version_state.quick_read('branch_name')
                 self.log.info(f'Rebooting Node with new verion {branch_name}')
-                cil_path = os.environ.get("CIL_PATH") + '/cilantro_ee'
+                cil_path = cilantro_ee.__file__ # os.environ.get("CIL_PATH") + '/cilantro_ee'
                 self.log.info(f'CIL_PATH={cil_path}')
                 if version_reboot(branch_name):
                     p = build_pepper(cil_path)
@@ -277,7 +278,9 @@ class Node:
                     else:
                         self.log.info('Pepper OK. restart new version')
                         run_install()
+                        importlib.reload(contracting)
                         importlib.reload(cilantro_ee)
+
                         self.log.info(f'New branch {branch_name} was reloaded OK.')
             else:
                 self.log.info('waiting for vote on upgrade')

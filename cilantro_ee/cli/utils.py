@@ -4,6 +4,7 @@ import psutil
 import subprocess
 import ipaddress
 import cilantro_ee
+import contracting
 from checksumdir import dirhash
 from contracting.client import ContractingClient
 from cilantro_ee.storage.contract import BlockchainDriver
@@ -18,7 +19,7 @@ def validate_ip(address):
         print('address/netmask is invalid: %s' % address)
 
 
-def build_pepper(pkg_dir_path=os.environ.get('CIL_PATH')):
+def build_pepper(pkg_dir_path=cilantro_ee.__file__):
 
     if pkg_dir_path is None:
         # pkg_dir_path = '/Volumes/dev/lamden/cilantro-enterprise'
@@ -31,7 +32,7 @@ def build_pepper(pkg_dir_path=os.environ.get('CIL_PATH')):
 
 
 def verify_cil_pkg(pkg_hash):
-    current_pepper = build_pepper(pkg_dir_path = os.environ.get('CIL_PATH'))
+    current_pepper = build_pepper(pkg_dir_path = cilantro_ee.__file__)
 
     if current_pepper == pkg_hash:
         return True
@@ -43,25 +44,29 @@ def run(*args):
     return subprocess.check_call(['git'] + list(args))
 
 def run_install():
-    path = os.environ.get('CIL_PATH')
-    os.chdir(f'{path}/cilantro-enterprise')
+    path = os.environ.get(cilantro_ee.__file__ + '/..')
+    os.chdir(f'{path}')
     return subprocess.check_call(['python3', "setup.py", "install"])
 
 
 def version_reboot(new_branch_name):
 
     try:
-        path = os.environ.get('CIL_PATH')
+        path = cilantro_ee.__file__ + '/..'
         os.chdir(path)
 
         # get latest release
         rel = new_branch_name  # input("Enter New Release branch:")
         br = f'{rel}'
-        run("checkout", "-b", br)
-        #
-        path = os.environ.get('CIL_PATH')
-        os.chdir(f'{path}/cilantro-enterprise')
-        subprocess.check_call(['python3', "setup.py", "install"])
+        run("fetch", "--all")
+        run("reset", "--hard", f"origin/{br}")
+        #git fetch --all    git reset --hard origin/ori1-rel-gov-socks-upg
+        subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+
+        path_ =  contracting.__file__
+        os.chdir(path)
+        subprocess.check_call(['python3', "setup.py", "develop"]) #  "install"
+
     except OSError as err:
         print("OS error: {0}".format(err))
     except:

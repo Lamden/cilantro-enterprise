@@ -63,8 +63,8 @@ def version_reboot(new_branch_name):
         #git fetch --all    git reset --hard origin/ori1-rel-gov-socks-upg
         subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
 
-        path_ =  contracting.__file__
-        os.chdir(path)
+        path2 =  os.path.join(os.path.dirname(contracting.__file__), '..')
+        os.chdir(path2)
         subprocess.check_call(['python3', "setup.py", "develop"]) #  "install"
 
     except OSError as err:

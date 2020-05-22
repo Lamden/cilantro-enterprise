@@ -269,7 +269,7 @@ class Node:
             if vote_consensus:
                 branch_name= self.version_state.quick_read('branch_name')
                 self.log.info(f'Rebooting Node with new verion {branch_name}')
-                cil_path = cilantro_ee.__file__ # os.environ.get("CIL_PATH") + '/cilantro_ee'
+                cil_path = os.path.dirname(cilantro_ee.__file__)
                 self.log.info(f'CIL_PATH={cil_path}')
                 if version_reboot(branch_name):
                     p = build_pepper(cil_path)

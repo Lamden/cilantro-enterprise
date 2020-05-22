@@ -19,7 +19,7 @@ def validate_ip(address):
         print('address/netmask is invalid: %s' % address)
 
 
-def build_pepper(pkg_dir_path=cilantro_ee.__file__):
+def build_pepper(pkg_dir_path= os.path.dirname(cilantro_ee.__file__)):
 
     if pkg_dir_path is None:
         # pkg_dir_path = '/Volumes/dev/lamden/cilantro-enterprise'
@@ -32,7 +32,7 @@ def build_pepper(pkg_dir_path=cilantro_ee.__file__):
 
 
 def verify_cil_pkg(pkg_hash):
-    current_pepper = build_pepper(pkg_dir_path = cilantro_ee.__file__)
+    current_pepper = build_pepper(pkg_dir_path = os.path.dirname(cilantro_ee.__file__))
 
     if current_pepper == pkg_hash:
         return True
@@ -44,7 +44,7 @@ def run(*args):
     return subprocess.check_call(['git'] + list(args))
 
 def run_install():
-    path = os.environ.get(cilantro_ee.__file__ + '/..')
+    path =  os.path.join(os.path.dirname(cilantro_ee.__file__),  '..')
     os.chdir(f'{path}')
     return subprocess.check_call(['python3', "setup.py", "install"])
 
@@ -52,7 +52,7 @@ def run_install():
 def version_reboot(new_branch_name):
 
     try:
-        path = cilantro_ee.__file__ + '/..'
+        path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')
         os.chdir(path)
 
         # get latest release

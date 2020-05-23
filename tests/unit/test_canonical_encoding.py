@@ -1,7 +1,4 @@
 from unittest import TestCase
-
-import cilantro_ee.crypto.canonical
-import cilantro_ee.nodes.masternode.contender
 from cilantro_ee.crypto import canonical
 
 

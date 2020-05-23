@@ -342,13 +342,19 @@ class TestNode(TestCase):
 
     def test_start_boots_up_normally(self):
         # This MN will also provide 'catch up' services
+
         mn_bootnode = 'tcp://127.0.0.1:18001'
         mn_wallet = Wallet()
         mn_network = network.Network(
             wallet=mn_wallet,
             ip_string=mn_bootnode,
             ctx=self.ctx,
-            router=self.r
+            router=router.Router(
+                socket_id=mn_bootnode,
+                ctx=self.ctx,
+                secure=True,
+                wallet=mn_wallet
+            )
         )
 
         blocks = generate_blocks(4)
@@ -363,7 +369,9 @@ class TestNode(TestCase):
         dl_wallet = Wallet()
         dl_router = router.Router(
                 socket_id=dl_bootnode,
-                ctx=self.ctx
+                ctx=self.ctx,
+                secure=True,
+                wallet=dl_wallet
             )
         dl_network = network.Network(
             wallet=dl_wallet,
@@ -387,6 +395,9 @@ class TestNode(TestCase):
             store=False,
         )
 
+        node.socket_authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
+        node.socket_authenticator.add_verifying_key(dl_wallet.verifying_key().hex())
+
         vks = [mn_wallet.verifying_key().hex(), dl_wallet.verifying_key().hex()]
 
         bootnodes = {
@@ -408,7 +419,7 @@ class TestNode(TestCase):
         tasks = asyncio.gather(
             self.r.serve(),
             dl_router.serve(),
-            node.start([mn_bootnode, dl_bootnode]),
+            node.start(),
             stop_server(self.r, 1),
             stop_server(dl_router, 1),
             stop_server(node.router, 1)

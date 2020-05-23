@@ -3,7 +3,7 @@ from unittest import TestCase
 from cilantro_ee.nodes.masternode.webserver import WebServer
 from cilantro_ee.crypto.wallet import Wallet
 from contracting.client import ContractingClient
-from contracting.db.driver import ContractDriver
+from contracting.db.driver import ContractDriver, decode, encode
 from cilantro_ee.storage import BlockStorage
 from cilantro_ee.crypto.transaction import build_transaction
 from cilantro_ee import storage
@@ -175,6 +175,11 @@ def get():
             }
 
             self.assertDictEqual(response.json, expected)
+
+    def test_get_variables_returns_error_if_contract_does_not_exist(self):
+        _, response = self.ws.app.test_client.get('/contracts/blah/variables')
+
+        self.assertDictEqual(response.json, {'error': 'blah does not exist'})
 
     def test_get_variable_returns_error_if_contract_does_not_exist(self):
         _, response = self.ws.app.test_client.get('/contracts/blah/v')
@@ -403,9 +408,6 @@ def get():
 
         self.assertDictEqual(response.json, {'error': 'Queue full. Resubmit shortly.'})
 
-    def test_submit_transaction_error_if_tx_malformed(self):
-        pass
-
     def test_get_tx_by_hash_if_it_exists(self):
         b = b'\x00' * 32
 
@@ -425,4 +427,70 @@ def get():
 
         _, response = self.ws.app.test_client.get(f'/tx?hash={b.hex()}')
         self.assertDictEqual(response.json, expected)
+
+    def test_malformed_tx_returns_error(self):
+        tx = b'"df:'
+
+        _, response = self.ws.app.test_client.post('/', data=tx)
+
+        self.assertDictEqual(response.json, {'error': 'Malformed request body.'})
+
+    def test_tx_with_error_returns_exception(self):
+        tx = build_transaction(
+            wallet=Wallet(),
+            processor=self.ws.wallet.verifying_key().hex(),
+            stamps=123,
+            nonce=0,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 123,
+                'to': 'jeff'
+            }
+        )
+
+        tx = decode(tx)
+        tx['payload']['stamps_supplied'] = -123
+        tx = encode(tx)
+
+        _, response = self.ws.app.test_client.post('/', data=tx)
+
+        self.assertDictEqual(response.json, {'error': 'Transaction is not formatted properly.'})
+
+    def test_iterate_variable_returns_error_if_contract_not_existent(self):
+        pass
+
+    def test_iterate_variable_returns_none_if_no_variables_to_iterate(self):
+        pass
+
+    def test_iterate_variable_returns_up_to_length_of_variables(self):
+        code = '''
+S = Hash()
+
+@construct
+def seed():
+    for i in range(1000):
+        S[str(i+1), str(i*2)] = i*i
+        
+@export
+def hello():
+    return "there"
+'''
+        self.ws.client.submit(f=code, name='testing')
+        self.ws.client.raw_driver.commit()
+
+    #     '/contracts/<contract>/<variable>/iterate')
+
+        _, response = self.ws.app.test_client.get('/contracts/testing/S/iterate')
+
+        self.assertEqual(len(response.json['values']), 500)
+
+    def test_latest_block_hash_returns_value(self):
+        pass
+
+    def test_error_returned_if_tx_hash_not_provided(self):
+        pass
+
+    def test_error_returned_if_no_tx_exists(self):
+        pass
 

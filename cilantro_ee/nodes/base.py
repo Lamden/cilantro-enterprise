@@ -22,6 +22,7 @@ GET_HEIGHT = 'get_height'
 
 log = get_logger('Base')
 
+
 async def get_latest_block_height(ip_string: str, ctx: zmq.asyncio.Context):
     msg = {
         'name': GET_HEIGHT,

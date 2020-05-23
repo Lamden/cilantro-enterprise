@@ -22,26 +22,30 @@ class TestAuthenticator(TestCase):
 
         sync.setup_genesis_contracts(self.masternodes, self.delegates, client=self.c)
 
-        self.s = SocketAuthenticator(client=self.c, ctx=self.ctx)
-
     def tearDown(self):
         self.ctx.destroy()
 
         self.c.flush()
 
     def test_add_verifying_key_writes_file(self):
+        s = SocketAuthenticator(client=self.c, ctx=self.ctx)
+
         sk = SigningKey.generate()
 
-        self.s.add_verifying_key(sk.verify_key.encode().hex())
+        s.add_verifying_key(sk.verify_key.encode().hex())
 
-        self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{sk.verify_key.encode().hex()}.key')))
+        s.authenticator.stop()
+
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{sk.verify_key.encode().hex()}.key')))
 
     def test_add_verifying_key_invalid_does_nothing(self):
         sk = b'\x00' * 32
 
-        self.s.add_verifying_key(sk.hex())
+        s = SocketAuthenticator(client=self.c, ctx=self.ctx)
+        s.add_verifying_key(sk.hex())
+        s.authenticator.stop()
 
-        self.assertFalse(os.path.exists(os.path.join(self.s.cert_dir, f'{sk.hex()}.key')))
+        self.assertFalse(os.path.exists(os.path.join(s.cert_dir, f'{sk.hex()}.key')))
 
     def test_add_governance_sockets_all_creates_files(self):
         fake_mns = [
@@ -85,13 +89,32 @@ class TestAuthenticator(TestCase):
             value=fake_od_d
         )
 
-        self.s.refresh_governance_sockets()
+        s = SocketAuthenticator(client=self.c, ctx=self.ctx)
+        s.refresh_governance_sockets()
+        s.authenticator.stop()
 
         for m in fake_mns:
-            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{m}.key')))
+            self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{m}.key')))
 
         for d in fake_dels:
-            self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{d}.key')))
+            self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{d}.key')))
 
-        self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{fake_od_m}.key')))
-        self.assertTrue(os.path.exists(os.path.join(self.s.cert_dir, f'{fake_od_d}.key')))
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{fake_od_m}.key')))
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{fake_od_d}.key')))
+
+    def test_passing_bootnodes_adds_keys_on_initialization(self):
+        w1 = Wallet()
+        w2 = Wallet()
+        w3 = Wallet()
+
+        bootnodes = {
+            w1.verifying_key().hex(): '127.0.0.1:18000',
+            w2.verifying_key().hex(): '127.0.0.1:18001',
+            w3.verifying_key().hex(): '127.0.0.1:18002',
+        }
+
+        s = SocketAuthenticator(client=self.c, ctx=self.ctx, bootnodes=bootnodes)
+
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w1.verifying_key().hex()}.key')))
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w2.verifying_key().hex()}.key')))
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w3.verifying_key().hex()}.key')))

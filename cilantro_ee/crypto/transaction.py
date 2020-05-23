@@ -57,6 +57,7 @@ EXCEPTION_MAP = {
     TransactionSignatureInvalid: {'error': 'Transaction is not signed by the sender.'},
     TransactionStampsNegative: {'error': 'Transaction has negative stamps supplied.'},
     TransactionException: {'error': 'Another error has occured.'},
+    TransactionFormattingError: {'error': 'Transaction is not formatted properly.'}
 }
 
 

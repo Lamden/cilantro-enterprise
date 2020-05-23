@@ -4,7 +4,6 @@ from contracting.db.encoder import encode, decode, safe_repr
 from cilantro_ee.crypto.canonical import tx_hash_from_tx, format_dictionary, merklize
 from cilantro_ee.logger.base import get_logger
 from datetime import datetime
-import hashlib
 import heapq
 from cilantro_ee import storage
 
@@ -47,7 +46,7 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
 
 def generate_environment(driver, timestamp, input_hash):
     now = Datetime._from_datetime(
-        datetime.utcfromtimestamp(timestamp/1000)
+        datetime.utcfromtimestamp(timestamp)
     )
 
     return {

@@ -83,6 +83,7 @@ class WebServer:
         self.app.add_route(self.get_variable, '/contracts/<contract>/<variable>')
         self.app.add_route(self.get_contracts, '/contracts', methods=['GET'])
         self.app.add_route(self.get_contract, '/contracts/<contract>', methods=['GET'])
+        self.app.add_route(self.iterate_variable, '/contracts/<contract>/<variable>/iterate')
 
         # Latest Block Routes
         self.app.add_route(self.get_latest_block, '/latest_block', methods=['GET', 'OPTIONS', ])
@@ -127,14 +128,14 @@ class WebServer:
             return response.json({'error': "Queue full. Resubmit shortly."}, status=503)
 
         # Check that the payload is valid JSON
-        try:
-            tx = decode(request.body)
-        except Exception as e:
+        tx = decode(request.body)
+        if tx is None:
             return response.json({'error': 'Malformed request body.'})
 
         # Check that the TX is correctly formatted
         error = transaction.check_tx_formatting(tx, self.wallet.verifying_key().hex())
         if error is not None:
+            print(error)
             return response.json(transaction.EXCEPTION_MAP[error])
 
         nonce, pending_nonce = transaction.get_nonces(
@@ -250,13 +251,13 @@ class WebServer:
         # if key is not None:
         #     key = key.split(',')
 
-        k = self.client.raw_driver.make_key(key=contract, field=variable, args=key)
+        k = self.client.raw_driver.make_key(contract=contract, variable=variable, args=key)
 
-        values = self.client.raw_driver.iter(k, length=500)
+        values = self.client.raw_driver.driver.iter(k, length=500)
 
         if len(values) == 0:
             return response.json({'values': None}, status=404)
-        return response.json({'values': values, 'next': values[-1][0]}, status=200)
+        return response.json({'values': values, 'next': values[-1]}, status=200)
 
     async def get_latest_block(self, request):
         index = self.blocks.get_last_n(n=1, collection=storage.BlockStorage.BLOCK)

@@ -51,6 +51,9 @@ class TestFormatting(TestCase):
     def test_vk_not_hex_fails(self):
         self.assertFalse(primatives.vk_is_formatted('x' * 64))
 
+    def test_vk_not_str_fails(self):
+        self.assertFalse(primatives.vk_is_formatted(None))
+
     def test_vk_not_string_fails(self):
         self.assertFalse(primatives.signature_is_formatted(123))
 
@@ -469,3 +472,37 @@ class TestFormatting(TestCase):
         }
 
         self.assertFalse(primatives.check_format(t, rules.TRANSACTION_RULES))
+
+    def test_list_recurses_returns_true(self):
+        test_rule = {
+            'sender': primatives.vk_is_formatted
+        }
+
+        thing = {
+            'sender': [
+                'a' * 64,
+                'b' * 64,
+                'c' * 64,
+                'd' * 64,
+                'e' * 64,
+            ]
+        }
+
+        self.assertTrue(primatives.check_format(thing, test_rule))
+
+    def test_rescurses_returns_false(self):
+        test_rule = {
+            'sender': primatives.vk_is_formatted
+        }
+
+        thing = {
+            'sender': [
+                'a' * 64,
+                'b' * 64,
+                'c' * 64,
+                'd' * 64,
+                'e' * 63,
+            ]
+        }
+
+        self.assertFalse(primatives.check_format(thing, test_rule))

@@ -7,25 +7,16 @@ from zmq.error import ZMQBaseError
 from zmq.auth.certs import load_certificate
 from cilantro_ee.logger.base import get_logger
 import pathlib
-from cilantro_ee import authentication
 
 CERT_DIR = 'cilsocks'
 DEFAULT_DIR = pathlib.Path.home() / CERT_DIR
 
 logger = get_logger('Router')
 
-# new block
-# work
-# sub block contenders
-# ping
-# join
-
-# join should send messages to other people if they are not in the peer list
-# ping returns pepper for id verification
-
 OK = {
     'response': 'ok'
 }
+
 
 def build_message(service, message):
     return {
@@ -85,8 +76,7 @@ class AsyncInbox:
                 if event:
                     _id, msg = await self.receive_message()
                     asyncio.ensure_future(self.handle_msg(_id, msg))
-
-            except zmq.error.ZMQError as e:
+            except zmq.error.ZMQError:
                 self.socket.close()
                 self.setup_socket()
 
@@ -206,10 +196,7 @@ async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.async
     except ZMQBaseError:
         return None
 
-    message = {
-        'service': service,
-        'msg': msg
-    }
+    message = build_message(service=service, message=msg)
 
     payload = encode(message).encode()
 
@@ -236,10 +223,7 @@ async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: s
         logger.debug(f'Could not connect to {ip}')
         return None
 
-    message = {
-        'service': service,
-        'msg': msg
-    }
+    message = build_message(service=service, message=msg)
 
     payload = encode(message).encode()
 
@@ -266,35 +250,3 @@ async def secure_multicast(msg: dict, service, wallet: Wallet, peer_map: dict, c
         )
 
     await asyncio.gather(*coroutines)
-
-
-async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Context, timeout=1000, linger=500):
-    socket = ctx.socket(zmq.DEALER)
-    socket.setsockopt(zmq.LINGER, linger)
-    socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
-
-    try:
-        socket.connect(socket_str)
-    except ZMQBaseError:
-        return None
-
-    message = {
-        'service': service,
-        'msg': msg
-    }
-
-    payload = encode(message).encode()
-
-    await socket.send(payload)
-
-    event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
-    msg = None
-    if event:
-        response = await socket.recv()
-
-        msg = decode(response)
-
-        socket.close()
-    logger.debug(f'Msg: {msg}')
-    return msg
-

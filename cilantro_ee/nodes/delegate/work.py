@@ -46,4 +46,9 @@ def filter_work(work):
         # Add the rest to a priority queue based on their timestamp
         heapq.heappush(filtered_work, (tx_batch['timestamp'], tx_batch))
 
-    return filtered_work
+    # Actually sorts the heap. This can be rewritten to use heap push pop.
+    w = []
+    for i in range(len(filtered_work)):
+        w.append(heapq.heappop(filtered_work))
+
+    return w

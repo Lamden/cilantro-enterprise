@@ -17,12 +17,12 @@ def recurse_rules(d: dict, rule: dict):
             if not recurse_rules(arg, subrule):
                 return False
 
-        if type(arg) == list:
+        elif type(arg) == list:
             for a in arg:
                 if not recurse_rules(a, subrule):
                     return False
 
-        if callable(subrule):
+        elif callable(subrule):
             if not subrule(arg):
                 return False
 

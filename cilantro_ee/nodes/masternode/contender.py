@@ -11,51 +11,63 @@ import time
 
 
 class SBCInbox(router.Processor):
-    def __init__(self, expected_subblocks=4, debug=True, *args, **kwargs):
+    def __init__(self, expected_subblocks=4, debug=True):
         self.q = []
         self.expected_subblocks = expected_subblocks
         self.log = get_logger('Subblock Gatherer')
         self.log.propagate = debug
-        super().__init__(*args, **kwargs)
 
     async def process_message(self, msg):
         # Ignore bad message types
         # Ignore if not enough subblocks
         # Make sure all the contenders are valid
+        if len(msg) != self.expected_subblocks:
+            return
+
         for i in range(len(msg)):
-            if self.sbc_is_valid(msg[i], i):
-                self.q.append(msg)
-                self.log.debug('Added Subblock Condender[] from ')
+            if not self.sbc_is_valid(msg[i], i):
+                return
+
+            self.q.append(msg)
+
+            self.log.debug(f'Added Subblock Condender[{i}]')
 
     def sbc_is_valid(self, sbc, sb_idx=0):
         if sbc['subblock'] != sb_idx:
-            self.log.debug('Subblock Contender[{}] from {} is out order.')
+            self.log.debug(f'Subblock Contender[{sb_idx}] is out order.')
             return False
 
         # Make sure signer is in the delegates
         if len(sbc['transactions']) == 0:
-            signature = sbc['input_hash']
+            message = sbc['input_hash']
         else:
-            signature = sbc['merkle_tree']['leaves'][0]
+            message = sbc['merkle_tree']['leaves'][0]
 
         valid_sig = verify(
             vk=sbc['signer'],
-            msg=signature,
+            msg=message,
             signature=sbc['merkle_tree']['signature']
         )
 
         if not valid_sig:
-            self.log.debug('Subblock Contender[{}] from {} has an invalid signature.')
+            self.log.debug(f'Subblock Contender[{sb_idx}] from {sbc["signer"][:8]} has an invalid signature.')
             return False
 
         if len(sbc['merkle_tree']['leaves']) > 0:
             txs = [encode(tx).encode() for tx in sbc['transactions']]
             expected_tree = merklize(txs)
 
+            # Missing leaves, etc
+            if len(sbc['merkle_tree']['leaves']) != len(expected_tree):
+                self.log.debug('Merkle Tree Len mismatch')
+                return False
+
             for i in range(len(expected_tree)):
                 if expected_tree[i] != sbc['merkle_tree']['leaves'][i]:
                     self.log.debug('Subblock Contender[{}] from {} has an Merkle tree proof.')
                     return False
+
+        return True
 
     def has_sbc(self):
         return len(self.q) > 0
@@ -243,7 +255,6 @@ class Aggregator:
     def __init__(self, driver, expected_subblocks=4, seconds_to_timeout=10):
         self.expected_subblocks = expected_subblocks
         self.sbc_inbox = SBCInbox(
-            driver=driver,
             expected_subblocks=self.expected_subblocks,
         )
 

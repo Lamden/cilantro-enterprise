@@ -294,13 +294,3 @@ class Node:
 
     def get_masternode_peers(self):
         return self._get_member_peers('masternodes')
-
-
-def get_genesis_block():
-    block = {
-        'hash': (b'\x00' * 32).hex(),
-        'number': 0,
-        'previous': (b'\x00' * 32).hex(),
-        'subblocks': []
-    }
-    return block

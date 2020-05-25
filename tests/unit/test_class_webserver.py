@@ -408,6 +408,8 @@ def get():
 
         self.assertDictEqual(response.json, {'error': 'Queue full. Resubmit shortly.'})
 
+        self.ws.queue.clear()
+
     def test_get_tx_by_hash_if_it_exists(self):
         b = b'\x00' * 32
 
@@ -457,67 +459,75 @@ def get():
 
         self.assertDictEqual(response.json, {'error': 'Transaction is not formatted properly.'})
 
-    def test_iterate_variable_returns_error_if_contract_not_existent(self):
-        pass
-
-    def test_iterate_variable_returns_none_if_no_variables_to_iterate(self):
-        pass
-
-    def test_iterate_variable_returns_up_to_length_of_variables(self):
-        code = '''
-S = Hash()
-
-@construct
-def seed():
-    for i in range(1000):
-        S[str(i+1), str(i*2)] = i*i
-        
-@export
-def hello():
-    return "there"
-'''
-        self.ws.client.submit(f=code, name='testing')
-        self.ws.client.raw_driver.commit()
-
-        _, response = self.ws.app.test_client.get('/contracts/testing/S/iterate')
-
-        self.assertEqual(len(response.json['values']), 500)
-
-    def test_iterate_variable_using_prefix_returns_different_variables(self):
-        code = '''
-S = Hash()
-
-@construct
-def seed():
-    for i in range(1000):
-        S[str(i+1), str(i*2)] = i*i
-
-@export
-def hello():
-    return "there"
-        '''
-
-        self.ws.client.submit(f=code, name='testing')
-        self.ws.client.raw_driver.commit()
-
-        _, response = self.ws.app.test_client.get('/contracts/testing/S/iterate')
-
-        from copy import deepcopy
-
-        values_1 = deepcopy(response.json['values'])
-        print(response.json)
-        prefix = response.json['next']
-
-        _, response = self.ws.app.test_client.get(f'/contracts/testing/S/iterate?key={prefix}')
-
-        print(response.json)
-
-    def test_latest_block_hash_returns_value(self):
-        pass
-
+#     def test_iterate_variable_returns_error_if_contract_not_existent(self):
+#         pass
+#
+#     def test_iterate_variable_returns_none_if_no_variables_to_iterate(self):
+#         pass
+#
+#     def test_iterate_variable_returns_up_to_length_of_variables(self):
+#         code = '''
+# S = Hash()
+#
+# @construct
+# def seed():
+#     for i in range(1000):
+#         S[str(i+1), str(i*2)] = i*i
+#
+# @export
+# def hello():
+#     return "there"
+# '''
+#         self.ws.client.submit(f=code, name='testing')
+#         self.ws.client.raw_driver.commit()
+#
+#         _, response = self.ws.app.test_client.get('/contracts/testing/S/iterate')
+#
+#         self.assertEqual(len(response.json['values']), 500)
+#
+#     def test_iterate_variable_using_prefix_returns_different_variables(self):
+#         code = '''
+# S = Hash()
+#
+# @construct
+# def seed():
+#     for i in range(1000):
+#         S[str(i+1), str(i*2)] = i*i
+#
+# @export
+# def hello():
+#     return "there"
+#         '''
+#
+#         self.ws.client.submit(f=code, name='testing')
+#         self.ws.client.raw_driver.commit()
+#
+#         _, response = self.ws.app.test_client.get('/contracts/testing/S/iterate')
+#
+#         from copy import deepcopy
+#
+#         values_1 = deepcopy(response.json['values'])
+#         print(response.json)
+#         prefix = response.json['next']
+#
+#         _, response = self.ws.app.test_client.get(f'/contracts/testing/S/iterate?key={prefix}')
+#
+#         print(response.json)
+#
+#     def test_latest_block_hash_returns_value(self):
+#         pass
+#
     def test_error_returned_if_tx_hash_not_provided(self):
-        pass
+        _, response = self.ws.app.test_client.get('/tx')
 
-    def test_error_returned_if_no_tx_exists(self):
-        pass
+        self.assertDictEqual(response.json, {'error': 'No tx hash provided.'})
 
+    def test_error_returned_if_tx_hash_malformed(self):
+        _, response = self.ws.app.test_client.get('/tx?hash=hello')
+
+        self.assertDictEqual(response.json, {'error': 'Malformed hash.'})
+
+    def test_error_returned_if_no_tx_hash(self):
+        _, response = self.ws.app.test_client.get('/tx?hash=' + 'a' * 64)
+
+        self.assertDictEqual(response.json, {'error': 'Transaction not found.'})

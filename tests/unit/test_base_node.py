@@ -111,16 +111,35 @@ class TestNode(TestCase):
 
     def test_catchup_with_nbn_added(self):
         driver = ContractDriver(driver=InMemDriver())
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        mn_wallet = Wallet()
+        mn_router = router.Router(
+            socket_id=mn_bootnode,
+            ctx=self.ctx,
+            secure=True,
+            wallet=mn_wallet
+        )
+
+        mn_router.add_service(base.BLOCK_SERVICE, self.b)
+
+        nw = Wallet()
+        dlw = Wallet()
         node = base.Node(
             socket_base='tcp://127.0.0.1:18002',
             ctx=self.ctx,
-            wallet=Wallet(),
+            wallet=nw,
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [mn_wallet.verifying_key().hex()],
+                'delegates': [dlw.verifying_key().hex()]
             },
             driver=driver
         )
+
+        self.authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
+        self.authenticator.add_verifying_key(nw.verifying_key().hex())
+        self.authenticator.add_verifying_key(dlw.verifying_key().hex())
+        self.authenticator.configure()
 
         blocks = generate_blocks(4)
 
@@ -133,9 +152,9 @@ class TestNode(TestCase):
         node.new_block_processor.q.append(blocks[3])
 
         tasks = asyncio.gather(
-            self.r.serve(),
-            node.catchup('tcp://127.0.0.1:18001'),
-            stop_server(self.r, 1)
+            mn_router.serve(),
+            node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key().hex()),
+            stop_server(mn_router, 1)
         )
 
         self.loop.run_until_complete(tasks)
@@ -456,3 +475,165 @@ class TestNode(TestCase):
         self.assertEqual(storage.get_latest_block_height(node.driver), 3)
         self.assertEqual(storage.get_latest_block_hash(node.driver), blocks[2]['hash'])
 
+    def test_new_block_service_appends_to_q_to_process_msg(self):
+        nb = base.NewBlock(driver=ContractDriver())
+
+        msg = 'test'
+
+        self.loop.run_until_complete(nb.process_message(msg))
+
+        self.assertEqual(nb.q, [msg])
+
+    def test_wait_for_next_holds_until_q_len_greater_than_0(self):
+        nb = base.NewBlock(driver=ContractDriver())
+
+        msg = 'test'
+
+        async def slow_add():
+            await asyncio.sleep(0.5)
+            await nb.process_message(msg)
+
+        self.loop.run_until_complete(slow_add())
+
+        self.assertEqual(nb.q, [msg])
+
+    def test_wait_for_next_pops_first_in_q(self):
+        nb = base.NewBlock(driver=ContractDriver())
+
+        msg = 'test'
+
+        nb.q.append('first')
+
+        tasks = asyncio.gather(
+            nb.process_message(msg),
+            nb.wait_for_next_nbn()
+        )
+
+        _, r = self.loop.run_until_complete(tasks)
+
+        self.assertEqual(r, 'first')
+
+    def test_wait_for_next_clears_q(self):
+        nb = base.NewBlock(driver=ContractDriver())
+
+        nb.q.append('first')
+        nb.q.append('second')
+        nb.q.append('third')
+
+        tasks = asyncio.gather(
+            nb.wait_for_next_nbn()
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        self.assertEqual(nb.q, [])
+
+    def test_get_member_peers_returns_vk_ip_pairs(self):
+        mn_wallet = Wallet()
+        dl_wallet = Wallet()
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        dl_bootnode = 'tcp://127.0.0.1:18002'
+
+        constitution = {
+            'masternodes': [mn_wallet.verifying_key().hex()],
+            'delegates': [dl_wallet.verifying_key().hex()]
+        }
+
+        bootnodes = {
+            mn_wallet.verifying_key().hex(): mn_bootnode,
+            dl_wallet.verifying_key().hex(): dl_bootnode
+        }
+
+        node_w = Wallet()
+        driver = ContractDriver(driver=InMemDriver())
+        node = base.Node(
+            socket_base='tcp://127.0.0.1:18003',
+            ctx=self.ctx,
+            wallet=node_w,
+            constitution=constitution,
+            driver=driver,
+            store=False,
+            bootnodes=bootnodes
+        )
+
+        # Assume caught up state
+        node.network.peers = bootnodes
+
+        m = node._get_member_peers('masternodes')
+        d = node._get_member_peers('delegates')
+
+        self.assertEqual(m, {mn_wallet.verifying_key().hex(): mn_bootnode})
+        self.assertEqual(d, {dl_wallet.verifying_key().hex(): dl_bootnode})
+
+    def test_get_delegate_peers_returns_deletates(self):
+        mn_wallet = Wallet()
+        dl_wallet = Wallet()
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        dl_bootnode = 'tcp://127.0.0.1:18002'
+
+        constitution = {
+            'masternodes': [mn_wallet.verifying_key().hex()],
+            'delegates': [dl_wallet.verifying_key().hex()]
+        }
+
+        bootnodes = {
+            mn_wallet.verifying_key().hex(): mn_bootnode,
+            dl_wallet.verifying_key().hex(): dl_bootnode
+        }
+
+        node_w = Wallet()
+        driver = ContractDriver(driver=InMemDriver())
+        node = base.Node(
+            socket_base='tcp://127.0.0.1:18003',
+            ctx=self.ctx,
+            wallet=node_w,
+            constitution=constitution,
+            driver=driver,
+            store=False,
+            bootnodes=bootnodes
+        )
+
+        # Assume caught up state
+        node.network.peers = bootnodes
+
+        d = node.get_delegate_peers()
+
+        self.assertEqual(d, {dl_wallet.verifying_key().hex(): dl_bootnode})
+
+    def test_get_masternode_peers_gets_masternodes(self):
+        mn_wallet = Wallet()
+        dl_wallet = Wallet()
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        dl_bootnode = 'tcp://127.0.0.1:18002'
+
+        constitution = {
+            'masternodes': [mn_wallet.verifying_key().hex()],
+            'delegates': [dl_wallet.verifying_key().hex()]
+        }
+
+        bootnodes = {
+            mn_wallet.verifying_key().hex(): mn_bootnode,
+            dl_wallet.verifying_key().hex(): dl_bootnode
+        }
+
+        node_w = Wallet()
+        driver = ContractDriver(driver=InMemDriver())
+        node = base.Node(
+            socket_base='tcp://127.0.0.1:18003',
+            ctx=self.ctx,
+            wallet=node_w,
+            constitution=constitution,
+            driver=driver,
+            store=False,
+            bootnodes=bootnodes
+        )
+
+        # Assume caught up state
+        node.network.peers = bootnodes
+
+        m = node.get_masternode_peers()
+
+        self.assertEqual(m, {mn_wallet.verifying_key().hex(): mn_bootnode})

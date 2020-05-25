@@ -1,5 +1,8 @@
 from unittest import TestCase
+from contracting.db.encoder import encode, decode
+from cilantro_ee.crypto.canonical import merklize, block_from_subblocks
 
+from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.nodes.masternode import contender
 import asyncio
 import secrets
@@ -547,8 +550,221 @@ class TestSBCProcessor(TestCase):
         self.assertFalse(s.sbc_is_valid(sbc, 2))
 
     def test_verify_signature_not_valid_no_transactions(self):
-        pass
+        w = Wallet()
+        w2 = Wallet()
+
+        input_hash = b'something'
+        signature = w2.sign(input_hash)
+
+        sbc = {
+            'subblock': 1,
+            'transactions': [],
+            'input_hash': input_hash.hex(),
+            'signer': w.verifying_key().hex(),
+            'merkle_tree': {
+                'signature': signature.hex()
+            }
+        }
+
+        s = contender.SBCInbox()
+
+        self.assertFalse(s.sbc_is_valid(sbc, 1))
 
     def test_verify_signature_not_valid_transactions(self):
-        pass
+        tx_1 = {
+            'something': 'who_cares'
+        }
 
+        tx_2 = {
+            'something_else': 'who_cares'
+        }
+
+        txs = [encode(tx).encode() for tx in [tx_1, tx_2]]
+        expected_tree = merklize(txs)
+
+        w = Wallet()
+        w2 = Wallet()
+
+        input_hash = b'something'
+        signature = w2.sign(expected_tree[0])
+
+        sbc = {
+            'subblock': 1,
+            'transactions': [tx_1, tx_2],
+            'input_hash': input_hash.hex(),
+            'signer': w.verifying_key().hex(),
+            'merkle_tree': {
+                'signature': signature.hex(),
+                'leaves': expected_tree
+            }
+        }
+
+        s = contender.SBCInbox()
+
+        self.assertFalse(s.sbc_is_valid(sbc, 1))
+
+    def test_bad_merkle_tree_missing_fails(self):
+        tx_1 = {
+            'something': 'who_cares'
+        }
+
+        tx_2 = {
+            'something_else': 'who_cares'
+        }
+
+        txs = [encode(tx).encode() for tx in [tx_1, tx_2]]
+        expected_tree = merklize(txs)
+
+        w = Wallet()
+
+        input_hash = b'something'
+        signature = w.sign(expected_tree[0])
+
+        sbc = {
+            'subblock': 1,
+            'transactions': [tx_1, tx_2],
+            'input_hash': input_hash.hex(),
+            'signer': w.verifying_key().hex(),
+            'merkle_tree': {
+                'signature': signature.hex(),
+                'leaves': expected_tree[0:1]
+            }
+        }
+
+        s = contender.SBCInbox()
+
+        self.assertFalse(s.sbc_is_valid(sbc, 1))
+
+    def test_bad_merkle_leaf_in_tree(self):
+        tx_1 = {
+            'something': 'who_cares'
+        }
+
+        tx_2 = {
+            'something_else': 'who_cares'
+        }
+
+        txs = [encode(tx).encode() for tx in [tx_1, tx_2]]
+        expected_tree = merklize(txs)
+
+        w = Wallet()
+
+        input_hash = b'something'
+        signature = w.sign(expected_tree[0])
+
+        expected_tree[1] = 'crap'
+
+        sbc = {
+            'subblock': 1,
+            'transactions': [tx_1, tx_2],
+            'input_hash': input_hash.hex(),
+            'signer': w.verifying_key().hex(),
+            'merkle_tree': {
+                'signature': signature.hex(),
+                'leaves': expected_tree
+            }
+        }
+
+        s = contender.SBCInbox()
+
+        self.assertFalse(s.sbc_is_valid(sbc, 1))
+
+    def test_good_sbc_returns_true(self):
+        tx_1 = {
+            'something': 'who_cares'
+        }
+
+        tx_2 = {
+            'something_else': 'who_cares'
+        }
+
+        txs = [encode(tx).encode() for tx in [tx_1, tx_2]]
+        expected_tree = merklize(txs)
+
+        w = Wallet()
+
+        input_hash = b'something'
+        signature = w.sign(expected_tree[0])
+
+        sbc = {
+            'subblock': 1,
+            'transactions': [tx_1, tx_2],
+            'input_hash': input_hash.hex(),
+            'signer': w.verifying_key().hex(),
+            'merkle_tree': {
+                'signature': signature.hex(),
+                'leaves': expected_tree
+            }
+        }
+
+        s = contender.SBCInbox()
+
+        self.assertTrue(s.sbc_is_valid(sbc, 1))
+
+    def test_process_message_good_and_bad_sbc_doesnt_pass_to_q(self):
+        ### GOOD SBC
+        tx_1_1 = {
+            'something': 'who_cares'
+        }
+
+        tx_1_2 = {
+            'something_else': 'who_cares'
+        }
+
+        txs = [encode(tx).encode() for tx in [tx_1_1, tx_1_2]]
+        expected_tree = merklize(txs)
+
+        w = Wallet()
+
+        input_hash = b'something'
+        signature = w.sign(expected_tree[0])
+
+        sbc_1 = {
+            'subblock': 0,
+            'transactions': [tx_1_1, tx_1_2],
+            'input_hash': input_hash.hex(),
+            'signer': w.verifying_key().hex(),
+            'merkle_tree': {
+                'signature': signature.hex(),
+                'leaves': expected_tree
+            }
+        }
+
+        ### BAD SBC
+        tx_2_1 = {
+            'something': 'who_cares2'
+        }
+
+        tx_2_2 = {
+            'something_else': 'who_cares2'
+        }
+
+        txs = [encode(tx).encode() for tx in [tx_2_1, tx_2_2]]
+        expected_tree = merklize(txs)
+
+        w = Wallet()
+
+        input_hash = b'something2'
+        signature = w.sign(expected_tree[0])
+
+        expected_tree[1] = 'crap'
+
+        sbc_2 = {
+            'subblock': 1,
+            'transactions': [tx_2_1, tx_2_2],
+            'input_hash': input_hash.hex(),
+            'signer': w.verifying_key().hex(),
+            'merkle_tree': {
+                'signature': signature.hex(),
+                'leaves': expected_tree
+            }
+        }
+
+        s = contender.SBCInbox()
+
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+        loop.run_until_complete(s.process_message([sbc_1, sbc_2]))
+
+        self.assertEqual(s.q, [])

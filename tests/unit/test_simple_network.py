@@ -313,15 +313,27 @@ class TestNetwork(TestCase):
         self.loop.close()
 
     def test_start_sends_joins_and_adds_peers_that_respond(self):
+        class PeerProcessor1(router.Processor):
+            async def process_message(self, msg):
+                return peers_1
+
+        class PeerProcessor2(router.Processor):
+            async def process_message(self, msg):
+                return peers_2
+
         me = Wallet()
+
+        n_router = router.Router(
+                socket_id='tcp://127.0.0.1:18002',
+                ctx=self.ctx,
+                secure=True,
+                wallet=me
+            )
         n = Network(
             wallet=me,
             ip_string='tcp://127.0.0.1:18002',
             ctx=self.ctx,
-            router=Router(
-                socket_id='tcp://127.0.0.1:18002',
-                ctx=self.ctx
-            )
+            router=n_router
         )
 
         bootnodes = [
@@ -329,26 +341,36 @@ class TestNetwork(TestCase):
             'tcp://127.0.0.1:18004'
         ]
 
-        async def reply(tcp, peers):
-            socket = self.ctx.socket(zmq.ROUTER)
-            socket.bind(tcp)
-
-            res = await socket.recv_multipart()
-            await socket.send_multipart(
-                [res[0], encode(peers).encode()]
-            )
-
-            return res[1]
-
         w_1 = Wallet()
+        w_2 = Wallet()
+
         peers_1 = {
             'peers': [{'vk': w_1.verifying_key().hex(), 'ip': bootnodes[0]}]
         }
-
-        w_2 = Wallet()
         peers_2 = {
             'peers': [{'vk': w_2.verifying_key().hex(), 'ip': bootnodes[1]}]
         }
+
+        router_1 = router.Router(
+                socket_id='tcp://127.0.0.1:18003',
+                ctx=self.ctx,
+                secure=True,
+                wallet=w_1
+            )
+        router_1.add_service('join', PeerProcessor1())
+
+        router_2 = router.Router(
+            socket_id='tcp://127.0.0.1:18004',
+            ctx=self.ctx,
+            secure=True,
+            wallet=w_2
+        )
+        router_2.add_service('join', PeerProcessor2())
+
+        self.authenticator.add_verifying_key(w_1.verifying_key().hex())
+        self.authenticator.add_verifying_key(w_2.verifying_key().hex())
+        self.authenticator.add_verifying_key(me.verifying_key().hex())
+        self.authenticator.configure()
 
         real_bootnodes = {
             w_1.verifying_key().hex(): bootnodes[0],
@@ -356,9 +378,11 @@ class TestNetwork(TestCase):
         }
 
         tasks = asyncio.gather(
-            reply(bootnodes[0], peers_1),
-            reply(bootnodes[1], peers_2),
-            n.start(real_bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()])
+            router_1.serve(),
+            router_2.serve(),
+            n.start(real_bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()]),
+            stop_server(router_1, 1),
+            stop_server(router_2, 1)
         )
 
         self.loop.run_until_complete(tasks)

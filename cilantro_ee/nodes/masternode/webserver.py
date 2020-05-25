@@ -83,7 +83,7 @@ class WebServer:
         self.app.add_route(self.get_variable, '/contracts/<contract>/<variable>')
         self.app.add_route(self.get_contracts, '/contracts', methods=['GET'])
         self.app.add_route(self.get_contract, '/contracts/<contract>', methods=['GET'])
-        self.app.add_route(self.iterate_variable, '/contracts/<contract>/<variable>/iterate')
+        #self.app.add_route(self.iterate_variable, '/contracts/<contract>/<variable>/iterate')
 
         # Latest Block Routes
         self.app.add_route(self.get_latest_block, '/latest_block', methods=['GET', 'OPTIONS', ])
@@ -241,23 +241,23 @@ class WebServer:
         else:
             return response.json({'value': value}, status=200, dumps=encode)
 
-    async def iterate_variable(self, request, contract, variable):
-        contract_code = self.client.raw_driver.get_contract(contract)
-
-        if contract_code is None:
-            return response.json({'error': '{} does not exist'.format(contract)}, status=404)
-
-        key = request.args.get('key')
-        # if key is not None:
-        #     key = key.split(',')
-
-        k = self.client.raw_driver.make_key(contract=contract, variable=variable, args=key)
-
-        values = self.client.raw_driver.driver.iter(k, length=500)
-
-        if len(values) == 0:
-            return response.json({'values': None}, status=404)
-        return response.json({'values': values, 'next': values[-1]}, status=200)
+    # async def iterate_variable(self, request, contract, variable):
+    #     contract_code = self.client.raw_driver.get_contract(contract)
+    #
+    #     if contract_code is None:
+    #         return response.json({'error': '{} does not exist'.format(contract)}, status=404)
+    #
+    #     key = request.args.get('key')
+    #     # if key is not None:
+    #     #     key = key.split(',')
+    #
+    #     k = self.client.raw_driver.make_key(contract=contract, variable=variable, args=key)
+    #
+    #     values = self.client.raw_driver.driver.iter(k, length=500)
+    #
+    #     if len(values) == 0:
+    #         return response.json({'values': None}, status=404)
+    #     return response.json({'values': values, 'next': values[-1]}, status=200)
 
     async def get_latest_block(self, request):
         index = self.blocks.get_last_n(n=1, collection=storage.BlockStorage.BLOCK)
@@ -290,7 +290,10 @@ class WebServer:
         _hash = request.args.get('hash')
 
         if _hash is not None:
-            tx = self.blocks.get_tx(bytes.fromhex(_hash))
+            try:
+                tx = self.blocks.get_tx(bytes.fromhex(_hash))
+            except ValueError:
+                return response.json({'error': 'Malformed hash.'}, status=400)
         else:
             return response.json({'error': 'No tx hash provided.'}, status=400)
 

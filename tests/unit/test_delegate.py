@@ -3,10 +3,12 @@ from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto import canonical
 from contracting.db.driver import decode
 from contracting.client import ContractingClient
-from cilantro_ee.nodes.delegate import execution
+from cilantro_ee.nodes.delegate import execution, work
 from cilantro_ee import storage
 import zmq.asyncio
 import asyncio
+import hashlib
+from copy import deepcopy
 
 import time
 from datetime import datetime
@@ -335,3 +337,153 @@ def get():
         self.assertEqual(sb2['input_hash'], tx_batch_2['input_hash'])
         self.assertEqual(sb2['subblock'], 1)
         self.assertEqual(sb2['previous'], 'B' * 64)
+
+    def test_no_txs_merklizes_and_signs_input_hash(self):
+        tx_batch_1 = {
+            'transactions': [],
+            'timestamp': time.time(),
+            'input_hash': 'A' * 64
+        }
+
+        work = [
+            (tx_batch_1['timestamp'], tx_batch_1),
+        ]
+
+        w = Wallet()
+
+        results = execution.execute_work(
+            executor=self.client.executor,
+            driver=self.client.raw_driver,
+            work=work,
+            previous_block_hash='B' * 64,
+            wallet=w,
+            stamp_cost=20_000
+        )
+
+        self.assertTrue(w.verify(bytes.fromhex(results[0]['input_hash']), bytes.fromhex(results[0]['merkle_tree']['signature'])))
+
+        h = hashlib.sha3_256()
+        h.update(bytes.fromhex(results[0]['input_hash']))
+
+        self.assertEqual(h.hexdigest(), results[0]['merkle_tree']['leaves'][0])
+
+
+class MockWork:
+    def __init__(self, sender):
+        self.sender = bytes.fromhex(sender)
+
+    def __eq__(self, other):
+        return self.sender == other.sender
+
+
+class TestWork(TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+
+    def test_gather_work_waits_for_all(self):
+        q = {}
+
+        async def fill_q():
+            q['1'] = 123
+            await asyncio.sleep(0.1)
+            q['3'] = 678
+            await asyncio.sleep(0.5)
+            q['x'] = 'zzz'
+
+        tasks = asyncio.gather(
+            fill_q(),
+            work.gather_transaction_batches(q, expected_batches=3, timeout=5)
+        )
+
+        loop = asyncio.get_event_loop()
+        _, w = loop.run_until_complete(tasks)
+
+        expected = [123, 678, 'zzz']
+
+        self.assertListEqual(expected, w)
+
+    def test_gather_past_timeout_returns_current_work(self):
+        q = {}
+
+        async def fill_q():
+            q['1'] = 123
+            await asyncio.sleep(0.1)
+            q['3'] = 678
+            await asyncio.sleep(1.1)
+            q['x'] = 'zzz'
+
+        tasks = asyncio.gather(
+            fill_q(),
+            work.gather_transaction_batches(q, expected_batches=3, timeout=1)
+        )
+
+        loop = asyncio.get_event_loop()
+        _, w = loop.run_until_complete(tasks)
+
+        expected = [123, 678]
+
+        self.assertListEqual(expected, w)
+
+    def test_pad_work_does_nothing_if_complete(self):
+        expected_masters = ['ab', 'cd', '23', '45']
+
+        mw1 = {'sender': 'ab'}
+        mw2 = {'sender': 'cd'}
+        mw3 = {'sender': '23'}
+        mw4 = {'sender': '45'}
+
+        work_list = [mw1, mw2, mw3, mw4]
+        w2 = deepcopy(work_list)
+
+        work.pad_work(work_list, expected_masters=expected_masters)
+
+        self.assertListEqual(work_list, w2)
+
+    def test_pad_work_adds_tx_batches_if_missing_masters(self):
+        expected_masters = ['ab', 'cd', '23', '45']
+
+        mw1 = {'sender': 'ab'}
+        mw2 = {'sender': 'cd'}
+
+        work_list = [mw1, mw2]
+
+        work.pad_work(work_list, expected_masters=expected_masters)
+
+        a, b, c, d = work_list
+
+        self.assertEqual(a, mw1)
+        self.assertEqual(b, mw2)
+        self.assertEqual(c['sender'], "23")
+        self.assertEqual(c['input_hash'], "23")
+        self.assertEqual(d['sender'], '45')
+        self.assertEqual(d['input_hash'], "45")
+
+    def test_filter_work_gets_rid_of_nones(self):
+        w = {
+            'timestamp': 0
+        }
+
+        filtered = work.filter_work([w, None])
+
+        self.assertEqual(filtered, [(0, w)])
+
+    def test_filter_sorts_by_time_stamp(self):
+        w = {
+            'timestamp': 125
+        }
+
+        w2 = {
+            'timestamp': 123
+        }
+
+        w3 = {
+            'timestamp': 1
+        }
+
+        filtered = work.filter_work([w, w2, w3])
+
+        self.assertEqual(filtered, [(1, w3), (123, w2), (125, w)])

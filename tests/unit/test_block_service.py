@@ -1,9 +1,11 @@
 from cilantro_ee.nodes.masternode import masternode
 from cilantro_ee.nodes import base
-from cilantro_ee import router, storage
+from cilantro_ee import router, storage, authentication
 from contracting.db.driver import ContractDriver
+from contracting.client import ContractingClient
 import zmq.asyncio
 import asyncio
+from cilantro_ee.crypto.wallet import Wallet
 
 from unittest import TestCase
 
@@ -19,6 +21,8 @@ class TestBlockService(TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+        self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
+
         self.b = masternode.BlockService(
             blocks=storage.BlockStorage(),
             driver=ContractDriver()
@@ -32,6 +36,7 @@ class TestBlockService(TestCase):
         self.r.add_service(base.BLOCK_SERVICE, self.b)
 
     def tearDown(self):
+        self.authenticator.authenticator.stop()
         self.ctx.destroy()
         self.loop.close()
         self.b.blocks.drop_collections()
@@ -118,17 +123,36 @@ class TestBlockService(TestCase):
     def test_get_latest_block_height(self):
         storage.set_latest_block_height(1337, self.b.driver)
 
+        vk = Wallet()
+        w = Wallet()
+
+        self.authenticator.add_verifying_key(vk.verifying_key().hex())
+        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.configure()
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        mn_router = router.Router(
+            socket_id=mn_bootnode,
+            ctx=self.ctx,
+            secure=True,
+            wallet=vk
+        )
+
+        mn_router.add_service(base.BLOCK_SERVICE, self.b)
+
         async def send_msg():
             res = await base.get_latest_block_height(
-                ip_string='tcp://127.0.0.1:18001',
+                ip=mn_bootnode,
+                vk=vk.verifying_key().hex(),
+                wallet=w,
                 ctx=self.ctx
             )
             return res
 
         tasks = asyncio.gather(
-            self.r.serve(),
+            mn_router.serve(),
             send_msg(),
-            stop_server(self.r, 0.2)
+            stop_server(mn_router, 1)
         )
 
         _, res, _ = self.loop.run_until_complete(tasks)
@@ -145,18 +169,37 @@ class TestBlockService(TestCase):
 
         self.b.blocks.store_block(block)
 
+        vk = Wallet()
+        w = Wallet()
+
+        self.authenticator.add_verifying_key(vk.verifying_key().hex())
+        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.configure()
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        mn_router = router.Router(
+            socket_id=mn_bootnode,
+            ctx=self.ctx,
+            secure=True,
+            wallet=vk
+        )
+
+        mn_router.add_service(base.BLOCK_SERVICE, self.b)
+
         async def send_msg():
             res = await base.get_block(
                 block_num=1337,
-                ip_string='tcp://127.0.0.1:18001',
+                ip=mn_bootnode,
+                vk=vk.verifying_key().hex(),
+                wallet=w,
                 ctx=self.ctx
             )
             return res
 
         tasks = asyncio.gather(
-            self.r.serve(),
+            mn_router.serve(),
             send_msg(),
-            stop_server(self.r, 0.2)
+            stop_server(mn_router, 1)
         )
 
         _, res, _ = self.loop.run_until_complete(tasks)
@@ -173,18 +216,37 @@ class TestBlockService(TestCase):
 
         self.b.blocks.store_block(block)
 
+        vk = Wallet()
+        w = Wallet()
+
+        self.authenticator.add_verifying_key(vk.verifying_key().hex())
+        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.configure()
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        mn_router = router.Router(
+            socket_id=mn_bootnode,
+            ctx=self.ctx,
+            secure=True,
+            wallet=vk
+        )
+
+        mn_router.add_service(base.BLOCK_SERVICE, self.b)
+
         async def send_msg():
             res = await base.get_block(
                 block_num=7331,
-                ip_string='tcp://127.0.0.1:18001',
+                ip=mn_bootnode,
+                vk=vk.verifying_key().hex(),
+                wallet=w,
                 ctx=self.ctx
             )
             return res
 
         tasks = asyncio.gather(
-            self.r.serve(),
+            mn_router.serve(),
             send_msg(),
-            stop_server(self.r, 0.2)
+            stop_server(mn_router, 1)
         )
 
         _, res, _ = self.loop.run_until_complete(tasks)

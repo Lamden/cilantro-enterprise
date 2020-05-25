@@ -479,11 +479,38 @@ def hello():
         self.ws.client.submit(f=code, name='testing')
         self.ws.client.raw_driver.commit()
 
-    #     '/contracts/<contract>/<variable>/iterate')
-
         _, response = self.ws.app.test_client.get('/contracts/testing/S/iterate')
 
         self.assertEqual(len(response.json['values']), 500)
+
+    def test_iterate_variable_using_prefix_returns_different_variables(self):
+        code = '''
+S = Hash()
+
+@construct
+def seed():
+    for i in range(1000):
+        S[str(i+1), str(i*2)] = i*i
+
+@export
+def hello():
+    return "there"
+        '''
+
+        self.ws.client.submit(f=code, name='testing')
+        self.ws.client.raw_driver.commit()
+
+        _, response = self.ws.app.test_client.get('/contracts/testing/S/iterate')
+
+        from copy import deepcopy
+
+        values_1 = deepcopy(response.json['values'])
+        print(response.json)
+        prefix = response.json['next']
+
+        _, response = self.ws.app.test_client.get(f'/contracts/testing/S/iterate?key={prefix}')
+
+        print(response.json)
 
     def test_latest_block_hash_returns_value(self):
         pass

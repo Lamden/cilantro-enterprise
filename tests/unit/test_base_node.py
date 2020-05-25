@@ -1,9 +1,10 @@
 from cilantro_ee.nodes.masternode import masternode
 from cilantro_ee.nodes import base
-from cilantro_ee import router, storage, network
+from cilantro_ee import router, storage, network, authentication
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto import canonical
 from contracting.db.driver import InMemDriver, ContractDriver
+from contracting.client import ContractingClient
 import zmq.asyncio
 import asyncio
 
@@ -56,7 +57,10 @@ class TestNode(TestCase):
 
         self.r.add_service(base.BLOCK_SERVICE, self.b)
 
+        self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
+
     def tearDown(self):
+        self.authenticator.authenticator.stop()
         self.ctx.destroy()
         self.loop.close()
         self.b.blocks.drop_collections()
@@ -345,16 +349,18 @@ class TestNode(TestCase):
 
         mn_bootnode = 'tcp://127.0.0.1:18001'
         mn_wallet = Wallet()
-        mn_network = network.Network(
-            wallet=mn_wallet,
-            ip_string=mn_bootnode,
-            ctx=self.ctx,
-            router=router.Router(
+        mn_router = router.Router(
                 socket_id=mn_bootnode,
                 ctx=self.ctx,
                 secure=True,
                 wallet=mn_wallet
             )
+
+        mn_network = network.Network(
+            wallet=mn_wallet,
+            ip_string=mn_bootnode,
+            ctx=self.ctx,
+            router=mn_router
         )
 
         blocks = generate_blocks(4)
@@ -364,6 +370,8 @@ class TestNode(TestCase):
         self.blocks.store_block(blocks[2])
 
         storage.set_latest_block_height(3, self.driver)
+
+        mn_router.add_service(base.BLOCK_SERVICE, masternode.BlockService(self.blocks, self.driver))
 
         dl_bootnode = 'tcp://127.0.0.1:18002'
         dl_wallet = Wallet()
@@ -385,42 +393,47 @@ class TestNode(TestCase):
             'delegates': [dl_wallet.verifying_key().hex()]
         }
 
-        driver = ContractDriver(driver=InMemDriver())
-        node = base.Node(
-            socket_base='tcp://127.0.0.1:18003',
-            ctx=self.ctx,
-            wallet=Wallet(),
-            constitution=constitution,
-            driver=driver,
-            store=False,
-        )
-
-        node.socket_authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
-        node.socket_authenticator.add_verifying_key(dl_wallet.verifying_key().hex())
-
-        vks = [mn_wallet.verifying_key().hex(), dl_wallet.verifying_key().hex()]
-
         bootnodes = {
             mn_wallet.verifying_key().hex(): mn_bootnode,
             dl_wallet.verifying_key().hex(): dl_bootnode
         }
 
+        node_w = Wallet()
+        driver = ContractDriver(driver=InMemDriver())
+        node = base.Node(
+            socket_base='tcp://127.0.0.1:18003',
+            ctx=self.ctx,
+            wallet=node_w,
+            constitution=constitution,
+            driver=driver,
+            store=False,
+            bootnodes=bootnodes
+        )
+
+        self.authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
+        self.authenticator.add_verifying_key(dl_wallet.verifying_key().hex())
+        self.authenticator.add_verifying_key(node_w.verifying_key().hex())
+
+        self.authenticator.configure()
+
+        vks = [mn_wallet.verifying_key().hex(), dl_wallet.verifying_key().hex()]
+
         tasks = asyncio.gather(
-            self.r.serve(),
+            mn_router.serve(),
             dl_router.serve(),
             mn_network.start(bootnodes, vks),
             dl_network.start(bootnodes, vks),
-            stop_server(self.r, 0.2),
+            stop_server(mn_router, 0.2),
             stop_server(dl_router, 0.2),
         )
 
         self.loop.run_until_complete(tasks)
 
         tasks = asyncio.gather(
-            self.r.serve(),
+            mn_router.serve(),
             dl_router.serve(),
             node.start(),
-            stop_server(self.r, 1),
+            stop_server(mn_router, 1),
             stop_server(dl_router, 1),
             stop_server(node.router, 1)
         )

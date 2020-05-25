@@ -295,6 +295,6 @@ async def request(socket_str: str, service: str, msg: dict, ctx: zmq.asyncio.Con
         msg = decode(response)
 
         socket.close()
-
+    logger.debug(f'Msg: {msg}')
     return msg
 

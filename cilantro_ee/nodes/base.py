@@ -1,5 +1,6 @@
 from cilantro_ee import storage, network, router, authentication, rewards, upgrade
 from cilantro_ee.crypto import canonical
+from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.contracts import sync
 from contracting.db.driver import ContractDriver
 import cilantro_ee
@@ -23,33 +24,39 @@ GET_HEIGHT = 'get_height'
 log = get_logger('Base')
 
 
-async def get_latest_block_height(ip_string: str, ctx: zmq.asyncio.Context):
+async def get_latest_block_height(wallet: Wallet, vk: str, ip: str, ctx: zmq.asyncio.Context):
     msg = {
         'name': GET_HEIGHT,
         'arg': ''
     }
 
-    response = await router.request(
-        socket_str=ip_string,
+    log.debug('Sending latest block height msg...')
+
+    response = await router.secure_request(
+        ip=ip,
+        vk=vk,
+        wallet=wallet,
         service=BLOCK_SERVICE,
         msg=msg,
-        ctx=ctx
+        ctx=ctx,
     )
 
     return response
 
 
-async def get_block(block_num: int, ip_string: str, ctx: zmq.asyncio.Context):
+async def get_block(block_num: int, wallet: Wallet, vk: str, ip: str, ctx: zmq.asyncio.Context):
     msg = {
         'name': GET_BLOCK,
         'arg': block_num
     }
 
-    response = await router.request(
-        socket_str=ip_string,
+    response = await router.secure_request(
+        ip=ip,
+        vk=vk,
+        wallet=wallet,
         service=BLOCK_SERVICE,
         msg=msg,
-        ctx=ctx
+        ctx=ctx,
     )
 
     return response
@@ -138,10 +145,15 @@ class Node:
 
         self.running = False
 
-    async def catchup(self, mn_seed):
+    async def catchup(self, mn_seed, mn_vk):
         # Get the current latest block stored and the latest block of the network
         current = storage.get_latest_block_height(self.driver)
-        latest = await get_latest_block_height(ip_string=mn_seed, ctx=self.ctx)
+        latest = await get_latest_block_height(
+            ip=mn_seed,
+            vk=mn_vk,
+            wallet=self.wallet,
+            ctx=self.ctx
+        )
 
         #assert type(latest) != dict, 'Provided node is not in sync.'
 
@@ -156,7 +168,13 @@ class Node:
 
         # Find the missing blocks process them
         for i in range(current, latest + 1):
-            block = await get_block(block_num=i, ip_string=mn_seed, ctx=self.ctx)
+            block = await get_block(
+                block_num=i,
+                ip=mn_seed,
+                vk=mn_vk,
+                wallet=self.wallet,
+                ctx=self.ctx
+            )
             self.update_state(block)
 
         # Process any blocks that were made while we were catching up
@@ -238,10 +256,11 @@ class Node:
 
         # Take a masternode vk from the constitution and look up its IP
         masternode = self.constitution['masternodes'][0]
+        self.log.debug(f'Catching up from MN: {masternode}')
         masternode_ip = self.network.peers[masternode]
 
         # Use this IP to request any missed blocks
-        await self.catchup(mn_seed=masternode_ip)
+        await self.catchup(mn_seed=masternode_ip, mn_vk=masternode)
 
         # Refresh the sockets to accept new nodes
         self.socket_authenticator.refresh_governance_sockets()

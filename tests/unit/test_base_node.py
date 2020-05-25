@@ -50,13 +50,6 @@ class TestNode(TestCase):
             driver=self.driver
         )
 
-        self.r = router.Router(
-            socket_id='tcp://127.0.0.1:18001',
-            ctx=self.ctx
-        )
-
-        self.r.add_service(base.BLOCK_SERVICE, self.b)
-
         self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
 
     def tearDown(self):
@@ -68,16 +61,36 @@ class TestNode(TestCase):
 
     def test_catchup(self):
         driver = ContractDriver(driver=InMemDriver())
+
+        dl_vk = Wallet().verifying_key().hex()
+
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        mn_wallet = Wallet()
+        mn_router = router.Router(
+            socket_id=mn_bootnode,
+            ctx=self.ctx,
+            secure=True,
+            wallet=mn_wallet
+        )
+
+        mn_router.add_service(base.BLOCK_SERVICE, self.b)
+
+        nw = Wallet()
         node = base.Node(
             socket_base='tcp://127.0.0.1:18002',
             ctx=self.ctx,
-            wallet=Wallet(),
+            wallet=nw,
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [mn_wallet.verifying_key().hex()],
+                'delegates': [dl_vk]
             },
             driver=driver
         )
+
+        self.authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
+        self.authenticator.add_verifying_key(nw.verifying_key().hex())
+        self.authenticator.add_verifying_key(dl_vk)
+        self.authenticator.configure()
 
         blocks = generate_blocks(3)
 
@@ -87,9 +100,9 @@ class TestNode(TestCase):
         storage.set_latest_block_height(3, self.driver)
 
         tasks = asyncio.gather(
-            self.r.serve(),
-            node.catchup('tcp://127.0.0.1:18001'),
-            stop_server(self.r, 1)
+            mn_router.serve(),
+            node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key().hex()),
+            stop_server(mn_router, 1)
         )
 
         self.loop.run_until_complete(tasks)

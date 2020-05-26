@@ -101,7 +101,7 @@ def get():
         self.assertEqual(result['stamps_used'], 1000)
 
     def test_generate_environment_creates_datetime_wrapped_object(self):
-        timestamp = time.time()
+        timestamp = int(time.time())
 
         e = execution.generate_environment(self.client.raw_driver, timestamp, 'A' * 64)
 

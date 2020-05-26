@@ -46,7 +46,7 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
 
 def generate_environment(driver, timestamp, input_hash):
     now = Datetime._from_datetime(
-        datetime.utcfromtimestamp(timestamp / 1000)
+        datetime.utcfromtimestamp(timestamp)
     )
 
     return {

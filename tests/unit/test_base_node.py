@@ -102,7 +102,7 @@ class TestNode(TestCase):
         tasks = asyncio.gather(
             mn_router.serve(),
             node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key),
-            stop_server(mn_router, 2)
+            stop_server(mn_router, 5)
         )
 
         self.loop.run_until_complete(tasks)

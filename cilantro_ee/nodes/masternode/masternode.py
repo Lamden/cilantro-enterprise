@@ -246,7 +246,11 @@ class Masternode(base.Node):
 
         return block
 
-    async def confirm_new_block(self, block):
+    async def loop(self):
+        block = await self.get_work_processed()
+
+        await self.hang()
+
         await router.secure_multicast(
             msg=block,
             service=base.NEW_BLOCK_SERVICE,
@@ -259,13 +263,7 @@ class Masternode(base.Node):
             ctx=self.ctx
         )
 
-        # Clear the work here??
         self.aggregator.sbc_inbox.q.clear()
-
-    async def loop(self):
-        block = await self.get_work_processed()
-        await self.hang()
-        await self.confirm_new_block(block)
 
     def stop(self):
         super().stop()

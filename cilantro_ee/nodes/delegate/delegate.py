@@ -76,8 +76,6 @@ class Delegate(base.Node):
         self.log.debug('Starting')
         await super().start()
 
-
-
         asyncio.ensure_future(self.run())
 
         self.log.info('Running...')

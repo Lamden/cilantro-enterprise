@@ -398,3 +398,78 @@ class TestMasternode(TestCase):
         txb2 = d2_q.q.pop(0)
 
         self.assertDictEqual(txb1, txb2)
+
+    def test_new_blockchain_boot_hangs_then_sends_out_broadcast(self):
+        mn_wallet = Wallet()
+        mn_bootnode = 'tcp://127.0.0.1:18001'
+        mn_router = router.Router(
+            wallet=mn_wallet,
+            socket_id=mn_bootnode,
+            ctx=self.ctx,
+            secure=True
+        )
+
+        dl_wallet = Wallet()
+        dl_bootnode = 'tcp://127.0.0.1:18002'
+        dl_router = router.Router(
+            wallet=dl_wallet,
+            socket_id=dl_bootnode,
+            ctx=self.ctx,
+            secure=True
+        )
+
+        driver = ContractDriver(driver=InMemDriver())
+        node = masternode.Masternode(
+            socket_base='tcp://127.0.0.1:18003',
+            ctx=self.ctx,
+            wallet=Wallet(),
+            constitution={
+                'masternodes': [mn_wallet.verifying_key],
+                'delegates': [dl_wallet.verifying_key]
+            },
+            driver=driver
+        )
+
+        node.client.set_var(
+            contract='masternodes',
+            variable='S',
+            arguments=['members'],
+            value=[mn_wallet.verifying_key]
+        )
+
+        node.client.set_var(
+            contract='delegates',
+            variable='S',
+            arguments=['members'],
+            value=[dl_wallet.verifying_key]
+        )
+
+        node.socket_authenticator.refresh_governance_sockets()
+
+        node.network.peers = {
+            mn_wallet.verifying_key: mn_bootnode,
+            dl_wallet.verifying_key: dl_bootnode
+        }
+
+        node.tx_batcher.queue.append('MOCK TX')
+
+        node.running = True
+
+        async def late_tx(timeout=0.2):
+            await asyncio.sleep(timeout)
+            node.tx_batcher.queue.append('MOCK TX')
+
+        async def late_kill(timeout=1):
+            node.running = False
+
+        tasks = asyncio.gather(
+            mn_router.serve(),
+            dl_router.serve(),
+            late_tx(),
+            node.new_blockchain_boot(),
+            late_kill(),
+            stop_server(mn_router, 1),
+            stop_server(dl_router, 1)
+        )
+
+        self.loop.run_until_complete(tasks)

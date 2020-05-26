@@ -145,7 +145,7 @@ def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce:
 
     metadata = {
         'signature': signature,
-        'timestamp': int(round(time.time() * 1000))
+        'timestamp': int(time.time())
     }
 
     tx = {

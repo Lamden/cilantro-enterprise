@@ -1,9 +1,10 @@
 from cilantro_ee.nodes.masternode import masternode
 from cilantro_ee.nodes import base
-from cilantro_ee import router, storage, network
+from cilantro_ee import router, storage, network, authentication
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto import canonical
 from contracting.db.driver import InMemDriver, ContractDriver
+from contracting.client import ContractingClient
 import zmq.asyncio
 import asyncio
 
@@ -44,11 +45,17 @@ class TestMasternode(TestCase):
     def setUp(self):
         self.ctx = zmq.asyncio.Context()
         self.loop = asyncio.new_event_loop()
+        self.driver = ContractDriver(driver=InMemDriver())
         asyncio.set_event_loop(self.loop)
+        self.authenticator = authentication.SocketAuthenticator(
+            client=ContractingClient(driver=self.driver),
+            ctx=self.ctx)
 
     def tearDown(self):
+        self.authenticator.authenticator.stop()
         self.ctx.destroy()
         self.loop.close()
+        self.driver.flush()
 
     def test_hang_returns_if_not_running(self):
         driver = ContractDriver(driver=InMemDriver())
@@ -305,3 +312,89 @@ class TestMasternode(TestCase):
         self.loop.run_until_complete(tasks)
 
         self.assertFalse(node.running)
+
+    def test_send_work_returns_if_no_one_online(self):
+        driver = ContractDriver(driver=InMemDriver())
+        node_wallet = Wallet()
+        node = masternode.Masternode(
+            socket_base='tcp://127.0.0.1:18003',
+            ctx=self.ctx,
+            wallet=node_wallet,
+            constitution={
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
+            },
+            driver=driver
+        )
+
+        r = self.loop.run_until_complete(node.send_work())
+
+        self.assertFalse(r)
+
+    def test_send_work_multicasts_tx_batch_to_delegates(self):
+        ips = [
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002',
+            'tcp://127.0.0.1:18003'
+        ]
+
+        d1w = Wallet()
+        d2w = Wallet()
+        m1w = Wallet()
+
+        self.authenticator.add_verifying_key(d1w.verifying_key)
+        self.authenticator.add_verifying_key(d2w.verifying_key)
+        self.authenticator.add_verifying_key(m1w.verifying_key)
+
+        self.authenticator.configure()
+
+        d1_r = router.Router(
+            socket_id=ips[0],
+            ctx=self.ctx,
+            wallet=d1w,
+            secure=True
+        )
+        d2_r = router.Router(
+            socket_id=ips[1],
+            ctx=self.ctx,
+            wallet=d2w,
+            secure=True
+        )
+
+        d1_q = router.QueueProcessor()
+        d2_q = router.QueueProcessor()
+
+        d1_r.add_service(base.WORK_SERVICE, d1_q)
+        d2_r.add_service(base.WORK_SERVICE, d2_q)
+
+        node = masternode.Masternode(
+            socket_base=ips[2],
+            ctx=self.ctx,
+            wallet=m1w,
+            constitution={
+                'masternodes': [m1w.verifying_key],
+                'delegates': [d1w.verifying_key, d2w.verifying_key]
+            },
+            driver=self.driver
+        )
+
+        node.network.peers = {
+            d1w.verifying_key: ips[0],
+            d2w.verifying_key: ips[1],
+            m1w.verifying_key: ips[2]
+        }
+
+        tasks = asyncio.gather(
+            d1_r.serve(),
+            d2_r.serve(),
+            node.send_work(),
+            stop_server(d1_r, 1),
+            stop_server(d2_r, 1)
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        txb1 = d1_q.q.pop(0)
+        txb2 = d2_q.q.pop(0)
+
+        self.assertDictEqual(txb1, txb2)

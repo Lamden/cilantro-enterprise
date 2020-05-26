@@ -217,7 +217,7 @@ class Masternode(base.Node):
         # LOOK AT SOCKETS CLASS
         if len(self.get_delegate_peers()) == 0:
             self.log.error('No one online!')
-            return
+            return False
 
         await router.secure_multicast(
             msg=tx_batch,

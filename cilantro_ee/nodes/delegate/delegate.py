@@ -34,6 +34,10 @@ class WorkProcessor(router.Processor):
     def process_todo_work(self):
         self.log.info(f'Current todo {self.todo}')
 
+        # Check if the tx batch is old
+        # Check if the sender is a master
+        # Check if the txs are old
+
         for work in self.todo:
             self.verify_work(work)
 

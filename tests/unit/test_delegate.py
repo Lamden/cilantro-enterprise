@@ -1,10 +1,11 @@
 from cilantro_ee.crypto import transaction
 from cilantro_ee.crypto.wallet import Wallet, verify
 from cilantro_ee.crypto import canonical
-from contracting.db.driver import decode
+from contracting.db.driver import decode, ContractDriver, InMemDriver
 from contracting.client import ContractingClient
 from cilantro_ee.nodes.delegate import execution, work
-from cilantro_ee import storage
+from cilantro_ee.nodes import masternode, delegate
+from cilantro_ee import storage, authentication
 import zmq.asyncio
 import asyncio
 import hashlib
@@ -50,12 +51,19 @@ class TestDelegate(TestCase):
     def setUp(self):
         self.ctx = zmq.asyncio.Context()
         self.loop = asyncio.new_event_loop()
-        self.client = ContractingClient()
+        self.driver = ContractDriver(driver=InMemDriver())
+        self.client = ContractingClient(driver=self.driver)
         self.client.flush()
         asyncio.set_event_loop(self.loop)
 
+        self.authenticator = authentication.SocketAuthenticator(
+            client=self.client, ctx=self.ctx
+        )
+
     def tearDown(self):
         self.client.flush()
+        self.driver.flush()
+        self.authenticator.authenticator.stop()
         self.ctx.destroy()
         self.loop.close()
 
@@ -366,6 +374,64 @@ def get():
         h.update(bytes.fromhex(results[0]['input_hash']))
 
         self.assertEqual(h.hexdigest(), results[0]['merkle_tree']['leaves'][0])
+
+    def test_acquire_work_1_master_gathers_tx_batches(self):
+        ips = [
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002'
+        ]
+
+        dw = Wallet()
+        mw = Wallet()
+
+        self.authenticator.add_verifying_key(mw.verifying_key)
+        self.authenticator.add_verifying_key(dw.verifying_key)
+        self.authenticator.configure()
+
+        mn = masternode.Masternode(
+            socket_base=ips[0],
+            ctx=self.ctx,
+            wallet=mw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        dl = delegate.Delegate(
+            socket_base=ips[1],
+            ctx=self.ctx,
+            wallet=dw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        peers = {
+            mw.verifying_key: ips[0],
+            dw.verifying_key: ips[1]
+        }
+
+        mn.network.peers = peers
+        dl.network.peers = peers
+
+        tasks = asyncio.gather(
+            mn.router.serve(),
+            dl.router.serve(),
+            mn.send_work(),
+            dl.acquire_work(),
+            stop_server(mn.router, 1),
+            stop_server(dl.router, 1),
+        )
+
+        _, _, _, w, _, _ = self.loop.run_until_complete(tasks)
+
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0][0], w[0][1]['timestamp'])
+        self.assertEqual(w[0][1]['sender'], mw.verifying_key)
 
 
 class MockWork:

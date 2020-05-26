@@ -29,8 +29,8 @@ def make_network(masternodes, delegates, ctx):
     dl_wallets = [Wallet() for _ in range(delegates)]
 
     constitution = {
-        'masternodes': [mn.verifying_key().hex() for mn in mn_wallets],
-        'delegates': [dl.verifying_key().hex() for dl in dl_wallets],
+        'masternodes': [mn.verifying_key for mn in mn_wallets],
+        'delegates': [dl.verifying_key for dl in dl_wallets],
     }
 
     mns = []
@@ -43,7 +43,7 @@ def make_network(masternodes, delegates, ctx):
         tcp = f'tcp://127.0.0.1:{port}'
 
         vk = (mn_wallets + dl_wallets)[i]
-        bootnodes[vk.verifying_key().hex()] = tcp
+        bootnodes[vk.verifying_key] = tcp
 
     node_count = 0
     for wallet in mn_wallets:
@@ -115,7 +115,7 @@ def make_tx_packed(processor, contract_name, function_name, sender=Wallet(), kwa
                                        config.INDEX_SEPARATOR,
                                        balances_hash,
                                        config.DELIMITER,
-                                       sender.verifying_key().hex())
+                                       sender.verifying_key)
 
     for driver in drivers:
         driver.set(balances_key, 1_000_000)
@@ -129,7 +129,7 @@ async def send_tx(masternode: Masternode, nodes, contract, function, sender=Wall
         r = await session.post(
             url=f'http://127.0.0.1:{masternode.webserver.port}/',
             data=make_tx_packed(
-                masternode.wallet.verifying_key(),
+                masternode.wallet.verifying_key,
                 contract_name=contract,
                 function_name=function,
                 sender=sender,
@@ -183,13 +183,13 @@ class Orchestrator:
             function=function,
             kwargs=kwargs,
             stamps=stamps,
-            processor=processor.wallet.verifying_key().hex(),
-            nonce=self.nonces[sender.verifying_key() + processor.wallet.verifying_key()]
+            processor=processor.wallet.verifying_key,
+            nonce=self.nonces[sender.verifying_key + processor.wallet.verifying_key]
         )
 
-        self.nonces[sender.verifying_key() + processor.wallet.verifying_key()] += 1
+        self.nonces[sender.verifying_key + processor.wallet.verifying_key] += 1
 
-        if sender.verifying_key() not in self.minted:
+        if sender.verifying_key not in self.minted:
             self.mint(1_000_000, sender)
 
         return batch
@@ -202,13 +202,13 @@ class Orchestrator:
                                            config.INDEX_SEPARATOR,
                                            balances_hash,
                                            config.DELIMITER,
-                                           to.verifying_key().hex())
+                                           to.verifying_key)
 
         for driver in [node.driver for node in self.nodes]:
             driver.set(balances_key, amount)
             driver.commit()
 
-        self.minted.add(to.verifying_key())
+        self.minted.add(to.verifying_key)
 
     def get_var(self, contract, function, arguments=[]):
         vals = []

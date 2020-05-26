@@ -133,7 +133,7 @@ class WebServer:
             return response.json({'error': 'Malformed request body.'})
 
         # Check that the TX is correctly formatted
-        error = transaction.check_tx_formatting(tx, self.wallet.verifying_key().hex())
+        error = transaction.check_tx_formatting(tx, self.wallet.verifying_key)
         if error is not None:
             print(error)
             return response.json(transaction.EXCEPTION_MAP[error])
@@ -178,15 +178,15 @@ class WebServer:
 
     # Get VK of this Masternode for Nonces
     async def get_id(self, request):
-        return response.json({'verifying_key': self.wallet.verifying_key().hex()})
+        return response.json({'verifying_key': self.wallet.verifying_key})
 
     # Get the Nonce of a VK
     async def get_nonce(self, request, vk):
-        latest_nonce = self.nonces.get_latest_nonce(sender=vk, processor=self.wallet.verifying_key().hex())
+        latest_nonce = self.nonces.get_latest_nonce(sender=vk, processor=self.wallet.verifying_key)
 
         return response.json({
             'nonce': latest_nonce,
-            'processor': self.wallet.verifying_key().hex(),
+            'processor': self.wallet.verifying_key,
             'sender': vk
         })
 

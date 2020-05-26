@@ -58,16 +58,16 @@ class TransactionBatcher:
 
         h = hashlib.sha3_256()
         h.update('{}'.format(timestamp).encode())
-        input_hash = h.digest()
+        input_hash = h.hexdigest()
 
         signature = self.wallet.sign(input_hash)
 
         batch = {
             'transactions': transactions,
             'timestamp': timestamp,
-            'signature': signature.hex(),
-            'sender': self.wallet.verifying_key().hex(),
-            'input_hash': input_hash.hex()
+            'signature': signature,
+            'sender': self.wallet.verifying_key,
+            'input_hash': input_hash
         }
 
         mn_logger.debug(f'Made new batch of {len(transactions)} transactions.')
@@ -178,7 +178,7 @@ class Masternode(base.Node):
             block = await self.new_block_processor.wait_for_next_nbn()
             self.process_new_block(block)
 
-            if self.wallet.verifying_key().hex() in self.driver.get_var(contract='masternodes',
+            if self.wallet.verifying_key in self.driver.get_var(contract='masternodes',
                                                                         variable='S',
                                                                         arguments=['members']):
                 break

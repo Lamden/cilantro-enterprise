@@ -66,7 +66,7 @@ def get_tx_batch():
                                        config.INDEX_SEPARATOR,
                                        balances_hash,
                                        config.DELIMITER,
-                                       w.verifying_key().hex())
+                                       w.verifying_key)
 
     driver = StateDriver()
     driver.set(balances_key, 1_000_000)
@@ -92,7 +92,7 @@ def get_tx_batch():
                                        config.INDEX_SEPARATOR,
                                        balances_hash,
                                        config.DELIMITER,
-                                       w.verifying_key().hex())
+                                       w.verifying_key)
 
     driver = StateDriver()
     driver.set(balances_key, 1_000_000)
@@ -121,13 +121,13 @@ dw1 = Wallet()
 constitution = {
     "masternodes": {
         "vk_list": [
-            mnw1.verifying_key().hex(),
+            mnw1.verifying_key,
         ],
         "min_quorum": 1
     },
     "delegates": {
         "vk_list": [
-            dw1.verifying_key().hex(),
+            dw1.verifying_key,
         ],
         "min_quorum": 1
     },
@@ -145,7 +145,7 @@ make_ipc(n1)
 def make_tx(processor):
     w = Wallet()
     batch = TransactionBuilder(
-        sender=w.verifying_key(),
+        sender=w.verifying_key,
         contract='test',
         function='testing',
         kwargs={},
@@ -166,7 +166,7 @@ def make_tx(processor):
                                        config.INDEX_SEPARATOR,
                                        balances_hash,
                                        config.DELIMITER,
-                                       w.verifying_key().hex())
+                                       w.verifying_key)
 
     driver = StateDriver()
     driver.set(balances_key, 1_000_000)
@@ -199,21 +199,21 @@ class TestNewMasternode(TestCase):
 
         mnw1 = Wallet()
         mnw2 = Wallet()
-        masternodes = [mnw1.verifying_key().hex(), mnw2.verifying_key().hex()]
+        masternodes = [mnw1.verifying_key, mnw2.verifying_key]
 
         dw1 = Wallet()
         dw2 = Wallet()
-        delegates = [dw1.verifying_key().hex(), dw2.verifying_key().hex()]
+        delegates = [dw1.verifying_key, dw2.verifying_key]
 
         constitution = {
             "masternodes": [
-                    mnw1.verifying_key().hex(),
-                    mnw2.verifying_key().hex()
+                    mnw1.verifying_key,
+                    mnw2.verifying_key
                 ],
             "masternode_min_quorum": 1,
             "delegates": [
-                    dw1.verifying_key().hex(),
-                    dw2.verifying_key().hex()
+                    dw1.verifying_key,
+                    dw2.verifying_key
                 ],
             "delegate_min_quorum": 1,
             "witnesses": {},
@@ -277,17 +277,17 @@ class TestNewMasternode(TestCase):
         constitution = {
             "masternodes": {
                 "vk_list": [
-                    mnw1.verifying_key().hex(),
-                    mnw2.verifying_key().hex()
+                    mnw1.verifying_key,
+                    mnw2.verifying_key
                 ],
                 "min_quorum": 1
             },
             "delegates": {
                 "vk_list": [
-                    dw1.verifying_key().hex(),
-                    dw2.verifying_key().hex(),
-                    dw3.verifying_key().hex(),
-                    dw4.verifying_key().hex()
+                    dw1.verifying_key,
+                    dw2.verifying_key,
+                    dw3.verifying_key,
+                    dw4.verifying_key
                 ],
                 "min_quorum": 1
             },
@@ -303,8 +303,8 @@ class TestNewMasternode(TestCase):
         mn1 = Masternode(wallet=mnw1, ctx=self.ctx, socket_base=f'ipc://{n1}', bootnodes=bootnodes,
                          constitution=constitution, webserver_port=8080, overwrite=True)
 
-        masternodes = [mnw1.verifying_key().hex(), mnw2.verifying_key().hex()]
-        delegates = [dw1.verifying_key().hex(), dw2.verifying_key().hex(), dw3.verifying_key().hex(), dw4.verifying_key().hex()]
+        masternodes = [mnw1.verifying_key, mnw2.verifying_key]
+        delegates = [dw1.verifying_key, dw2.verifying_key, dw3.verifying_key, dw4.verifying_key]
 
         contacts = MockContacts(
             masters=masternodes,
@@ -329,12 +329,12 @@ class TestNewMasternode(TestCase):
 
         w = Wallet()
         batch = TransactionBuilder(
-            sender=w.verifying_key(),
+            sender=w.verifying_key,
             contract='test',
             function='testing',
             kwargs={},
             stamps=1_000_000,
-            processor=mnw1.verifying_key(),
+            processor=mnw1.verifying_key,
             nonce=0
         )
 
@@ -350,7 +350,7 @@ class TestNewMasternode(TestCase):
                                            config.INDEX_SEPARATOR,
                                            balances_hash,
                                            config.DELIMITER,
-                                           w.verifying_key().hex())
+                                           w.verifying_key)
 
         driver = StateDriver()
         driver.set(balances_key, 1_000_000)
@@ -359,10 +359,10 @@ class TestNewMasternode(TestCase):
         mn1.tx_batcher.queue.append(tx)
 
         mn1.network.peer_service.table.peers = {
-            dw1.verifying_key().hex(): f'ipc://{d1}',
-            dw2.verifying_key().hex(): f'ipc://{d2}',
-            dw3.verifying_key().hex(): f'ipc://{d3}',
-            dw4.verifying_key().hex(): f'ipc://{d4}'
+            dw1.verifying_key: f'ipc://{d1}',
+            dw2.verifying_key: f'ipc://{d2}',
+            dw3.verifying_key: f'ipc://{d3}',
+            dw4.verifying_key: f'ipc://{d4}'
         }
 
         async def late_send():
@@ -390,10 +390,10 @@ class TestNewMasternode(TestCase):
 
         self.loop.run_until_complete(tasks)
 
-        self.assertTrue(wi1.work[mnw1.verifying_key().hex()])
-        self.assertTrue(wi2.work[mnw1.verifying_key().hex()])
-        self.assertTrue(wi3.work[mnw1.verifying_key().hex()])
-        self.assertTrue(wi4.work[mnw1.verifying_key().hex()])
+        self.assertTrue(wi1.work[mnw1.verifying_key])
+        self.assertTrue(wi2.work[mnw1.verifying_key])
+        self.assertTrue(wi3.work[mnw1.verifying_key])
+        self.assertTrue(wi4.work[mnw1.verifying_key])
 
     def test_send_nbn_to_everyone(self):
         bootnodes = ['ipc:///tmp/n2', 'ipc:///tmp/n3']
@@ -409,17 +409,17 @@ class TestNewMasternode(TestCase):
         constitution = {
             "masternodes": {
                 "vk_list": [
-                    mnw1.verifying_key().hex(),
-                    mnw2.verifying_key().hex()
+                    mnw1.verifying_key,
+                    mnw2.verifying_key
                 ],
                 "min_quorum": 1
             },
             "delegates": {
                 "vk_list": [
-                    dw1.verifying_key().hex(),
-                    dw2.verifying_key().hex(),
-                    dw3.verifying_key().hex(),
-                    dw4.verifying_key().hex()
+                    dw1.verifying_key,
+                    dw2.verifying_key,
+                    dw3.verifying_key,
+                    dw4.verifying_key
                 ],
                 "min_quorum": 1
             },
@@ -442,9 +442,9 @@ class TestNewMasternode(TestCase):
             overwrite=True
         )
 
-        masternodes = [mnw1.verifying_key().hex(), mnw2.verifying_key().hex()]
-        delegates = [dw1.verifying_key().hex(), dw2.verifying_key().hex(), dw3.verifying_key().hex(),
-                     dw4.verifying_key().hex()]
+        masternodes = [mnw1.verifying_key, mnw2.verifying_key]
+        delegates = [dw1.verifying_key, dw2.verifying_key, dw3.verifying_key,
+                     dw4.verifying_key]
 
         contacts = MockContacts(
             masters=masternodes,
@@ -472,11 +472,11 @@ class TestNewMasternode(TestCase):
         mn2 = NBNInbox(socket_id=_socket(f'ipc://{n2}/block_notifications'), ctx=self.ctx, contacts=contacts, verify=False)
 
         mn1.network.peer_service.table.peers = {
-            dw1.verifying_key().hex(): f'ipc://{d1}',
-            dw2.verifying_key().hex(): f'ipc://{d2}',
-            dw3.verifying_key().hex(): f'ipc://{d3}',
-            dw4.verifying_key().hex(): f'ipc://{d4}',
-            mnw2.verifying_key().hex(): f'ipc://{n2}'
+            dw1.verifying_key: f'ipc://{d1}',
+            dw2.verifying_key: f'ipc://{d2}',
+            dw3.verifying_key: f'ipc://{d3}',
+            dw4.verifying_key: f'ipc://{d4}',
+            mnw2.verifying_key: f'ipc://{n2}'
         }
 
         mn1.current_nbn = b'hello'
@@ -528,17 +528,17 @@ class TestNewMasternode(TestCase):
         constitution = {
             "masternodes": {
                 "vk_list": [
-                    mnw1.verifying_key().hex(),
-                    mnw2.verifying_key().hex()
+                    mnw1.verifying_key,
+                    mnw2.verifying_key
                 ],
                 "min_quorum": 1
             },
             "delegates": {
                 "vk_list": [
-                    dw1.verifying_key().hex(),
-                    dw2.verifying_key().hex(),
-                    dw3.verifying_key().hex(),
-                    dw4.verifying_key().hex()
+                    dw1.verifying_key,
+                    dw2.verifying_key,
+                    dw3.verifying_key,
+                    dw4.verifying_key
                 ],
                 "min_quorum": 1
             },
@@ -561,9 +561,9 @@ class TestNewMasternode(TestCase):
             overwrite=True
         )
 
-        masternodes = [mnw1.verifying_key().hex(), mnw2.verifying_key().hex()]
-        delegates = [dw1.verifying_key().hex(), dw2.verifying_key().hex(), dw3.verifying_key().hex(),
-                     dw4.verifying_key().hex()]
+        masternodes = [mnw1.verifying_key, mnw2.verifying_key]
+        delegates = [dw1.verifying_key, dw2.verifying_key, dw3.verifying_key,
+                     dw4.verifying_key]
 
         contacts = MockContacts(
             masters=masternodes,
@@ -591,11 +591,11 @@ class TestNewMasternode(TestCase):
         mn2 = NBNInbox(socket_id=_socket(f'ipc://{n2}/block_notifications'), ctx=self.ctx, contacts=contacts, verify=False)
 
         mn1.network.peer_service.table.peers = {
-            dw1.verifying_key().hex(): f'ipc://{d1}',
-            dw2.verifying_key().hex(): f'ipc://{d2}',
-            dw3.verifying_key().hex(): f'ipc://{d3}',
-            dw4.verifying_key().hex(): f'ipc://{d4}',
-            mnw2.verifying_key().hex(): f'ipc://{n2}'
+            dw1.verifying_key: f'ipc://{d1}',
+            dw2.verifying_key: f'ipc://{d2}',
+            dw3.verifying_key: f'ipc://{d3}',
+            dw4.verifying_key: f'ipc://{d4}',
+            mnw2.verifying_key: f'ipc://{n2}'
         }
 
         mn1.current_nbn = b'hello'
@@ -652,17 +652,17 @@ class TestNewMasternode(TestCase):
         constitution = {
             "masternodes": {
                 "vk_list": [
-                    mnw1.verifying_key().hex(),
-                    mnw2.verifying_key().hex()
+                    mnw1.verifying_key,
+                    mnw2.verifying_key
                 ],
                 "min_quorum": 1
             },
             "delegates": {
                 "vk_list": [
-                    dw1.verifying_key().hex(),
-                    dw2.verifying_key().hex(),
-                    dw3.verifying_key().hex(),
-                    dw4.verifying_key().hex()
+                    dw1.verifying_key,
+                    dw2.verifying_key,
+                    dw3.verifying_key,
+                    dw4.verifying_key
                 ],
                 "min_quorum": 1
             },
@@ -678,9 +678,9 @@ class TestNewMasternode(TestCase):
         mn1 = Masternode(wallet=mnw1, ctx=self.ctx, socket_base=f'ipc://{n1}', bootnodes=bootnodes,
                          constitution=constitution, webserver_port=8080, overwrite=True)
 
-        masternodes = [mnw1.verifying_key().hex(), mnw2.verifying_key().hex()]
-        delegates = [dw1.verifying_key().hex(), dw2.verifying_key().hex(), dw3.verifying_key().hex(),
-                     dw4.verifying_key().hex()]
+        masternodes = [mnw1.verifying_key, mnw2.verifying_key]
+        delegates = [dw1.verifying_key, dw2.verifying_key, dw3.verifying_key,
+                     dw4.verifying_key]
 
         contacts = MockContacts(
             masters=masternodes,
@@ -705,12 +705,12 @@ class TestNewMasternode(TestCase):
 
         w = Wallet()
         batch = TransactionBuilder(
-            sender=w.verifying_key(),
+            sender=w.verifying_key,
             contract='test',
             function='testing',
             kwargs={},
             stamps=1_000_000,
-            processor=mnw1.verifying_key(),
+            processor=mnw1.verifying_key,
             nonce=0
         )
 
@@ -726,7 +726,7 @@ class TestNewMasternode(TestCase):
                                            config.INDEX_SEPARATOR,
                                            balances_hash,
                                            config.DELIMITER,
-                                           w.verifying_key().hex())
+                                           w.verifying_key)
 
         driver = StateDriver()
         driver.set(balances_key, 1_000_000)
@@ -735,10 +735,10 @@ class TestNewMasternode(TestCase):
         mn1.tx_batcher.queue.append(tx)
 
         mn1.network.peer_service.table.peers = {
-            dw1.verifying_key().hex(): f'ipc://{d1}',
-            dw2.verifying_key().hex(): f'ipc://{d2}',
-            dw3.verifying_key().hex(): f'ipc://{d3}',
-            dw4.verifying_key().hex(): f'ipc://{d4}'
+            dw1.verifying_key: f'ipc://{d1}',
+            dw2.verifying_key: f'ipc://{d2}',
+            dw3.verifying_key: f'ipc://{d3}',
+            dw4.verifying_key: f'ipc://{d4}'
         }
 
         async def late_send():
@@ -769,9 +769,9 @@ class TestNewMasternode(TestCase):
             if not rr[0]:
                 self.assertEqual(rr[1], f'ipc://{d3}/incoming_work')
 
-        self.assertTrue(wi1.work[mnw1.verifying_key().hex()])
-        self.assertTrue(wi2.work[mnw1.verifying_key().hex()])
-        self.assertTrue(wi4.work[mnw1.verifying_key().hex()])
+        self.assertTrue(wi1.work[mnw1.verifying_key])
+        self.assertTrue(wi2.work[mnw1.verifying_key])
+        self.assertTrue(wi4.work[mnw1.verifying_key])
 
     def test_process_blocks_single_contact_updates_correctly(self):
         # Setup masternode
@@ -796,13 +796,13 @@ class TestNewMasternode(TestCase):
     #     constitution = {
     #         "masternodes": {
     #             "vk_list": [
-    #                 mnw1.verifying_key().hex(),
+    #                 mnw1.verifying_key,
     #             ],
     #             "min_quorum": 1
     #         },
     #         "delegates": {
     #             "vk_list": [
-    #                 dw1.verifying_key().hex(),
+    #                 dw1.verifying_key,
     #             ],
     #             "min_quorum": 1
     #         },
@@ -818,7 +818,7 @@ class TestNewMasternode(TestCase):
     #     n3 = '/tmp/n3'
     #     make_ipc(n3)
     #     d1 = Network(wallet=dw1, ctx=self.ctx, socket_base=f'ipc://{n3}',
-    #                  bootnodes=bootnodes, mn_to_find=[mnw1.verifying_key().hex()], del_to_find=[dw1.verifying_key().hex()])
+    #                  bootnodes=bootnodes, mn_to_find=[mnw1.verifying_key], del_to_find=[dw1.verifying_key])
     #
     #
     #
@@ -837,7 +837,7 @@ class TestNewMasternode(TestCase):
     #
     #     async def add_tx():
     #         await asyncio.sleep(0.4)
-    #         m.tx_batcher.queue.append(make_tx(mnw1.verifying_key()))
+    #         m.tx_batcher.queue.append(make_tx(mnw1.verifying_key))
     #
     #     async def boot():
     #         await m.start()
@@ -862,13 +862,13 @@ class TestNewMasternode(TestCase):
         constitution = {
             "masternodes": {
                 "vk_list": [
-                    mnw1.verifying_key().hex(),
+                    mnw1.verifying_key,
                 ],
                 "min_quorum": 1
             },
             "delegates": {
                 "vk_list": [
-                    dw1.verifying_key().hex(),
+                    dw1.verifying_key,
                 ],
                 "min_quorum": 1
             },
@@ -962,7 +962,7 @@ class TestNewMasternode(TestCase):
         )
 
         m.parameters.sockets = {
-            dw1.verifying_key().hex(): 'ipc:///tmp/n2'
+            dw1.verifying_key: 'ipc:///tmp/n2'
         }
 
         # For mocking

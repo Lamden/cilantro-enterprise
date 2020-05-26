@@ -62,7 +62,7 @@ class TestNode(TestCase):
     def test_catchup(self):
         driver = ContractDriver(driver=InMemDriver())
 
-        dl_vk = Wallet().verifying_key().hex()
+        dl_vk = Wallet().verifying_key
 
         mn_bootnode = 'tcp://127.0.0.1:18001'
         mn_wallet = Wallet()
@@ -81,14 +81,14 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=nw,
             constitution={
-                'masternodes': [mn_wallet.verifying_key().hex()],
+                'masternodes': [mn_wallet.verifying_key],
                 'delegates': [dl_vk]
             },
             driver=driver
         )
 
-        self.authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
-        self.authenticator.add_verifying_key(nw.verifying_key().hex())
+        self.authenticator.add_verifying_key(mn_wallet.verifying_key)
+        self.authenticator.add_verifying_key(nw.verifying_key)
         self.authenticator.add_verifying_key(dl_vk)
         self.authenticator.configure()
 
@@ -101,7 +101,7 @@ class TestNode(TestCase):
 
         tasks = asyncio.gather(
             mn_router.serve(),
-            node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key().hex()),
+            node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key),
             stop_server(mn_router, 1)
         )
 
@@ -130,15 +130,15 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=nw,
             constitution={
-                'masternodes': [mn_wallet.verifying_key().hex()],
-                'delegates': [dlw.verifying_key().hex()]
+                'masternodes': [mn_wallet.verifying_key],
+                'delegates': [dlw.verifying_key]
             },
             driver=driver
         )
 
-        self.authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
-        self.authenticator.add_verifying_key(nw.verifying_key().hex())
-        self.authenticator.add_verifying_key(dlw.verifying_key().hex())
+        self.authenticator.add_verifying_key(mn_wallet.verifying_key)
+        self.authenticator.add_verifying_key(nw.verifying_key)
+        self.authenticator.add_verifying_key(dlw.verifying_key)
         self.authenticator.configure()
 
         blocks = generate_blocks(4)
@@ -153,7 +153,7 @@ class TestNode(TestCase):
 
         tasks = asyncio.gather(
             mn_router.serve(),
-            node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key().hex()),
+            node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key),
             stop_server(mn_router, 1)
         )
 
@@ -174,8 +174,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -196,8 +196,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -218,8 +218,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -240,8 +240,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -261,8 +261,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -282,8 +282,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -306,8 +306,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver,
             store=True,
@@ -333,8 +333,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver,
             store=True,
@@ -356,8 +356,8 @@ class TestNode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver,
             store=True,
@@ -421,13 +421,13 @@ class TestNode(TestCase):
         )
 
         constitution = {
-            'masternodes': [mn_wallet.verifying_key().hex()],
-            'delegates': [dl_wallet.verifying_key().hex()]
+            'masternodes': [mn_wallet.verifying_key],
+            'delegates': [dl_wallet.verifying_key]
         }
 
         bootnodes = {
-            mn_wallet.verifying_key().hex(): mn_bootnode,
-            dl_wallet.verifying_key().hex(): dl_bootnode
+            mn_wallet.verifying_key: mn_bootnode,
+            dl_wallet.verifying_key: dl_bootnode
         }
 
         node_w = Wallet()
@@ -442,13 +442,13 @@ class TestNode(TestCase):
             bootnodes=bootnodes
         )
 
-        self.authenticator.add_verifying_key(mn_wallet.verifying_key().hex())
-        self.authenticator.add_verifying_key(dl_wallet.verifying_key().hex())
-        self.authenticator.add_verifying_key(node_w.verifying_key().hex())
+        self.authenticator.add_verifying_key(mn_wallet.verifying_key)
+        self.authenticator.add_verifying_key(dl_wallet.verifying_key)
+        self.authenticator.add_verifying_key(node_w.verifying_key)
 
         self.authenticator.configure()
 
-        vks = [mn_wallet.verifying_key().hex(), dl_wallet.verifying_key().hex()]
+        vks = [mn_wallet.verifying_key, dl_wallet.verifying_key]
 
         tasks = asyncio.gather(
             mn_router.serve(),
@@ -536,13 +536,13 @@ class TestNode(TestCase):
         dl_bootnode = 'tcp://127.0.0.1:18002'
 
         constitution = {
-            'masternodes': [mn_wallet.verifying_key().hex()],
-            'delegates': [dl_wallet.verifying_key().hex()]
+            'masternodes': [mn_wallet.verifying_key],
+            'delegates': [dl_wallet.verifying_key]
         }
 
         bootnodes = {
-            mn_wallet.verifying_key().hex(): mn_bootnode,
-            dl_wallet.verifying_key().hex(): dl_bootnode
+            mn_wallet.verifying_key: mn_bootnode,
+            dl_wallet.verifying_key: dl_bootnode
         }
 
         node_w = Wallet()
@@ -563,8 +563,8 @@ class TestNode(TestCase):
         m = node._get_member_peers('masternodes')
         d = node._get_member_peers('delegates')
 
-        self.assertEqual(m, {mn_wallet.verifying_key().hex(): mn_bootnode})
-        self.assertEqual(d, {dl_wallet.verifying_key().hex(): dl_bootnode})
+        self.assertEqual(m, {mn_wallet.verifying_key: mn_bootnode})
+        self.assertEqual(d, {dl_wallet.verifying_key: dl_bootnode})
 
     def test_get_delegate_peers_returns_deletates(self):
         mn_wallet = Wallet()
@@ -574,13 +574,13 @@ class TestNode(TestCase):
         dl_bootnode = 'tcp://127.0.0.1:18002'
 
         constitution = {
-            'masternodes': [mn_wallet.verifying_key().hex()],
-            'delegates': [dl_wallet.verifying_key().hex()]
+            'masternodes': [mn_wallet.verifying_key],
+            'delegates': [dl_wallet.verifying_key]
         }
 
         bootnodes = {
-            mn_wallet.verifying_key().hex(): mn_bootnode,
-            dl_wallet.verifying_key().hex(): dl_bootnode
+            mn_wallet.verifying_key: mn_bootnode,
+            dl_wallet.verifying_key: dl_bootnode
         }
 
         node_w = Wallet()
@@ -600,7 +600,7 @@ class TestNode(TestCase):
 
         d = node.get_delegate_peers()
 
-        self.assertEqual(d, {dl_wallet.verifying_key().hex(): dl_bootnode})
+        self.assertEqual(d, {dl_wallet.verifying_key: dl_bootnode})
 
     def test_get_masternode_peers_gets_masternodes(self):
         mn_wallet = Wallet()
@@ -610,13 +610,13 @@ class TestNode(TestCase):
         dl_bootnode = 'tcp://127.0.0.1:18002'
 
         constitution = {
-            'masternodes': [mn_wallet.verifying_key().hex()],
-            'delegates': [dl_wallet.verifying_key().hex()]
+            'masternodes': [mn_wallet.verifying_key],
+            'delegates': [dl_wallet.verifying_key]
         }
 
         bootnodes = {
-            mn_wallet.verifying_key().hex(): mn_bootnode,
-            dl_wallet.verifying_key().hex(): dl_bootnode
+            mn_wallet.verifying_key: mn_bootnode,
+            dl_wallet.verifying_key: dl_bootnode
         }
 
         node_w = Wallet()
@@ -636,4 +636,4 @@ class TestNode(TestCase):
 
         m = node.get_masternode_peers()
 
-        self.assertEqual(m, {mn_wallet.verifying_key().hex(): mn_bootnode})
+        self.assertEqual(m, {mn_wallet.verifying_key: mn_bootnode})

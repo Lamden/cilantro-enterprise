@@ -560,7 +560,7 @@ class TestSBCProcessor(TestCase):
             'subblock': 1,
             'transactions': [],
             'input_hash': input_hash.hex(),
-            'signer': w.verifying_key().hex(),
+            'signer': w.verifying_key,
             'merkle_tree': {
                 'signature': signature.hex()
             }
@@ -592,7 +592,7 @@ class TestSBCProcessor(TestCase):
             'subblock': 1,
             'transactions': [tx_1, tx_2],
             'input_hash': input_hash.hex(),
-            'signer': w.verifying_key().hex(),
+            'signer': w.verifying_key,
             'merkle_tree': {
                 'signature': signature.hex(),
                 'leaves': expected_tree
@@ -624,7 +624,7 @@ class TestSBCProcessor(TestCase):
             'subblock': 1,
             'transactions': [tx_1, tx_2],
             'input_hash': input_hash.hex(),
-            'signer': w.verifying_key().hex(),
+            'signer': w.verifying_key,
             'merkle_tree': {
                 'signature': signature.hex(),
                 'leaves': expected_tree[0:1]
@@ -658,7 +658,7 @@ class TestSBCProcessor(TestCase):
             'subblock': 1,
             'transactions': [tx_1, tx_2],
             'input_hash': input_hash.hex(),
-            'signer': w.verifying_key().hex(),
+            'signer': w.verifying_key,
             'merkle_tree': {
                 'signature': signature.hex(),
                 'leaves': expected_tree
@@ -690,7 +690,7 @@ class TestSBCProcessor(TestCase):
             'subblock': 1,
             'transactions': [tx_1, tx_2],
             'input_hash': input_hash.hex(),
-            'signer': w.verifying_key().hex(),
+            'signer': w.verifying_key,
             'merkle_tree': {
                 'signature': signature.hex(),
                 'leaves': expected_tree
@@ -723,7 +723,7 @@ class TestSBCProcessor(TestCase):
             'subblock': 0,
             'transactions': [tx_1_1, tx_1_2],
             'input_hash': input_hash.hex(),
-            'signer': w.verifying_key().hex(),
+            'signer': w.verifying_key,
             'merkle_tree': {
                 'signature': signature.hex(),
                 'leaves': expected_tree
@@ -753,7 +753,7 @@ class TestSBCProcessor(TestCase):
             'subblock': 1,
             'transactions': [tx_2_1, tx_2_2],
             'input_hash': input_hash.hex(),
-            'signer': w.verifying_key().hex(),
+            'signer': w.verifying_key,
             'merkle_tree': {
                 'signature': signature.hex(),
                 'leaves': expected_tree

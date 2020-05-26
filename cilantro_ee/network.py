@@ -56,7 +56,7 @@ class IdentityProcessor(router.Processor):
 
         proof = {
             'signature': signature,
-            'vk': self.wallet.verifying_key().hex(),
+            'vk': self.wallet.verifying_key,
             'timestamp': now,
             'ip': self.ip_string
         }
@@ -106,12 +106,12 @@ class Network:
         self.ctx = ctx
 
         self.peers = {
-            self.wallet.verifying_key().hex(): ip_string
+            self.wallet.verifying_key: ip_string
         }
 
         # Add processors to router to accept and process networking messages
         self.ip = ip_string
-        self.vk = self.wallet.verifying_key().hex()
+        self.vk = self.wallet.verifying_key
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers, wallet=self.wallet)
         self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
 
@@ -120,7 +120,7 @@ class Network:
 
         self.join_msg = {
             'ip': ip_string,
-            'vk': self.wallet.verifying_key().hex()
+            'vk': self.wallet.verifying_key
         }
 
     async def start(self, bootnodes: dict, vks: list):

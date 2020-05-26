@@ -38,12 +38,12 @@ def trigger(pkg=None, iaddr=None):
 
     my_wallet = verify_access()
     pepper = pkg  #TODO replace with verified pepper pkg
-    kwargs = {'pepper': pepper, 'initiator_vk': my_wallet.verifying_key().hex()}
-    vk = my_wallet.verifying_key()
+    kwargs = {'pepper': pepper, 'initiator_vk': my_wallet.verifying_key}
+    vk = my_wallet.verifying_key
 
     SERVER = f'http://{iaddr}:18080'
 
-    nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key().hex()))
+    nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key))
     nonce = nonce_req.json()['nonce']
 
     #TODO bail out if vk is not in list of master nodes
@@ -82,14 +82,14 @@ def vote(iaddr):
 
     SERVER = f'http://{iaddr}:18080'
 
-    nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key().hex()))
+    nonce_req = requests.get('{}/nonce/{}'.format(SERVER, my_wallet.verifying_key))
     nonce = nonce_req.json()['nonce']
-    vk = my_wallet.verifying_key()
+    vk = my_wallet.verifying_key
 
-    kwargs = {'vk': my_wallet.verifying_key().hex()}
+    kwargs = {'vk': my_wallet.verifying_key}
 
     pack = TransactionBuilder(
-        sender=my_wallet.verifying_key(),
+        sender=my_wallet.verifying_key,
         contract='upgrade',
         function='vote',
         kwargs=kwargs,

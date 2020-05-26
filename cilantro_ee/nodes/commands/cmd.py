@@ -15,8 +15,8 @@ class Cilparser:
     def trigger(self, sk=None):
         my_wallet = Wallet(seed=sk)
         pepper = 'RAMDOM' # TODO replace with verified pepper pkg
-        kwargs = {'pepper': pepper,'vk': my_wallet.verifying_key()}
-        vk = my_wallet.verifying_key()
+        kwargs = {'pepper': pepper,'vk': my_wallet.verifying_key}
+        vk = my_wallet.verifying_key
 
         #TODO bail out if vk is not in list of master nodes
 
@@ -37,15 +37,15 @@ class Cilparser:
 
     def vote(self, sk=None):
         my_wallet = Wallet(seed=sk)
-        kwargs = {'vk': my_wallet.verifying_key()}
+        kwargs = {'vk': my_wallet.verifying_key}
 
         pack = TransactionBuilder(
-            sender=my_wallet.verifying_key(),
+            sender=my_wallet.verifying_key,
             contract='upgrade',
             function='vote',
             kwargs=kwargs,
             stamps=1_000_000,
-            processor=my_wallet.verifying_key(),
+            processor=my_wallet.verifying_key,
             nonce=0
         )
 
@@ -56,15 +56,15 @@ class Cilparser:
 
     def check_ready_quorum(self, sk=None):
         my_wallet = Wallet(seed=sk)
-        kwargs = {'vk': my_wallet.verifying_key()}
+        kwargs = {'vk': my_wallet.verifying_key}
 
         pack = TransactionBuilder(
-            sender=my_wallet.verifying_key(),
+            sender=my_wallet.verifying_key,
             contract='upgrade',
             function='check_vote_state',
             kwargs=kwargs,
             stamps=1_000_000,
-            processor=my_wallet.verifying_key(),
+            processor=my_wallet.verifying_key,
             nonce=0
         )
 

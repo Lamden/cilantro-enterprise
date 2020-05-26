@@ -126,8 +126,8 @@ class TestBlockService(TestCase):
         vk = Wallet()
         w = Wallet()
 
-        self.authenticator.add_verifying_key(vk.verifying_key().hex())
-        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.add_verifying_key(vk.verifying_key)
+        self.authenticator.add_verifying_key(w.verifying_key)
         self.authenticator.configure()
 
         mn_bootnode = 'tcp://127.0.0.1:18001'
@@ -143,7 +143,7 @@ class TestBlockService(TestCase):
         async def send_msg():
             res = await base.get_latest_block_height(
                 ip=mn_bootnode,
-                vk=vk.verifying_key().hex(),
+                vk=vk.verifying_key,
                 wallet=w,
                 ctx=self.ctx
             )
@@ -172,8 +172,8 @@ class TestBlockService(TestCase):
         vk = Wallet()
         w = Wallet()
 
-        self.authenticator.add_verifying_key(vk.verifying_key().hex())
-        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.add_verifying_key(vk.verifying_key)
+        self.authenticator.add_verifying_key(w.verifying_key)
         self.authenticator.configure()
 
         mn_bootnode = 'tcp://127.0.0.1:18001'
@@ -190,7 +190,7 @@ class TestBlockService(TestCase):
             res = await base.get_block(
                 block_num=1337,
                 ip=mn_bootnode,
-                vk=vk.verifying_key().hex(),
+                vk=vk.verifying_key,
                 wallet=w,
                 ctx=self.ctx
             )
@@ -219,8 +219,8 @@ class TestBlockService(TestCase):
         vk = Wallet()
         w = Wallet()
 
-        self.authenticator.add_verifying_key(vk.verifying_key().hex())
-        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.add_verifying_key(vk.verifying_key)
+        self.authenticator.add_verifying_key(w.verifying_key)
         self.authenticator.configure()
 
         mn_bootnode = 'tcp://127.0.0.1:18001'
@@ -237,7 +237,7 @@ class TestBlockService(TestCase):
             res = await base.get_block(
                 block_num=7331,
                 ip=mn_bootnode,
-                vk=vk.verifying_key().hex(),
+                vk=vk.verifying_key,
                 wallet=w,
                 ctx=self.ctx
             )

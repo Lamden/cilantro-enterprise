@@ -14,8 +14,8 @@ class TestAuthenticator(TestCase):
         self.ctx = zmq.asyncio.Context()
         self.w = Wallet()
 
-        self.masternodes = [Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), Wallet().verifying_key().hex()]
-        self.delegates = [Wallet().verifying_key().hex(), Wallet().verifying_key().hex(), Wallet().verifying_key().hex()]
+        self.masternodes = [Wallet().verifying_key, Wallet().verifying_key, Wallet().verifying_key]
+        self.delegates = [Wallet().verifying_key, Wallet().verifying_key, Wallet().verifying_key]
 
         self.c = ContractingClient()
         self.c.flush()
@@ -49,9 +49,9 @@ class TestAuthenticator(TestCase):
 
     def test_add_governance_sockets_all_creates_files(self):
         fake_mns = [
-            Wallet().verifying_key().hex(),
-            Wallet().verifying_key().hex(),
-            Wallet().verifying_key().hex()
+            Wallet().verifying_key,
+            Wallet().verifying_key,
+            Wallet().verifying_key
         ]
 
         self.c.set_var(
@@ -61,11 +61,11 @@ class TestAuthenticator(TestCase):
             value=fake_mns
         )
 
-        fake_od_m = Wallet().verifying_key().hex()
+        fake_od_m = Wallet().verifying_key
 
         fake_dels = [
-            Wallet().verifying_key().hex(),
-            Wallet().verifying_key().hex()
+            Wallet().verifying_key,
+            Wallet().verifying_key
         ]
 
         self.c.set_var(
@@ -75,7 +75,7 @@ class TestAuthenticator(TestCase):
             value=fake_dels
         )
 
-        fake_od_d = Wallet().verifying_key().hex()
+        fake_od_d = Wallet().verifying_key
 
         self.c.set_var(
             contract='elect_masternodes',
@@ -108,13 +108,13 @@ class TestAuthenticator(TestCase):
         w3 = Wallet()
 
         bootnodes = {
-            w1.verifying_key().hex(): '127.0.0.1:18000',
-            w2.verifying_key().hex(): '127.0.0.1:18001',
-            w3.verifying_key().hex(): '127.0.0.1:18002',
+            w1.verifying_key: '127.0.0.1:18000',
+            w2.verifying_key: '127.0.0.1:18001',
+            w3.verifying_key: '127.0.0.1:18002',
         }
 
         s = SocketAuthenticator(client=self.c, ctx=self.ctx, bootnodes=bootnodes)
 
-        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w1.verifying_key().hex()}.key')))
-        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w2.verifying_key().hex()}.key')))
-        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w3.verifying_key().hex()}.key')))
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w1.verifying_key}.key')))
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w2.verifying_key}.key')))
+        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{w3.verifying_key}.key')))

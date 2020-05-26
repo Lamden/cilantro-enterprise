@@ -6,21 +6,10 @@ import secrets
 from . import zbase
 
 
-def sign(sk: bytes, msg: bytes):
-    key = nacl.signing.SigningKey(seed=sk)
-    sig = key.sign(msg)
-    return sig.signature
-
-
-def verify(vk: bytes, msg: bytes, signature: bytes):
-    if type(vk) == str:
-        vk = bytes.fromhex(vk)
-
-    if type(msg) == str:
-        msg = bytes.fromhex(msg)
-
-    if type(signature) == str:
-        signature = bytes.fromhex(signature)
+def verify(vk: str, msg: str, signature: str):
+    vk = bytes.fromhex(vk)
+    msg = msg.encode()
+    signature = bytes.fromhex(signature)
 
     vk = nacl.signing.VerifyKey(vk)
     try:
@@ -44,32 +33,17 @@ class Wallet:
         self.curve_sk = z85.encode(self.sk.to_curve25519_private_key().encode())
         self.curve_vk = z85.encode(self.vk.to_curve25519_public_key().encode())
 
-    @staticmethod
-    def _format_key(k, as_hex=False):
-        fk = k.encode()
-        if as_hex:
-            return fk.hex()
-        return fk
+    @property
+    def signing_key(self):
+        return self.sk.encode().hex()
 
-    def signing_key(self, as_hex=False):
-        return self._format_key(self.sk, as_hex=as_hex)
+    @property
+    def verifying_key(self):
+        return self.vk.encode().hex()
 
-    def verifying_key(self, as_hex=False):
-        return self._format_key(self.vk, as_hex=as_hex)
-
-    def sign(self, msg: str, as_hex=False):
-        msg = bytes.fromhex(msg)
-        sig = self.sk.sign(msg)
-        if as_hex:
-            return sig.signature.hex()
-        return sig.signature
-
-    def verify(self, msg: bytes, signature: bytes):
-        try:
-            self.vk.verify(msg, signature)
-        except nacl.exceptions.BadSignatureError:
-            return False
-        return True
+    def sign(self, msg: str):
+        sig = self.sk.sign(msg.encode())
+        return sig.signature.hex()
 
     @property
     def vk_pretty(self):

@@ -31,20 +31,20 @@ mnw3 = Wallet()
 dw1 = Wallet()
 
 constitution = {
-        'masternodes': [mnw1.verifying_key().hex()],
-        'delegates': [dw1.verifying_key().hex()],
+        'masternodes': [mnw1.verifying_key],
+        'delegates': [dw1.verifying_key],
         'masternode_min_quorum': 1,
         'delegate_min_quorum': 1,
     }
 
 constitution2 = {
         'masternodes': [
-            mnw1.verifying_key().hex(),
-            mnw2.verifying_key().hex(),
-            mnw3.verifying_key().hex()
+            mnw1.verifying_key,
+            mnw2.verifying_key,
+            mnw3.verifying_key
         ],
         'delegates': [
-            dw1.verifying_key().hex(),
+            dw1.verifying_key,
         ],
         'masternode_min_quorum': 1,
         'delegate_min_quorum': 1,
@@ -64,7 +64,7 @@ def make_ipc(p):
 def make_tx(processor, contract_name, function_name, kwargs={}):
     w = Wallet()
     batch = TransactionBuilder(
-        sender=w.verifying_key(),
+        sender=w.verifying_key,
         contract=contract_name,
         function=function_name,
         kwargs=kwargs,
@@ -85,7 +85,7 @@ def make_tx(processor, contract_name, function_name, kwargs={}):
                                        config.INDEX_SEPARATOR,
                                        balances_hash,
                                        config.DELIMITER,
-                                       w.verifying_key().hex())
+                                       w.verifying_key)
 
     driver = ContractDriver()
     driver.set(balances_key, 1_000_000)
@@ -167,7 +167,7 @@ class TestDelegateFullFlow(TestCase):
         d.running = True
 
         d.parameters.sockets = {
-            mnw1.verifying_key().hex(): 'ipc:///tmp/n2'
+            mnw1.verifying_key: 'ipc:///tmp/n2'
         }
 
         async def run():
@@ -239,7 +239,7 @@ class TestDelegateFullFlow(TestCase):
         d.running = True
 
         d.parameters.sockets = {
-            mnw1.verifying_key().hex(): 'ipc:///tmp/n2'
+            mnw1.verifying_key: 'ipc:///tmp/n2'
         }
 
         args_1 = ('hi', 'hello')
@@ -247,9 +247,9 @@ class TestDelegateFullFlow(TestCase):
         args_3 = ('yeehaw', 'p')
 
         mock_master.tx_batcher.queue.extend([
-            make_tx(mnw1.verifying_key(), *args_1),
-            make_tx(mnw1.verifying_key(), *args_2),
-            make_tx(mnw1.verifying_key(), *args_3),
+            make_tx(mnw1.verifying_key, *args_1),
+            make_tx(mnw1.verifying_key, *args_2),
+            make_tx(mnw1.verifying_key, *args_3),
         ])
 
         async def stop():
@@ -293,8 +293,8 @@ class TestDelegateFullFlow(TestCase):
         d.running = True
 
         d.parameters.sockets = {
-            mnw1.verifying_key().hex(): 'ipc:///tmp/n2',
-            mnw2.verifying_key().hex(): 'ipc:///tmp/n3'
+            mnw1.verifying_key: 'ipc:///tmp/n2',
+            mnw2.verifying_key: 'ipc:///tmp/n3'
         }
 
         mock_master.send_to_work_socket()
@@ -304,9 +304,9 @@ class TestDelegateFullFlow(TestCase):
         args_3 = ('yeehaw', 'p')
 
         mock_master.tx_batcher.queue.extend([
-            make_tx(mnw1.verifying_key(), *args_1),
-            make_tx(mnw1.verifying_key(), *args_2),
-            make_tx(mnw1.verifying_key(), *args_3),
+            make_tx(mnw1.verifying_key, *args_1),
+            make_tx(mnw1.verifying_key, *args_2),
+            make_tx(mnw1.verifying_key, *args_3),
         ])
 
         ### TXS for master 2
@@ -315,9 +315,9 @@ class TestDelegateFullFlow(TestCase):
         args_6 = ('456', 'zzz')
 
         mock_master_2.tx_batcher.queue.extend([
-            make_tx(mnw2.verifying_key(), *args_4),
-            make_tx(mnw2.verifying_key(), *args_5),
-            make_tx(mnw2.verifying_key(), *args_6),
+            make_tx(mnw2.verifying_key, *args_4),
+            make_tx(mnw2.verifying_key, *args_5),
+            make_tx(mnw2.verifying_key, *args_6),
         ])
 
         async def stop():
@@ -363,9 +363,9 @@ class TestDelegateFullFlow(TestCase):
         d.running = True
 
         d.parameters.sockets = {
-            mnw1.verifying_key().hex(): 'ipc:///tmp/n2',
-            mnw2.verifying_key().hex(): 'ipc:///tmp/n3',
-            mnw3.verifying_key().hex(): 'ipc:///'
+            mnw1.verifying_key: 'ipc:///tmp/n2',
+            mnw2.verifying_key: 'ipc:///tmp/n3',
+            mnw3.verifying_key: 'ipc:///'
         }
 
         args_1 = ('hi', 'hello')
@@ -373,9 +373,9 @@ class TestDelegateFullFlow(TestCase):
         args_3 = ('yeehaw', 'p')
 
         mock_master.tx_batcher.queue.extend([
-            make_tx(mnw1.verifying_key(), *args_1),
-            make_tx(mnw1.verifying_key(), *args_2),
-            make_tx(mnw1.verifying_key(), *args_3),
+            make_tx(mnw1.verifying_key, *args_1),
+            make_tx(mnw1.verifying_key, *args_2),
+            make_tx(mnw1.verifying_key, *args_3),
         ])
 
         ### TXS for master 2
@@ -384,9 +384,9 @@ class TestDelegateFullFlow(TestCase):
         args_6 = ('456', 'zzz')
 
         mock_master_2.tx_batcher.queue.extend([
-            make_tx(mnw2.verifying_key(), *args_4),
-            make_tx(mnw2.verifying_key(), *args_5),
-            make_tx(mnw2.verifying_key(), *args_6),
+            make_tx(mnw2.verifying_key, *args_4),
+            make_tx(mnw2.verifying_key, *args_5),
+            make_tx(mnw2.verifying_key, *args_6),
         ])
 
         async def stop():

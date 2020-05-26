@@ -29,7 +29,7 @@ class TestProcessors(TestCase):
         self.router = Router(socket_id=self.base_tcp, ctx=self.ctx, wallet=self.base_wallet, secure=True)
 
         self.authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)
-        self.authenticator.add_verifying_key(self.base_wallet.verifying_key().hex())
+        self.authenticator.add_verifying_key(self.base_wallet.verifying_key)
         self.authenticator.configure()
 
     def tearDown(self):
@@ -109,11 +109,11 @@ class TestProcessors(TestCase):
     def test_join_processor_good_message_offline_returns_none(self):
         w = Wallet()
 
-        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.add_verifying_key(w.verifying_key)
         self.authenticator.configure()
 
         msg = {
-            'vk': w.verifying_key().hex(),
+            'vk': w.verifying_key,
             'ip': 'tcp://127.0.0.1:18000'
         }
 
@@ -129,11 +129,11 @@ class TestProcessors(TestCase):
     def test_join_processor_good_message_bad_proof_returns_none(self):
         w = Wallet()
 
-        self.authenticator.add_verifying_key(w.verifying_key().hex())
+        self.authenticator.add_verifying_key(w.verifying_key)
         self.authenticator.configure()
 
         msg = {
-            'vk': w.verifying_key().hex(),
+            'vk': w.verifying_key,
             'ip': 'tcp://127.0.0.1:18000'
         }
 
@@ -148,7 +148,7 @@ class TestProcessors(TestCase):
                 msg={"howdy": 123},
                 service=JOIN_SERVICE,
                 wallet=w,
-                vk=self.base_wallet.verifying_key().hex(),
+                vk=self.base_wallet.verifying_key,
                 ip=self.base_tcp,
                 ctx=self.ctx
             )
@@ -167,7 +167,7 @@ class TestProcessors(TestCase):
     def test_join_processor_good_message_adds_to_peers(self):
         # Create a new peer (router and service)
         peer_to_add = Wallet()
-        self.authenticator.add_verifying_key(peer_to_add.verifying_key().hex())
+        self.authenticator.add_verifying_key(peer_to_add.verifying_key)
         self.authenticator.configure()
 
         other_router = Router(
@@ -187,7 +187,7 @@ class TestProcessors(TestCase):
         ###
 
         peers = {
-            self.base_wallet.verifying_key().hex(): 'tcp://127.0.0.1:18001'
+            self.base_wallet.verifying_key: 'tcp://127.0.0.1:18001'
         }
 
         j = JoinProcessor(
@@ -197,7 +197,7 @@ class TestProcessors(TestCase):
         )
 
         msg = {
-            'vk': peer_to_add.verifying_key().hex(),
+            'vk': peer_to_add.verifying_key,
             'ip': 'tcp://127.0.0.1:18000'
         }
 
@@ -209,12 +209,12 @@ class TestProcessors(TestCase):
 
         self.loop.run_until_complete(tasks)
 
-        self.assertEqual(peers[peer_to_add.verifying_key().hex()], 'tcp://127.0.0.1:18000')
+        self.assertEqual(peers[peer_to_add.verifying_key], 'tcp://127.0.0.1:18000')
 
     def test_join_processor_good_message_forwards_to_peers_and_returns_to_sender(self):
         # JOINER PEER
         peer_to_add = Wallet()
-        self.authenticator.add_verifying_key(peer_to_add.verifying_key().hex())
+        self.authenticator.add_verifying_key(peer_to_add.verifying_key)
         self.authenticator.configure()
 
         other_router = Router(
@@ -235,11 +235,11 @@ class TestProcessors(TestCase):
 
         existing_peer = Wallet()
         peers = {
-            existing_peer.verifying_key().hex(): 'tcp://127.0.0.1:18001'
+            existing_peer.verifying_key: 'tcp://127.0.0.1:18001'
         }
 
         # EXISTING PEER
-        self.authenticator.add_verifying_key(existing_peer.verifying_key().hex())
+        self.authenticator.add_verifying_key(existing_peer.verifying_key)
         self.authenticator.configure()
 
         existing_router = Router(
@@ -266,7 +266,7 @@ class TestProcessors(TestCase):
         ###
 
         peers_2 = {
-            existing_peer.verifying_key().hex(): 'tcp://127.0.0.1:18001'
+            existing_peer.verifying_key: 'tcp://127.0.0.1:18001'
         }
         j = JoinProcessor(
             ctx=self.ctx,
@@ -275,7 +275,7 @@ class TestProcessors(TestCase):
         )
 
         msg = {
-            'vk': peer_to_add.verifying_key().hex(),
+            'vk': peer_to_add.verifying_key,
             'ip': 'tcp://127.0.0.1:18000'
         }
 
@@ -345,10 +345,10 @@ class TestNetwork(TestCase):
         w_2 = Wallet()
 
         peers_1 = {
-            'peers': [{'vk': w_1.verifying_key().hex(), 'ip': bootnodes[0]}]
+            'peers': [{'vk': w_1.verifying_key, 'ip': bootnodes[0]}]
         }
         peers_2 = {
-            'peers': [{'vk': w_2.verifying_key().hex(), 'ip': bootnodes[1]}]
+            'peers': [{'vk': w_2.verifying_key, 'ip': bootnodes[1]}]
         }
 
         router_1 = router.Router(
@@ -367,20 +367,20 @@ class TestNetwork(TestCase):
         )
         router_2.add_service('join', PeerProcessor2())
 
-        self.authenticator.add_verifying_key(w_1.verifying_key().hex())
-        self.authenticator.add_verifying_key(w_2.verifying_key().hex())
-        self.authenticator.add_verifying_key(me.verifying_key().hex())
+        self.authenticator.add_verifying_key(w_1.verifying_key)
+        self.authenticator.add_verifying_key(w_2.verifying_key)
+        self.authenticator.add_verifying_key(me.verifying_key)
         self.authenticator.configure()
 
         real_bootnodes = {
-            w_1.verifying_key().hex(): bootnodes[0],
-            w_2.verifying_key().hex(): bootnodes[1]
+            w_1.verifying_key: bootnodes[0],
+            w_2.verifying_key: bootnodes[1]
         }
 
         tasks = asyncio.gather(
             router_1.serve(),
             router_2.serve(),
-            n.start(real_bootnodes, [w_1.verifying_key().hex(), w_2.verifying_key().hex()]),
+            n.start(real_bootnodes, [w_1.verifying_key, w_2.verifying_key]),
             stop_server(router_1, 1),
             stop_server(router_2, 1)
         )
@@ -388,9 +388,9 @@ class TestNetwork(TestCase):
         self.loop.run_until_complete(tasks)
 
         expected = {
-            w_1.verifying_key().hex(): bootnodes[0],
-            w_2.verifying_key().hex(): bootnodes[1],
-            me.verifying_key().hex(): 'tcp://127.0.0.1:18002'
+            w_1.verifying_key: bootnodes[0],
+            w_2.verifying_key: bootnodes[1],
+            me.verifying_key: 'tcp://127.0.0.1:18002'
         }
 
         self.assertDictEqual(n.peers, expected)
@@ -405,9 +405,9 @@ class TestNetwork(TestCase):
                'tcp://127.0.0.1:18003']
 
         bootnodes = {
-            w1.verifying_key().hex(): ips[0],
-            w2.verifying_key().hex(): ips[1],
-            w3.verifying_key().hex(): ips[2],
+            w1.verifying_key: ips[0],
+            w2.verifying_key: ips[1],
+            w3.verifying_key: ips[2],
         }
 
         for vk in bootnodes.keys():
@@ -424,9 +424,9 @@ class TestNetwork(TestCase):
         r3 = Router(socket_id=ips[2], ctx=self.ctx, wallet=w3, secure=True)
         n3 = Network(wallet=w3, ip_string=ips[2], ctx=self.ctx, router=r3)
 
-        vks = [w1.verifying_key().hex(),
-               w2.verifying_key().hex(),
-               w3.verifying_key().hex()]
+        vks = [w1.verifying_key,
+               w2.verifying_key,
+               w3.verifying_key]
 
         async def stop_server(s: Router, timeout=0.2):
             await asyncio.sleep(timeout)

@@ -1,5 +1,5 @@
 from cilantro_ee.crypto import transaction
-from cilantro_ee.crypto.wallet import Wallet
+from cilantro_ee.crypto.wallet import Wallet, verify
 from cilantro_ee.crypto import canonical
 from contracting.db.driver import decode
 from contracting.client import ContractingClient
@@ -360,7 +360,7 @@ def get():
             stamp_cost=20_000
         )
 
-        self.assertTrue(w.verify(bytes.fromhex(results[0]['input_hash']), bytes.fromhex(results[0]['merkle_tree']['signature'])))
+        self.assertTrue(verify(w.verifying_key, results[0]['input_hash'], results[0]['merkle_tree']['signature']))
 
         h = hashlib.sha3_256()
         h.update(bytes.fromhex(results[0]['input_hash']))

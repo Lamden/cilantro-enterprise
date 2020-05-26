@@ -1,7 +1,6 @@
 import time
 
 from cilantro_ee.crypto.canonical import format_dictionary
-from cilantro_ee.crypto.wallet import sign
 from cilantro_ee.formatting import check_format, rules, primatives
 from contracting.db.encoder import encode
 from cilantro_ee import storage
@@ -136,13 +135,13 @@ def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce:
         'kwargs': kwargs,
         'nonce': nonce,
         'processor': processor,
-        'sender': wallet.verifying_key().hex(),
+        'sender': wallet.verifying_key,
         'stamps_supplied': stamps,
     }
 
     assert check_format(payload, rules.TRANSACTION_PAYLOAD_RULES), 'Invalid payload provided!'
 
-    signature = sign(wallet.signing_key(), encode(payload).encode())
+    signature = wallet.sign(encode(payload))
 
     metadata = {
         'signature': signature.hex(),

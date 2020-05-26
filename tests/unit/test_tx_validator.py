@@ -54,9 +54,9 @@ class TestTransactionBuilder(TestCase):
         decoded = decode(tx)
 
         res = verify(
-            w.verifying_key(),
+            w.verifying_key,
             encode(decoded['payload']).encode(),
-            bytes.fromhex(decoded['metadata']['signature'])
+            decoded['metadata']['signature']
         )
 
         self.assertTrue(res)
@@ -65,7 +65,7 @@ class TestTransactionBuilder(TestCase):
         w = Wallet()
 
         expected = {
-                'sender': w.verifying_key().hex(),
+                'sender': w.verifying_key,
                 'processor': 'b' * 64,
                 'stamps_supplied': 123,
                 'nonce': 0,

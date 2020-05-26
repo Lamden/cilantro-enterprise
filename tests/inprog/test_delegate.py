@@ -72,7 +72,7 @@ def get_tx_batch():
                                        config.INDEX_SEPARATOR,
                                        balances_hash,
                                        config.DELIMITER,
-                                       w.verifying_key().hex())
+                                       w.verifying_key)
 
     driver = StateDriver()
     driver.set(balances_key, 1_000_000)
@@ -98,7 +98,7 @@ def get_tx_batch():
                                        config.INDEX_SEPARATOR,
                                        balances_hash,
                                        config.DELIMITER,
-                                       w.verifying_key().hex())
+                                       w.verifying_key)
 
     driver = StateDriver()
     driver.set(balances_key, 1_000_000)
@@ -367,13 +367,13 @@ dw1 = Wallet()
 constitution = {
     "masternodes": {
         "vk_list": [
-            mnw1.verifying_key().hex(),
+            mnw1.verifying_key,
         ],
         "min_quorum": 1
     },
     "delegates": {
         "vk_list": [
-            dw1.verifying_key().hex(),
+            dw1.verifying_key,
         ],
         "min_quorum": 1
     },
@@ -473,12 +473,12 @@ class TestDelegate(TestCase):
 
         # Add a single peer that we control
         b.parameters.sockets = {
-            mnw1.verifying_key().hex(): 'ipc:///tmp/n1'
+            mnw1.verifying_key: 'ipc:///tmp/n1'
         }
 
         put_test_contract(self.client)
 
-        b.work_inbox.work[mnw1.verifying_key().hex()] = get_tx_batch()
+        b.work_inbox.work[mnw1.verifying_key] = get_tx_batch()
 
         async def stop():
             await asyncio.sleep(1)

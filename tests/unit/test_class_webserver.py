@@ -37,13 +37,13 @@ class TestClassWebserver(TestCase):
 
     def test_get_id(self):
         _, response = self.ws.app.test_client.get('/id')
-        self.assertDictEqual(response.json, {'verifying_key': self.w.verifying_key().hex()})
+        self.assertDictEqual(response.json, {'verifying_key': self.w.verifying_key})
 
     def test_get_nonce_pending_nonce_is_none_returns_0(self):
         w2 = Wallet()
-        _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key().hex()))
+        _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key))
 
-        expected = {'nonce': 0, 'processor': self.w.verifying_key().hex(), 'sender': w2.verifying_key().hex()}
+        expected = {'nonce': 0, 'processor': self.w.verifying_key, 'sender': w2.verifying_key}
 
         self.assertDictEqual(response.json, expected)
 
@@ -51,25 +51,25 @@ class TestClassWebserver(TestCase):
         w2 = Wallet()
 
         self.ws.nonces.set_pending_nonce(
-            sender=w2.verifying_key().hex(),
-            processor=self.w.verifying_key().hex(),
+            sender=w2.verifying_key,
+            processor=self.w.verifying_key,
             value=123
         )
 
-        _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key().hex()))
+        _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key))
 
-        expected = {'nonce': 123, 'processor': self.w.verifying_key().hex(), 'sender': w2.verifying_key().hex()}
+        expected = {'nonce': 123, 'processor': self.w.verifying_key, 'sender': w2.verifying_key}
 
         self.assertDictEqual(response.json, expected)
 
     def test_get_nonce_pending_nonce_is_none_but_nonce_is_not_returns_nonce(self):
         w2 = Wallet()
 
-        self.ws.nonces.set_nonce(processor=self.w.verifying_key().hex(), sender=w2.verifying_key().hex(), value=555)
+        self.ws.nonces.set_nonce(processor=self.w.verifying_key, sender=w2.verifying_key, value=555)
 
-        _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key().hex()))
+        _, response = self.ws.app.test_client.get('/nonce/{}'.format(w2.verifying_key))
 
-        expected = {'nonce': 555, 'processor': self.w.verifying_key().hex(), 'sender': w2.verifying_key().hex()}
+        expected = {'nonce': 555, 'processor': self.w.verifying_key, 'sender': w2.verifying_key}
 
         self.assertDictEqual(response.json, expected)
 
@@ -373,7 +373,7 @@ def get():
 
         tx = build_transaction(
             wallet=Wallet(),
-            processor=self.ws.wallet.verifying_key().hex(),
+            processor=self.ws.wallet.verifying_key,
             stamps=123,
             nonce=0,
             contract='currency',
@@ -393,7 +393,7 @@ def get():
 
         tx = build_transaction(
             wallet=Wallet(),
-            processor=self.ws.wallet.verifying_key().hex(),
+            processor=self.ws.wallet.verifying_key,
             stamps=123,
             nonce=0,
             contract='currency',
@@ -440,7 +440,7 @@ def get():
     def test_tx_with_error_returns_exception(self):
         tx = build_transaction(
             wallet=Wallet(),
-            processor=self.ws.wallet.verifying_key().hex(),
+            processor=self.ws.wallet.verifying_key,
             stamps=123,
             nonce=0,
             contract='currency',

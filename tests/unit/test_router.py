@@ -334,8 +334,8 @@ class TestJSONAsyncInbox(TestCase):
         w = Wallet()
         w2 = Wallet()
 
-        authenticator.add_verifying_key(w.verifying_key().hex())
-        authenticator.add_verifying_key(w2.verifying_key().hex())
+        authenticator.add_verifying_key(w.verifying_key)
+        authenticator.add_verifying_key(w2.verifying_key)
         authenticator.configure()
 
         m = router.JSONAsyncInbox(
@@ -352,7 +352,7 @@ class TestJSONAsyncInbox(TestCase):
                 msg={'hello': 'there'},
                 service='something',
                 wallet=w2,
-                vk=w.verifying_key().hex(),
+                vk=w.verifying_key,
                 ip='tcp://127.0.0.1:10000',
                 ctx=self.ctx
             )
@@ -376,8 +376,8 @@ class TestJSONAsyncInbox(TestCase):
         w = Wallet()
         w2 = Wallet()
 
-        authenticator.add_verifying_key(w.verifying_key().hex())
-        authenticator.add_verifying_key(w2.verifying_key().hex())
+        authenticator.add_verifying_key(w.verifying_key)
+        authenticator.add_verifying_key(w2.verifying_key)
         authenticator.configure()
 
         class MockProcessor(router.Processor):
@@ -402,7 +402,7 @@ class TestJSONAsyncInbox(TestCase):
                 msg={'hello': 'there'},
                 service='something',
                 wallet=w2,
-                vk=w.verifying_key().hex(),
+                vk=w.verifying_key,
                 ip='tcp://127.0.0.1:10000',
                 ctx=self.ctx
             )
@@ -428,8 +428,8 @@ class TestJSONAsyncInbox(TestCase):
         w = Wallet()
         w2 = Wallet()
 
-        authenticator.add_verifying_key(w.verifying_key().hex())
-        authenticator.add_verifying_key(w2.verifying_key().hex())
+        authenticator.add_verifying_key(w.verifying_key)
+        authenticator.add_verifying_key(w2.verifying_key)
         authenticator.configure()
 
         async def get():
@@ -437,7 +437,7 @@ class TestJSONAsyncInbox(TestCase):
                 msg={'hello': 'there'},
                 service='something',
                 wallet=w2,
-                vk=w.verifying_key().hex(),
+                vk=w.verifying_key,
                 ip='tcp://x',
                 ctx=self.ctx
             )
@@ -457,8 +457,8 @@ class TestJSONAsyncInbox(TestCase):
         w = Wallet()
         w2 = Wallet()
 
-        authenticator.add_verifying_key(w.verifying_key().hex())
-        authenticator.add_verifying_key(w2.verifying_key().hex())
+        authenticator.add_verifying_key(w.verifying_key)
+        authenticator.add_verifying_key(w2.verifying_key)
         authenticator.configure()
 
         async def get():
@@ -466,7 +466,7 @@ class TestJSONAsyncInbox(TestCase):
                 msg={'hello': 'there'},
                 service='something',
                 wallet=w2,
-                vk=w.verifying_key().hex(),
+                vk=w.verifying_key,
                 ip='tcp://x',
                 ctx=self.ctx
             )
@@ -486,8 +486,8 @@ class TestJSONAsyncInbox(TestCase):
         w = Wallet()
         w2 = Wallet()
 
-        authenticator.add_verifying_key(w.verifying_key().hex())
-        authenticator.add_verifying_key(w2.verifying_key().hex())
+        authenticator.add_verifying_key(w.verifying_key)
+        authenticator.add_verifying_key(w2.verifying_key)
         authenticator.configure()
 
         m = router.Router(
@@ -507,7 +507,7 @@ class TestJSONAsyncInbox(TestCase):
                 msg={'hello': 'there'},
                 service='something',
                 wallet=w2,
-                vk=w.verifying_key().hex(),
+                vk=w.verifying_key,
                 ip='tcp://127.0.0.1:10000',
                 ctx=self.ctx
             )
@@ -532,9 +532,9 @@ class TestJSONAsyncInbox(TestCase):
         w2 = Wallet()
         w3 = Wallet()
 
-        authenticator.add_verifying_key(w1.verifying_key().hex())
-        authenticator.add_verifying_key(w2.verifying_key().hex())
-        authenticator.add_verifying_key(w3.verifying_key().hex())
+        authenticator.add_verifying_key(w1.verifying_key)
+        authenticator.add_verifying_key(w2.verifying_key)
+        authenticator.add_verifying_key(w3.verifying_key)
         authenticator.configure()
 
         m1 = router.Router(
@@ -563,8 +563,8 @@ class TestJSONAsyncInbox(TestCase):
 
         async def get():
             peers = {
-                w1.verifying_key().hex(): 'tcp://127.0.0.1:10000',
-                w2.verifying_key().hex(): 'tcp://127.0.0.1:10001'
+                w1.verifying_key: 'tcp://127.0.0.1:10000',
+                w2.verifying_key: 'tcp://127.0.0.1:10001'
             }
 
             await router.secure_multicast(

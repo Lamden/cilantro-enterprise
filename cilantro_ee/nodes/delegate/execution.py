@@ -105,7 +105,7 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
             'input_hash': tx_batch['input_hash'],
             'transactions': results,
             'merkle_tree': merkle_tree,
-            'signer': wallet.verifying_key().hex(),
+            'signer': wallet.verifying_key,
             'subblock': i % parallelism,
             'previous': previous_block_hash
         }

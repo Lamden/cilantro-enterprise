@@ -57,8 +57,8 @@ class TestMasternode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -72,8 +72,8 @@ class TestMasternode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -98,8 +98,8 @@ class TestMasternode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -124,8 +124,8 @@ class TestMasternode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -162,8 +162,8 @@ class TestMasternode(TestCase):
             ctx=self.ctx,
             wallet=Wallet(),
             constitution={
-                'masternodes': [mn_wallet.verifying_key().hex()],
-                'delegates': [dl_wallet.verifying_key().hex()]
+                'masternodes': [mn_wallet.verifying_key],
+                'delegates': [dl_wallet.verifying_key]
             },
             driver=driver
         )
@@ -172,21 +172,21 @@ class TestMasternode(TestCase):
             contract='masternodes',
             variable='S',
             arguments=['members'],
-            value=[mn_wallet.verifying_key().hex()]
+            value=[mn_wallet.verifying_key]
         )
 
         node.client.set_var(
             contract='delegates',
             variable='S',
             arguments=['members'],
-            value=[dl_wallet.verifying_key().hex()]
+            value=[dl_wallet.verifying_key]
         )
 
         node.socket_authenticator.refresh_governance_sockets()
 
         node.network.peers = {
-            mn_wallet.verifying_key().hex(): mn_bootnode,
-            dl_wallet.verifying_key().hex(): dl_bootnode
+            mn_wallet.verifying_key: mn_bootnode,
+            dl_wallet.verifying_key: dl_bootnode
         }
 
         node.tx_batcher.queue.append('MOCK TX')
@@ -233,7 +233,7 @@ class TestMasternode(TestCase):
                     'state': [
                         {
                             'key': 'masternodes.S:members',
-                            'value': [node_wallet.verifying_key().hex()]
+                            'value': [node_wallet.verifying_key]
                         }
                     ],
                     'transaction': {
@@ -255,8 +255,8 @@ class TestMasternode(TestCase):
             ctx=self.ctx,
             wallet=node_wallet,
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )
@@ -286,8 +286,8 @@ class TestMasternode(TestCase):
             ctx=self.ctx,
             wallet=node_wallet,
             constitution={
-                'masternodes': [Wallet().verifying_key().hex()],
-                'delegates': [Wallet().verifying_key().hex()]
+                'masternodes': [Wallet().verifying_key],
+                'delegates': [Wallet().verifying_key]
             },
             driver=driver
         )

@@ -52,10 +52,10 @@ class IdentityProcessor(router.Processor):
         h = hashlib.sha3_256()
         h.update(message_bytes)
 
-        signature = self.wallet.sign(h.digest())
+        signature = self.wallet.sign(h.hexdigest())
 
         proof = {
-            'signature': signature.hex(),
+            'signature': signature,
             'vk': self.wallet.verifying_key().hex(),
             'timestamp': now,
             'ip': self.ip_string

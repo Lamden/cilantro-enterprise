@@ -488,8 +488,6 @@ class TestMasterStorage(TestCase):
 
         got_block = self.db.get_block(1)
 
-        block.pop('_id')
-
         self.assertEqual(block, got_block)
 
     def test_get_block_hash(self):
@@ -504,8 +502,6 @@ class TestMasterStorage(TestCase):
         self.assertTrue(_id)
 
         got_block = self.db.get_block('a')
-
-        block.pop('_id')
 
         self.assertEqual(block, got_block)
 
@@ -522,8 +518,6 @@ class TestMasterStorage(TestCase):
 
         got_block = self.db.get_block('b')
 
-        block.pop('_id')
-
         self.assertIsNone(got_block)
 
     def test_got_none_block_num(self):
@@ -538,8 +532,6 @@ class TestMasterStorage(TestCase):
         self.assertTrue(_id)
 
         got_block = self.db.get_block(2)
-
-        block.pop('_id')
 
         self.assertIsNone(got_block)
 
@@ -557,8 +549,6 @@ class TestMasterStorage(TestCase):
         self.db.drop_collections()
 
         got_block = self.db.get_block(1)
-
-        block.pop('_id')
 
         self.assertIsNone(got_block)
 
@@ -624,3 +614,96 @@ class TestMasterStorage(TestCase):
         got_blocks = self.db.get_last_n(3, 5)
 
         self.assertIsNone(got_blocks)
+
+    def test_store_and_get_tx(self):
+        tx = {
+            'hash': 'something',
+            'key': 'value'
+        }
+
+        self.db.put(tx, BlockStorage.TX)
+
+        tx_got = self.db.get_tx(h='something')
+
+        self.assertDictEqual(tx, tx_got)
+
+    def test_get_non_existant_tx_returns_none(self):
+        tx_got = self.db.get_tx(h='something')
+
+        self.assertIsNone(tx_got)
+
+    def test_store_txs_from_block_adds_all_txs(self):
+        tx_1 = {
+            'hash': 'something1',
+            'key': '1'
+        }
+
+        tx_2 = {
+            'hash': 'something2',
+            'key': '2'
+        }
+
+        tx_3 = {
+            'hash': 'something3',
+            'key': '3'
+        }
+
+        block = {
+            'subblocks': [
+                {
+                    'transactions': [tx_1, tx_2, tx_3]
+                }
+            ]
+        }
+
+        self.db.store_txs(block)
+
+        got_1 = self.db.get_tx(h='something1')
+        got_2 = self.db.get_tx(h='something2')
+        got_3 = self.db.get_tx(h='something3')
+
+        self.assertDictEqual(tx_1, got_1)
+        self.assertDictEqual(tx_2, got_2)
+        self.assertDictEqual(tx_3, got_3)
+
+    def test_store_block_stores_txs_and_block(self):
+        tx_1 = {
+            'hash': 'something1',
+            'key': '1'
+        }
+
+        tx_2 = {
+            'hash': 'something2',
+            'key': '2'
+        }
+
+        tx_3 = {
+            'hash': 'something3',
+            'key': '3'
+        }
+
+        block = {
+            'hash': 'hello',
+            'subblocks': [
+                {
+                    'transactions': [tx_1, tx_2, tx_3]
+                }
+            ]
+        }
+
+        self.db.store_block(block)
+
+        got_1 = self.db.get_tx(h='something1')
+        got_2 = self.db.get_tx(h='something2')
+        got_3 = self.db.get_tx(h='something3')
+
+        self.assertDictEqual(tx_1, got_1)
+        self.assertDictEqual(tx_2, got_2)
+        self.assertDictEqual(tx_3, got_3)
+
+        got_block = self.db.get_block('hello')
+
+        self.assertDictEqual(block, got_block)
+
+    def test_get_block_v_none_returns_none(self):
+        self.assertIsNone(self.db.get_block())

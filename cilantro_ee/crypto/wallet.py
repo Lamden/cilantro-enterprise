@@ -44,30 +44,21 @@ class Wallet:
         self.curve_sk = z85.encode(self.sk.to_curve25519_private_key().encode())
         self.curve_vk = z85.encode(self.vk.to_curve25519_public_key().encode())
 
-    @classmethod
-    def from_sk(cls, sk):
-        if type(sk) == str:
-            sk = bytes.fromhex(sk)
-
-        return Wallet(seed=sk)
-
     @staticmethod
-    def format_key(k, as_hex=False):
+    def _format_key(k, as_hex=False):
         fk = k.encode()
         if as_hex:
             return fk.hex()
         return fk
 
     def signing_key(self, as_hex=False):
-        return self.format_key(self.sk, as_hex=as_hex)
+        return self._format_key(self.sk, as_hex=as_hex)
 
     def verifying_key(self, as_hex=False):
-        return self.format_key(self.vk, as_hex=as_hex)
+        return self._format_key(self.vk, as_hex=as_hex)
 
-    def sign(self, msg: bytes, as_hex=False):
-        if type(msg) == str:
-            msg = bytes.fromhex(msg)
-
+    def sign(self, msg: str, as_hex=False):
+        msg = bytes.fromhex(msg)
         sig = self.sk.sign(msg)
         if as_hex:
             return sig.signature.hex()

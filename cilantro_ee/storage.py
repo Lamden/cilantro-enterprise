@@ -167,8 +167,10 @@ class BlockStorage:
     def put(self, data, collection=BLOCK):
         if collection == BlockStorage.BLOCK:
             _id = self.blocks.insert_one(data)
+            del data['_id']
         elif collection == BlockStorage.TX:
             _id = self.txs.insert_one(data)
+            del data['_id']
         else:
             return False
 
@@ -208,14 +210,9 @@ class BlockStorage:
 
     def store_block(self, block):
         self.put(block, BlockStorage.BLOCK)
-
-        if block.get('_id') is not None:
-            del block['_id']
-
         self.store_txs(block)
 
     def store_txs(self, block):
         for subblock in block['subblocks']:
             for tx in subblock['transactions']:
                 self.put(tx, BlockStorage.TX)
-                del tx['_id']

@@ -13,7 +13,7 @@ class Cilparser:
         print(self.pkg, self.vote, self.ready)
 
     def trigger(self, sk=None):
-        my_wallet = Wallet.from_sk(sk=sk)
+        my_wallet = Wallet(seed=sk)
         pepper = 'RAMDOM' # TODO replace with verified pepper pkg
         kwargs = {'pepper': pepper,'vk': my_wallet.verifying_key()}
         vk = my_wallet.verifying_key()
@@ -36,7 +36,7 @@ class Cilparser:
         return m
 
     def vote(self, sk=None):
-        my_wallet = Wallet.from_sk(sk=sk)
+        my_wallet = Wallet(seed=sk)
         kwargs = {'vk': my_wallet.verifying_key()}
 
         pack = TransactionBuilder(
@@ -55,7 +55,7 @@ class Cilparser:
         return m
 
     def check_ready_quorum(self, sk=None):
-        my_wallet = Wallet.from_sk(sk=sk)
+        my_wallet = Wallet(seed=sk)
         kwargs = {'vk': my_wallet.verifying_key()}
 
         pack = TransactionBuilder(

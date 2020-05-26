@@ -102,7 +102,7 @@ class TestNode(TestCase):
         tasks = asyncio.gather(
             mn_router.serve(),
             node.catchup('tcp://127.0.0.1:18001', mn_wallet.verifying_key),
-            stop_server(mn_router, 1)
+            stop_server(mn_router, 2)
         )
 
         self.loop.run_until_complete(tasks)
@@ -164,7 +164,7 @@ class TestNode(TestCase):
         block = {
             'hash': 'f' * 64,
             'number': 1,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 
@@ -186,7 +186,7 @@ class TestNode(TestCase):
         block = {
             'hash': 'a' * 64,
             'number': 2,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 
@@ -230,7 +230,7 @@ class TestNode(TestCase):
         block = {
             'hash': 'a' * 64,
             'number': 1,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 

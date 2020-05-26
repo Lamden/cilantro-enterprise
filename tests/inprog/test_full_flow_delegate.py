@@ -73,7 +73,7 @@ def make_tx(processor, contract_name, function_name, kwargs={}):
         nonce=0
     )
 
-    batch.sign(w.signing_key())
+    batch.sign(w.signing_key)
     b = batch.serialize()
 
     tx = transaction_capnp.Transaction.from_bytes_packed(b)

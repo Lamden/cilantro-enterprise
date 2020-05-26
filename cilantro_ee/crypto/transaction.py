@@ -65,9 +65,9 @@ def check_tx_formatting(tx: dict, expected_processor: str):
         return TransactionFormattingError
 
     if not wallet.verify(
-            bytes.fromhex(tx['payload']['sender']),
-            encode(tx['payload']).encode(),
-            bytes.fromhex(tx['metadata']['signature'])
+            tx['payload']['sender'],
+            encode(tx['payload']),
+            tx['metadata']['signature']
     ):
         return TransactionSignatureInvalid
 
@@ -144,7 +144,7 @@ def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce:
     signature = wallet.sign(encode(payload))
 
     metadata = {
-        'signature': signature.hex(),
+        'signature': signature,
         'timestamp': int(round(time.time() * 1000))
     }
 

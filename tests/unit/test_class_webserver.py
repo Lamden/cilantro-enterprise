@@ -313,8 +313,6 @@ def get():
 
         _, response = self.ws.app.test_client.get('/blocks?num=1')
 
-        del block['_id']
-
         self.assertDictEqual(response.json, block)
 
     def test_get_block_by_num_that_doesnt_exist_returns_error(self):
@@ -338,8 +336,6 @@ def get():
             'blockNum': 1,
             'data': 'woop'
         }
-
-        del block['_id']
 
         _, response = self.ws.app.test_client.get(f'/blocks?hash={h}')
         self.assertDictEqual(response.json, expected)
@@ -424,8 +420,6 @@ def get():
         }
 
         self.ws.blocks.put(tx, collection=self.ws.blocks.TX)
-
-        del tx['_id']
 
         _, response = self.ws.app.test_client.get(f'/tx?hash={b.hex()}')
         self.assertDictEqual(response.json, expected)

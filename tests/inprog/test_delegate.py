@@ -62,7 +62,7 @@ def get_tx_batch():
         processor=b'\x00' * 32,
         nonce=0
     )
-    tx.sign(w.signing_key())
+    tx.sign(w.signing_key)
     tx.serialize()
 
     currency_contract = 'currency'
@@ -88,7 +88,7 @@ def get_tx_batch():
         processor=b'\x00' * 32,
         nonce=0
     )
-    tx2.sign(Wallet().signing_key())
+    tx2.sign(Wallet().signing_key)
     tx2.serialize()
 
     currency_contract = 'currency'
@@ -141,7 +141,7 @@ def get():
             processor=b'\x00' * 32,
             nonce=0
         )
-        tx.sign(Wallet().signing_key())
+        tx.sign(Wallet().signing_key)
         tx.serialize()
 
         result = execution.execute_tx(self.client, tx.struct)
@@ -217,7 +217,7 @@ def get():
             processor=b'\x00' * 32,
             nonce=0
         )
-        tx.sign(Wallet().signing_key())
+        tx.sign(Wallet().signing_key)
         tx.serialize()
 
         tx2 = TransactionBuilder(
@@ -229,7 +229,7 @@ def get():
             processor=b'\x00' * 32,
             nonce=0
         )
-        tx2.sign(Wallet().signing_key())
+        tx2.sign(Wallet().signing_key)
         tx2.serialize()
 
         tx_batch = transaction_list_to_transaction_batch([tx.struct, tx2.struct], wallet=Wallet())
@@ -275,7 +275,7 @@ def get():
             processor=b'\x00' * 32,
             nonce=0
         )
-        tx.sign(Wallet().signing_key())
+        tx.sign(Wallet().signing_key)
         tx.serialize()
 
         tx2 = TransactionBuilder(
@@ -287,7 +287,7 @@ def get():
             processor=b'\x00' * 32,
             nonce=0
         )
-        tx2.sign(Wallet().signing_key())
+        tx2.sign(Wallet().signing_key)
         tx2.serialize()
 
         tx_batch_1 = transaction_list_to_transaction_batch([tx.struct, tx2.struct], wallet=Wallet())
@@ -301,7 +301,7 @@ def get():
             processor=b'\x00' * 32,
             nonce=0
         )
-        tx.sign(Wallet().signing_key())
+        tx.sign(Wallet().signing_key)
         tx.serialize()
 
         tx2 = TransactionBuilder(
@@ -313,7 +313,7 @@ def get():
             processor=b'\x00' * 32,
             nonce=0
         )
-        tx2.sign(Wallet().signing_key())
+        tx2.sign(Wallet().signing_key)
         tx2.serialize()
 
         tx_batch_2 = transaction_list_to_transaction_batch([tx.struct, tx2.struct], wallet=Wallet())

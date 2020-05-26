@@ -58,7 +58,7 @@ def trigger(pkg=None, iaddr=None):
         nonce=nonce
     )
 
-    pack.sign(my_wallet.signing_key())
+    pack.sign(my_wallet.signing_key)
     m = pack.serialize()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(cil_interface(server=iaddr, packed_data=m, sleep=2))
@@ -98,7 +98,7 @@ def vote(iaddr):
         nonce=nonce
     )
 
-    pack.sign(my_wallet.signing_key())
+    pack.sign(my_wallet.signing_key)
     m = pack.serialize()
 
     loop = asyncio.get_event_loop()

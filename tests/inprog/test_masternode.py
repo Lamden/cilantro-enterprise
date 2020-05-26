@@ -56,7 +56,7 @@ def get_tx_batch():
         processor=b'\x00' * 32,
         nonce=0
     )
-    tx.sign(w.signing_key())
+    tx.sign(w.signing_key)
     tx.serialize()
 
     currency_contract = 'currency'
@@ -82,7 +82,7 @@ def get_tx_batch():
         processor=b'\x00' * 32,
         nonce=0
     )
-    tx2.sign(Wallet().signing_key())
+    tx2.sign(Wallet().signing_key)
     tx2.serialize()
 
     currency_contract = 'currency'
@@ -154,7 +154,7 @@ def make_tx(processor):
         nonce=0
     )
 
-    batch.sign(w.signing_key())
+    batch.sign(w.signing_key)
     b = batch.serialize()
 
     tx = transaction_capnp.Transaction.from_bytes_packed(b)
@@ -338,7 +338,7 @@ class TestNewMasternode(TestCase):
             nonce=0
         )
 
-        batch.sign(w.signing_key())
+        batch.sign(w.signing_key)
         b = batch.serialize()
 
         tx = transaction_capnp.Transaction.from_bytes_packed(b)
@@ -714,7 +714,7 @@ class TestNewMasternode(TestCase):
             nonce=0
         )
 
-        batch.sign(w.signing_key())
+        batch.sign(w.signing_key)
         b = batch.serialize()
 
         tx = transaction_capnp.Transaction.from_bytes_packed(b)

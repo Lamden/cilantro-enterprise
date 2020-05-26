@@ -553,16 +553,16 @@ class TestSBCProcessor(TestCase):
         w = Wallet()
         w2 = Wallet()
 
-        input_hash = b'something'
+        input_hash = 'something'
         signature = w2.sign(input_hash)
 
         sbc = {
             'subblock': 1,
             'transactions': [],
-            'input_hash': input_hash.hex(),
+            'input_hash': input_hash,
             'signer': w.verifying_key,
             'merkle_tree': {
-                'signature': signature.hex()
+                'signature': signature
             }
         }
 
@@ -585,16 +585,16 @@ class TestSBCProcessor(TestCase):
         w = Wallet()
         w2 = Wallet()
 
-        input_hash = b'something'
+        input_hash = 'something'
         signature = w2.sign(expected_tree[0])
 
         sbc = {
             'subblock': 1,
             'transactions': [tx_1, tx_2],
-            'input_hash': input_hash.hex(),
+            'input_hash': input_hash,
             'signer': w.verifying_key,
             'merkle_tree': {
-                'signature': signature.hex(),
+                'signature': signature,
                 'leaves': expected_tree
             }
         }
@@ -617,16 +617,16 @@ class TestSBCProcessor(TestCase):
 
         w = Wallet()
 
-        input_hash = b'something'
+        input_hash = 'something'
         signature = w.sign(expected_tree[0])
 
         sbc = {
             'subblock': 1,
             'transactions': [tx_1, tx_2],
-            'input_hash': input_hash.hex(),
+            'input_hash': input_hash,
             'signer': w.verifying_key,
             'merkle_tree': {
-                'signature': signature.hex(),
+                'signature': signature,
                 'leaves': expected_tree[0:1]
             }
         }
@@ -649,7 +649,7 @@ class TestSBCProcessor(TestCase):
 
         w = Wallet()
 
-        input_hash = b'something'
+        input_hash = 'something'
         signature = w.sign(expected_tree[0])
 
         expected_tree[1] = 'crap'
@@ -657,10 +657,10 @@ class TestSBCProcessor(TestCase):
         sbc = {
             'subblock': 1,
             'transactions': [tx_1, tx_2],
-            'input_hash': input_hash.hex(),
+            'input_hash': input_hash,
             'signer': w.verifying_key,
             'merkle_tree': {
-                'signature': signature.hex(),
+                'signature': signature,
                 'leaves': expected_tree
             }
         }
@@ -683,16 +683,16 @@ class TestSBCProcessor(TestCase):
 
         w = Wallet()
 
-        input_hash = b'something'
+        input_hash = 'something'
         signature = w.sign(expected_tree[0])
 
         sbc = {
             'subblock': 1,
             'transactions': [tx_1, tx_2],
-            'input_hash': input_hash.hex(),
+            'input_hash': input_hash,
             'signer': w.verifying_key,
             'merkle_tree': {
-                'signature': signature.hex(),
+                'signature': signature,
                 'leaves': expected_tree
             }
         }
@@ -716,16 +716,16 @@ class TestSBCProcessor(TestCase):
 
         w = Wallet()
 
-        input_hash = b'something'
+        input_hash = 'something'
         signature = w.sign(expected_tree[0])
 
         sbc_1 = {
             'subblock': 0,
             'transactions': [tx_1_1, tx_1_2],
-            'input_hash': input_hash.hex(),
+            'input_hash': input_hash,
             'signer': w.verifying_key,
             'merkle_tree': {
-                'signature': signature.hex(),
+                'signature': signature,
                 'leaves': expected_tree
             }
         }
@@ -744,7 +744,7 @@ class TestSBCProcessor(TestCase):
 
         w = Wallet()
 
-        input_hash = b'something2'
+        input_hash = 'something2'
         signature = w.sign(expected_tree[0])
 
         expected_tree[1] = 'crap'
@@ -752,10 +752,10 @@ class TestSBCProcessor(TestCase):
         sbc_2 = {
             'subblock': 1,
             'transactions': [tx_2_1, tx_2_2],
-            'input_hash': input_hash.hex(),
+            'input_hash': input_hash,
             'signer': w.verifying_key,
             'merkle_tree': {
-                'signature': signature.hex(),
+                'signature': signature,
                 'leaves': expected_tree
             }
         }

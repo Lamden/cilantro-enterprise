@@ -428,7 +428,7 @@ class TestNetwork(TestCase):
                w2.verifying_key,
                w3.verifying_key]
 
-        async def stop_server(s: Router, timeout=0.2):
+        async def stop_server(s: Router, timeout=1):
             await asyncio.sleep(timeout)
             s.stop()
 

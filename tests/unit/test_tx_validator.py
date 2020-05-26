@@ -55,7 +55,7 @@ class TestTransactionBuilder(TestCase):
 
         res = verify(
             w.verifying_key,
-            encode(decoded['payload']).encode(),
+            encode(decoded['payload']),
             decoded['metadata']['signature']
         )
 

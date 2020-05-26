@@ -56,9 +56,9 @@ class TestBlockService(TestCase):
 
     def test_service_returns_block_for_number_if_exists(self):
         block = {
-            'hash': (b'\x00' * 32).hex(),
+            'hash': '0' * 64,
             'number': 1337,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 
@@ -84,9 +84,9 @@ class TestBlockService(TestCase):
 
     def test_service_returns_none_if_blocknum_not_num(self):
         block = {
-            'hash': (b'\x00' * 32).hex(),
+            'hash': '0' * 64,
             'number': 1337,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 
@@ -103,9 +103,9 @@ class TestBlockService(TestCase):
 
     def test_service_returns_none_if_no_block_found(self):
         block = {
-            'hash': (b'\x00' * 32).hex(),
+            'hash': '0' * 64,
             'number': 1337,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 
@@ -161,9 +161,9 @@ class TestBlockService(TestCase):
 
     def test_router_returns_block_for_number_if_exists(self):
         block = {
-            'hash': (b'\x00' * 32).hex(),
+            'hash': '0' * 64,
             'number': 1337,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 
@@ -208,9 +208,9 @@ class TestBlockService(TestCase):
 
     def test_router_returns_none_if_no_block_found(self):
         block = {
-            'hash': (b'\x00' * 32).hex(),
+            'hash': '0' * 64,
             'number': 1337,
-            'previous': (b'\x00' * 32).hex(),
+            'previous': '0' * 64,
             'subblocks': []
         }
 

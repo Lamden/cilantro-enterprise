@@ -30,7 +30,7 @@ class Cilparser:
             nonce=0
         )
 
-        pack.sign(my_wallet.signing_key())
+        pack.sign(my_wallet.signing_key)
         m = pack.serialize()
 
         return m
@@ -49,7 +49,7 @@ class Cilparser:
             nonce=0
         )
 
-        pack.sign(my_wallet.signing_key())
+        pack.sign(my_wallet.signing_key)
         m = pack.serialize()
 
         return m
@@ -68,7 +68,7 @@ class Cilparser:
             nonce=0
         )
 
-        pack.sign(my_wallet.signing_key())
+        pack.sign(my_wallet.signing_key)
         m = pack.serialize()
 
         return m

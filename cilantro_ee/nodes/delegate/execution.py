@@ -46,7 +46,7 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
 
 def generate_environment(driver, timestamp, input_hash):
     now = Datetime._from_datetime(
-        datetime.utcfromtimestamp(timestamp)
+        datetime.utcfromtimestamp(timestamp / 1000)
     )
 
     return {
@@ -94,11 +94,11 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
             proof = wallet.sign(merkle[0])
         else:
             merkle = merklize([bytes.fromhex(tx_batch['input_hash'])])
-            proof = wallet.sign(bytes.fromhex(tx_batch['input_hash']))
+            proof = wallet.sign(tx_batch['input_hash'])
 
         merkle_tree = {
             'leaves': merkle,
-            'signature': proof.hex()
+            'signature': proof
         }
 
         sbc = {

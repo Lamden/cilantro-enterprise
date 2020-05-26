@@ -271,6 +271,7 @@ class Node:
                 self.log.info(f'Rebooting Node with new verion {branch_name}')
                 cil_path = os.path.dirname(cilantro_ee.__file__)
                 self.log.info(f'CIL_PATH={cil_path}')
+                self.log.info(f'CONTRACTING_PATH={os.path.dirname(contracting.__file__)}')
                 if version_reboot(branch_name):
                     p = build_pepper(cil_path)
                     if self.pepper != p:
@@ -278,8 +279,8 @@ class Node:
                     else:
                         self.log.info('Pepper OK. restart new version')
                         run_install()
-                        importlib.reload(contracting)
                         importlib.reload(cilantro_ee)
+                        importlib.reload(contracting)
 
                         self.log.info(f'New branch {branch_name} was reloaded OK.')
             else:

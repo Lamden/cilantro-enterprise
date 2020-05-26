@@ -46,7 +46,10 @@ def run(*args):
 def run_install():
     path =  os.path.join(os.path.dirname(cilantro_ee.__file__),  '..')
     os.chdir(f'{path}')
-    return subprocess.check_call(['python3', "setup.py", "install"])
+    subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+    path2 =  os.path.join(os.path.dirname(contracting.__file__),  '..')
+    os.chdir(f'{path2}')
+    return subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
 
 
 def version_reboot(new_branch_name):
@@ -61,11 +64,14 @@ def version_reboot(new_branch_name):
         run("fetch", "--all")
         run("reset", "--hard", f"origin/{br}")
         #git fetch --all    git reset --hard origin/ori1-rel-gov-socks-upg
-        subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+        # subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
 
         path2 =  os.path.join(os.path.dirname(contracting.__file__), '..')
         os.chdir(path2)
-        subprocess.check_call(['python3', "setup.py", "develop"]) #  "install"
+        br = 'dev'
+        run("fetch", "--all")
+        run("reset", "--hard", f"origin/{br}")
+        # subprocess.check_call(['python3', "setup.py", "develop"]) #  "install"
 
     except OSError as err:
         print("OS error: {0}".format(err))

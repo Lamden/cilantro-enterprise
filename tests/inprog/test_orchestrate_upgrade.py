@@ -196,7 +196,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
             contract='upgrade',
             function='trigger_upgrade',
             kwargs={
-                'git_branch_name': 'ori1-rel-gov-socks-upg',
+                'cilantro_branch_name': 'ori1-rel-gov-socks-upg',
+                'contract_branch_name': 'dev',
                 'pepper': '59f7ae7bb194fef8ef88ee417466a2aba6b35d9a3bf2c20620e779d5516babdc',
                 'initiator_vk': stu.verifying_key().hex()
             },

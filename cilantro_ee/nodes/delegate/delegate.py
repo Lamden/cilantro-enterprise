@@ -7,12 +7,15 @@ import time
 from cilantro_ee.crypto.wallet import verify
 from contracting.execution.executor import Executor
 from contracting.db.encoder import encode
+from cilantro_ee.crypto import transaction
+from contracting.client import ContractingClient
+from cilantro_ee import storage
 
 WORK_SERVICE = 'work'
 
 
 class WorkProcessor(router.Processor):
-    def __init__(self, debug=True, expired_batch=5):
+    def __init__(self, client: ContractingClient, nonces: storage.NonceStorage, debug=True, expired_batch=5, tx_timeout=5):
         self.work = {}
 
         self.todo = []
@@ -23,6 +26,10 @@ class WorkProcessor(router.Processor):
 
         self.masters = []
         self.expired_batch = expired_batch
+        self.tx_timeout = tx_timeout
+
+        self.client = client
+        self.nonces = nonces
 
     async def process_message(self, msg):
         if not self.accepting_work:
@@ -33,14 +40,27 @@ class WorkProcessor(router.Processor):
             self.verify_work(msg)
 
     def verify_work(self, msg):
-        if msg['signer'] not in self.masters:
+        if msg['sender'] not in self.masters:
             return
 
-        if not verify(vk=msg['signer'], msg=msg['input_hash'], signature=msg['signature']):
+        if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
             return
 
         if int(time.time()) - msg['timestamp'] > self.expired_batch:
             return
+
+        for tx in msg['transactions']:
+            try:
+                transaction.transaction_is_valid(
+                    transaction=tx,
+                    expected_processor=msg['sender'],
+                    client=self.client,
+                    nonces=self.nonces,
+                    strict=False,
+                    timeout=self.expired_batch + self.tx_timeout
+                )
+            except transaction.TransactionException:
+                return
 
         self.work[msg['sender']] = msg
 

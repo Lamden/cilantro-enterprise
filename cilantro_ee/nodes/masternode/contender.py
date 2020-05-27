@@ -58,7 +58,7 @@ class SBCInbox(router.Processor):
             expected_tree = merklize(txs)
 
             # Missing leaves, etc
-            if len(sbc['merkle_tree']['leaves']) != len(expected_tree):
+            if len(sbc['merkle_tree']['leaves']) != len(expected_tree) and len(sbc['transactions']) > 0:
                 self.log.debug('Merkle Tree Len mismatch')
                 return False
 

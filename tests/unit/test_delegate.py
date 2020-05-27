@@ -4,8 +4,8 @@ from cilantro_ee.crypto import canonical
 from contracting.db.driver import decode, ContractDriver, InMemDriver
 from contracting.client import ContractingClient
 from cilantro_ee.nodes.delegate import execution, work
-from cilantro_ee.nodes import masternode, delegate
-from cilantro_ee import storage, authentication
+from cilantro_ee.nodes import masternode, delegate, base
+from cilantro_ee import storage, authentication, router
 import zmq.asyncio
 import asyncio
 import hashlib
@@ -432,6 +432,194 @@ def get():
         self.assertEqual(len(w), 1)
         self.assertEqual(w[0][0], w[0][1]['timestamp'])
         self.assertEqual(w[0][1]['sender'], mw.verifying_key)
+
+    def test_acquire_work_2_masters_gathers_tx_batches_pads_work_and_waits_if_missing(self):
+        ips = [
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002'
+        ]
+
+        dw = Wallet()
+        mw = Wallet()
+        mw2 = Wallet()
+
+        self.authenticator.add_verifying_key(mw.verifying_key)
+        self.authenticator.add_verifying_key(dw.verifying_key)
+        self.authenticator.configure()
+
+        mn = masternode.Masternode(
+            socket_base=ips[0],
+            ctx=self.ctx,
+            wallet=mw,
+            constitution={
+                'masternodes': [mw.verifying_key, mw2.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        dl = delegate.Delegate(
+            socket_base=ips[1],
+            ctx=self.ctx,
+            wallet=dw,
+            constitution={
+                'masternodes': [mw.verifying_key, mw2.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        peers = {
+            mw.verifying_key: ips[0],
+            dw.verifying_key: ips[1],
+            mw2.verifying_key: 'tpc://127.0.0.1:18003'
+        }
+
+        mn.network.peers = peers
+        dl.network.peers = peers
+
+        tasks = asyncio.gather(
+            mn.router.serve(),
+            dl.router.serve(),
+            mn.send_work(),
+            dl.acquire_work(),
+            stop_server(mn.router, 1),
+            stop_server(dl.router, 1),
+        )
+
+        _, _, _, w, _, _ = self.loop.run_until_complete(tasks)
+
+        self.assertEqual(len(w), 2)
+        self.assertEqual(w[0][0], w[0][1]['timestamp'])
+        self.assertEqual(w[0][1]['sender'], mw.verifying_key)
+
+        self.assertEqual(w[1][0], w[1][1]['timestamp'])
+        self.assertEqual(w[1][1]['sender'], mw2.verifying_key)
+        self.assertEqual(w[1][1]['input_hash'], mw2.verifying_key)
+        self.assertEqual(w[1][1]['signature'], '0' * 128)
+
+    def test_process_new_work_processes_tx_batch(self):
+        ips = [
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002'
+        ]
+
+        dw = Wallet()
+        mw = Wallet()
+
+        self.authenticator.add_verifying_key(mw.verifying_key)
+        self.authenticator.add_verifying_key(dw.verifying_key)
+        self.authenticator.configure()
+
+        mn = masternode.Masternode(
+            socket_base=ips[0],
+            ctx=self.ctx,
+            wallet=mw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        mnq = router.QueueProcessor()
+        mn.router.add_service(base.CONTENDER_SERVICE, mnq)
+
+        dl = delegate.Delegate(
+            socket_base=ips[1],
+            ctx=self.ctx,
+            wallet=dw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        peers = {
+            mw.verifying_key: ips[0],
+            dw.verifying_key: ips[1]
+        }
+
+        mn.network.peers = peers
+        dl.network.peers = peers
+
+        tasks = asyncio.gather(
+            mn.router.serve(),
+            dl.router.serve(),
+            mn.send_work(),
+            dl.process_new_work(),
+            stop_server(mn.router, 1),
+            stop_server(dl.router, 1),
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        sbc = mnq.q.pop(0)
+
+        self.assertEqual(len(sbc), 1)
+        self.assertEqual(sbc[0]['previous'], '0' * 64)
+        self.assertEqual(sbc[0]['signer'], dw.verifying_key)
+
+    def test_masternode_delegate_single_loop_works(self):
+        ips = [
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002'
+        ]
+
+        dw = Wallet()
+        mw = Wallet()
+
+        self.authenticator.add_verifying_key(mw.verifying_key)
+        self.authenticator.add_verifying_key(dw.verifying_key)
+        self.authenticator.configure()
+
+        mn = masternode.Masternode(
+            socket_base=ips[0],
+            ctx=self.ctx,
+            wallet=mw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        dl = delegate.Delegate(
+            socket_base=ips[1],
+            ctx=self.ctx,
+            wallet=dw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=ContractDriver(driver=InMemDriver())
+        )
+
+        peers = {
+            mw.verifying_key: ips[0],
+            dw.verifying_key: ips[1]
+        }
+
+        mn.network.peers = peers
+        dl.network.peers = peers
+
+        tasks = asyncio.gather(
+            mn.router.serve(),
+            dl.router.serve(),
+            mn.loop(),
+            dl.loop(),
+            stop_server(mn.router, 1),
+            stop_server(dl.router, 1),
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        # sbc = mnq.q.pop(0)
+        #
+        # self.assertEqual(len(sbc), 1)
+        # self.assertEqual(sbc[0]['previous'], '0' * 64)
+        # self.assertEqual(sbc[0]['signer'], dw.verifying_key)
 
 
 class MockWork:

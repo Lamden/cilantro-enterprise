@@ -54,7 +54,7 @@ class TransactionBatcher:
         self.queue = queue
 
     def make_batch(self, transactions):
-        timestamp = int(round(time.time() * 1000))
+        timestamp = int(time.time())
 
         h = hashlib.sha3_256()
         h.update('{}'.format(timestamp).encode())

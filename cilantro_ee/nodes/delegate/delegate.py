@@ -98,7 +98,11 @@ class Delegate(base.Node):
 
         return work.filter_work(w)
 
-    async def loop(self):
+    async def wait_for_new_block_confirmation(self):
+        block = await self.new_block_processor.wait_for_next_nbn()
+        self.update_state(block)
+
+    async def process_new_work(self):
         if len(self.get_masternode_peers()) == 0:
             return
 
@@ -120,8 +124,6 @@ class Delegate(base.Node):
             stamp_cost=self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
         )
 
-        print(results)
-
         await router.secure_multicast(
             msg=results,
             service=base.CONTENDER_SERVICE,
@@ -131,10 +133,11 @@ class Delegate(base.Node):
             ctx=self.ctx
         )
 
-        self.driver.clear_pending_state()  # Add
+        self.driver.clear_pending_state()
 
-        block = await self.new_block_processor.wait_for_next_nbn()
-        self.update_state(block)
+    async def loop(self):
+        await self.process_new_work()
+        await self.wait_for_new_block_confirmation()
 
     async def run(self):
         self.log.debug('Running...')
@@ -143,7 +146,6 @@ class Delegate(base.Node):
         #     block = await self.new_block_processor.wait_for_next_nbn()
         #     self.log.debug('Genesis block signal received.')
         #     self.process_new_block(block)
-
 
         while self.running:
             await self.loop()

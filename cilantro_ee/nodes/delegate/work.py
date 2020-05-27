@@ -28,7 +28,7 @@ def pad_work(work: list, expected_masters: list):
     for missing_master in expected_masters:
         shim = {
             'transactions': [],
-            'timestamp': int(round(time.time() * 1000)),
+            'timestamp': int(time.time()),
             'signature': '0' * 128,
             'input_hash': missing_master,
             'sender': missing_master

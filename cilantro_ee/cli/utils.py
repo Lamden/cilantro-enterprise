@@ -82,8 +82,10 @@ def version_reboot(new_branch_name, new_contract_name='dev', contract_only=False
 
     except OSError as err:
         print("OS error: {0}".format(err))
+        return False
     except:
         print("Unexpected error:", sys.exc_info())
+        return False
 
     return True
 

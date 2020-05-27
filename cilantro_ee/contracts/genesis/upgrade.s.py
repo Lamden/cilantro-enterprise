@@ -14,7 +14,7 @@ upg_init_time = Variable()
 upg_pepper = Variable()
 upg_window = Variable()
 branch_name = Variable()
-test_name = Variable()
+c_branch_name = Variable()
 
 mn_vote = Variable()
 dl_vote = Variable()
@@ -37,8 +37,7 @@ def seed():
 
 
 @export
-def trigger_upgrade(git_branch_name: str, pepper: str, initiator_vk: str):
-    test_name.set(git_branch_name)
+def trigger_upgrade(cilantro_branch_name: str, contract_branch_name: str, pepper: str, initiator_vk: str):
     if upg_lock.get() is True:
         assert_parallel_upg_check()
 
@@ -48,7 +47,9 @@ def trigger_upgrade(git_branch_name: str, pepper: str, initiator_vk: str):
         upg_lock.set(True)
         #upg_init_time.set(now)
         upg_pepper.set(pepper)
-        branch_name.set(git_branch_name)
+        branch_name.set(cilantro_branch_name)
+        c_branch_name.set(contract_branch_name)
+
         #upg_window.set(datetime.Timedelta(seconds=3000000000))
         mn_vote.set(0)
         dl_vote.set(0)

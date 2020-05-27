@@ -1,5 +1,6 @@
 import unittest
-#import os, pathlib
+import os
+import subprocess
 from cilantro_ee.contracts import sync
 from cilantro_ee.cli.utils import build_pepper
 from cilantro_ee.crypto.wallet import Wallet
@@ -87,6 +88,17 @@ class TestUpdateContractFix(TestCase):
     def test_build_pepper(self):
         p = build_pepper()
         self.assertEqual(p, p)
+
+    def test_git_branch(self):
+        path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')
+        os.chdir(path)
+
+        new_branch_name=None
+        # subprocess.check_call(['git', "rev-parse", "--abbrev", "-ref", "HEAD"])  # git rev-parse --abbrev-ref HEAD
+        from subprocess import check_output
+        new_branch_name = check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip()
+        print (new_branch_name)
+
 
 
 if __name__ == '__main__':

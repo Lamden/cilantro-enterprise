@@ -197,7 +197,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
             function='trigger_upgrade',
             kwargs={
                 'git_branch_name': 'ori1-rel-gov-socks-upg',
-                'pepper': '7babfa0b32ed6581632f9253e847fac64eb3eef99f08fc0ff8b3a89cfd7546f5',
+                'pepper': '59f7ae7bb194fef8ef88ee417466a2aba6b35d9a3bf2c20620e779d5516babdc',
                 'initiator_vk': stu.verifying_key().hex()
             },
             sender=candidate

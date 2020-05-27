@@ -25,7 +25,6 @@ def build_pepper(pkg_dir_path= os.path.dirname(cilantro_ee.__file__)):
         # pkg_dir_path = '/Volumes/dev/lamden/cilantro-enterprise'
         pkg_dir_path = '../../cilantro_ee'
 
-
     pepper = dirhash(pkg_dir_path, 'sha256', excluded_extensions = ['pyc'])
     print(pepper)
     return pepper
@@ -43,35 +42,43 @@ def verify_cil_pkg(pkg_hash):
 def run(*args):
     return subprocess.check_call(['git'] + list(args))
 
-def run_install():
-    path =  os.path.join(os.path.dirname(cilantro_ee.__file__),  '..')
-    os.chdir(f'{path}')
-    subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+def run_install(only_contaract=False):
+    if not only_contaract:
+        path =  os.path.join(os.path.dirname(cilantro_ee.__file__),  '..')
+        os.chdir(f'{path}')
+        subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+
     path2 =  os.path.join(os.path.dirname(contracting.__file__),  '..')
     os.chdir(f'{path2}')
     return subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
 
 
-def version_reboot(new_branch_name):
-
+def get_version(path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')):
+    cur_branch_name = None
     try:
-        path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')
         os.chdir(path)
+        cur_branch_name = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip()
+    except OSError as err:
+        print("OS error: {0}".format(err))
+    except:
+        print("Unexpected error:", sys.exc_info())
+    return cur_branch_name
 
-        # get latest release
-        rel = new_branch_name  # input("Enter New Release branch:")
-        br = f'{rel}'
-        run("fetch", "--all")
-        run("reset", "--hard", f"origin/{br}")
-        #git fetch --all    git reset --hard origin/ori1-rel-gov-socks-upg
-        # subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+def version_reboot(new_branch_name, new_contract_name='dev', contract_only=False):
+    try:
+        if not contract_only:
+            path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')
+            os.chdir(path)
+
+            rel = new_branch_name  # input("Enter New Release branch:")
+            br = f'{rel}'
+            run("fetch", "--all")
+            run("reset", "--hard", f"origin/{br}")
 
         path2 =  os.path.join(os.path.dirname(contracting.__file__), '..')
         os.chdir(path2)
-        br = 'dev'
         run("fetch", "--all")
-        run("reset", "--hard", f"origin/{br}")
-        # subprocess.check_call(['python3', "setup.py", "develop"]) #  "install"
+        run("reset", "--hard", f"origin/{new_contract_name}")
 
     except OSError as err:
         print("OS error: {0}".format(err))
@@ -79,14 +86,6 @@ def version_reboot(new_branch_name):
         print("Unexpected error:", sys.exc_info())
 
     return True
-    # Find cil process
-    # PNAME = 'cil'
-    # for proc in psutil.process_iter():
-    #     # check whether the process name matches
-    #     if proc.name() == PNAME:
-    #         proc.kill()
-
-
 
 
 def get_update_state():

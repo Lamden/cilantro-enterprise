@@ -19,7 +19,7 @@ from contracting.client import ContractingClient
 
 from cilantro_ee.nodes.rewards import RewardManager
 from cilantro_ee.cli.utils import version_reboot
-from cilantro_ee.cli.utils import build_pepper, run_install
+from cilantro_ee.cli.utils import build_pepper, run_install, get_version
 
 from cilantro_ee.logger.base import get_logger
 
@@ -263,26 +263,34 @@ class Node:
             self.log.info('num delegates voted -> {}'.format(self.dl_votes))
             self.log.info('test_name -> {}'.format(test_name))
 
-
             # check for vote consensys
             vote_consensus = self.version_state.quick_read('upg_consensus')
             if vote_consensus:
                 branch_name= self.version_state.quick_read('branch_name')
-                self.log.info(f'Rebooting Node with new verion {branch_name}')
+                contract_name= self.version_state.quick_read('c_branch_name')
+                self.log.info(f'Rebooting Node with new verions {branch_name} {contract_name}')
                 cil_path = os.path.dirname(cilantro_ee.__file__)
                 self.log.info(f'CIL_PATH={cil_path}')
                 self.log.info(f'CONTRACTING_PATH={os.path.dirname(contracting.__file__)}')
-                if version_reboot(branch_name):
+                old_branch_name = get_version()
+                old_contract_name = get_version(os.path.join(os.path.dirname(contracting.__file__),  '..'))
+                only_contract = branch_name==old_branch_name
+                if version_reboot(branch_name, contract_name, only_contract):
                     p = build_pepper(cil_path)
                     if self.pepper != p:
                         self.log.error(f'peppers mismatch {self.pepper} {p}')
+                        self.log.error(f'Restore previous versions: {old_branch_name} {old_contract_name}')
+                        version_reboot(old_branch_name, old_contract_name, only_contract)
                     else:
                         self.log.info('Pepper OK. restart new version')
-                        run_install()
-                        importlib.reload(cilantro_ee)
+                        run_install(only_contract)
+                        if not only_contract:
+                            importlib.reload(cilantro_ee)
                         importlib.reload(contracting)
 
                         self.log.info(f'New branch {branch_name} was reloaded OK.')
+                else:
+                    version_reboot(old_branch_name, old_contract_name)
             else:
                 self.log.info('waiting for vote on upgrade')
 

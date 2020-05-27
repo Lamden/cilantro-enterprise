@@ -138,15 +138,20 @@ class WebServer:
             print(error)
             return response.json(transaction.EXCEPTION_MAP[error])
 
-        nonce, pending_nonce = transaction.get_nonces(
-            sender=tx['payload']['sender'],
-            processor=tx['payload']['processor'],
-            driver=self.nonces
-        )
-
-        # Calculate and set the 'pending nonce' which keeps track of what the sender's nonce will
-        # be if the block the tx is included in is successful.
         try:
+            transaction.transaction_is_valid(
+                transaction=tx,
+                expected_processor=self.wallet.verifying_key,
+                client=self.client,
+                nonces=self.nonces
+            )
+
+            nonce, pending_nonce = transaction.get_nonces(
+                sender=tx['payload']['sender'],
+                processor=tx['payload']['processor'],
+                driver=self.nonces
+            )
+
             pending_nonce = transaction.get_new_pending_nonce(
                 tx_nonce=tx['payload']['nonce'],
                 nonce=nonce,

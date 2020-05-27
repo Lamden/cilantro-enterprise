@@ -272,7 +272,7 @@ class TestValidator(TestCase):
     def test_has_enough_stamps_passes(self):
         transaction.has_enough_stamps(
             balance=10,
-            stamp_per_balance=10000,
+            stamps_per_tau=10000,
             stamps_supplied=1000,
         )
 
@@ -280,7 +280,7 @@ class TestValidator(TestCase):
         with self.assertRaises(transaction.TransactionSenderTooFewStamps):
             transaction.has_enough_stamps(
                 balance=10,
-                stamp_per_balance=10000,
+                stamps_per_tau=10000,
                 stamps_supplied=100001,
             )
 
@@ -288,7 +288,7 @@ class TestValidator(TestCase):
         with self.assertRaises(transaction.TransactionSenderTooFewStamps):
             transaction.has_enough_stamps(
                 balance=10,
-                stamp_per_balance=10000,
+                stamps_per_tau=10000,
                 stamps_supplied=100000,
                 contract='currency',
                 function='transfer',

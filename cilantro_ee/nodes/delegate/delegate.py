@@ -3,7 +3,8 @@ from cilantro_ee import router, storage
 from cilantro_ee.nodes import base
 from cilantro_ee.logger.base import get_logger
 import asyncio
-
+import time
+from cilantro_ee.crypto.wallet import verify
 from contracting.execution.executor import Executor
 from contracting.db.encoder import encode
 
@@ -11,7 +12,7 @@ WORK_SERVICE = 'work'
 
 
 class WorkProcessor(router.Processor):
-    def __init__(self, debug=True):
+    def __init__(self, debug=True, expired_batch=5):
         self.work = {}
 
         self.todo = []
@@ -19,6 +20,9 @@ class WorkProcessor(router.Processor):
 
         self.log = get_logger('DEL WI')
         self.log.propagate = debug
+
+        self.masters = []
+        self.expired_batch = expired_batch
 
     async def process_message(self, msg):
         if not self.accepting_work:
@@ -29,6 +33,15 @@ class WorkProcessor(router.Processor):
             self.verify_work(msg)
 
     def verify_work(self, msg):
+        if msg['signer'] not in self.masters:
+            return
+
+        if not verify(vk=msg['signer'], msg=msg['input_hash'], signature=msg['signature']):
+            return
+
+        if int(time.time()) - msg['timestamp'] > self.expired_batch:
+            return
+
         self.work[msg['sender']] = msg
 
     def process_todo_work(self):
@@ -38,13 +51,14 @@ class WorkProcessor(router.Processor):
         # Check if the sender is a master
         # Check if the txs are old
 
-        for work in self.todo:
-            self.verify_work(work)
+        for work_ in self.todo:
+            self.verify_work(work_)
 
         self.todo.clear()
 
-    async def accept_work(self, expected_batched):
+    async def accept_work(self, expected_batched, masters):
         self.accepting_work = True
+        self.masters = masters
         self.process_todo_work()
 
         w = await work.gather_transaction_batches(
@@ -141,12 +155,6 @@ class Delegate(base.Node):
 
     async def run(self):
         self.log.debug('Running...')
-        # if storage.get_latest_block_height(self.driver) == 0:
-        #     self.log.debug('Waiting for a new block')
-        #     block = await self.new_block_processor.wait_for_next_nbn()
-        #     self.log.debug('Genesis block signal received.')
-        #     self.process_new_block(block)
-
         while self.running:
             await self.loop()
 

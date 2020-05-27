@@ -5,6 +5,7 @@ from cilantro_ee.formatting import check_format, rules, primatives
 from contracting.db.encoder import encode
 from cilantro_ee import storage
 from cilantro_ee.crypto import wallet
+from contracting.client import ContractingClient
 
 
 class TransactionException(Exception):
@@ -111,21 +112,26 @@ def get_new_pending_nonce(tx_nonce, nonce, pending_nonce, strict=True, tx_per_bl
     return pending_nonce
 
 
-def has_enough_stamps(balance, stamp_per_balance, stamps_supplied, contract=None, function=None, amount=0):
-    if balance * stamp_per_balance < stamps_supplied:
+def has_enough_stamps(balance, stamps_per_tau, stamps_supplied, contract=None, function=None, amount=0):
+    if balance * stamps_per_tau < stamps_supplied:
         raise TransactionSenderTooFewStamps
 
     # Prevent people from sending their entire balances for free by checking if that is what they are doing.
     if contract == 'currency' and function == 'transfer':
 
         # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
-        if ((balance - amount) * stamp_per_balance) / 6000 < 2:
+        if ((balance - amount) * stamps_per_tau) / 6000 < 2:
             raise TransactionSenderTooFewStamps
 
 
 def contract_name_is_valid(contract, function, name):
     if contract == 'submission' and function == 'submit_contract' and not primatives.contract_name_is_formatted(name):
         raise TransactionContractNameInvalid
+
+
+def transaction_is_not_expired(transaction, timeout=5):
+    timestamp = transaction['metadata']['timestamp']
+    return int(time.time()) - timestamp < timeout
 
 
 def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce: int, processor: str, stamps: int):
@@ -154,3 +160,59 @@ def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce:
     }
 
     return encode(format_dictionary(tx))
+
+
+# Run through all tests
+def transaction_is_valid(transaction, expected_processor, client: ContractingClient, nonces: storage.NonceStorage, strict=True,
+                         tx_per_block=15, timeout=5):
+    # Check basic formatting so we can access via __getitem__ notation without errors
+    if not check_format(transaction, rules.TRANSACTION_RULES):
+        return TransactionFormattingError
+
+    transaction_is_not_expired(transaction, timeout)
+
+    # Put in to variables for visual ease
+    processor = transaction['payload']['processor']
+    sender = transaction['payload']['sender']
+
+    # Checks if correct processor and if signature is valid
+    check_tx_formatting(transaction, expected_processor)
+
+    # Gets the expected nonces
+    nonce, pending_nonce = get_nonces(sender, processor, nonces)
+
+    # Get the provided nonce
+    tx_nonce = transaction['payload']['nonce']
+
+    # Check to see if the provided nonce is valid to what we expect and
+    # if there are less than the max pending txs in the block
+    get_new_pending_nonce(tx_nonce, nonce, pending_nonce, strict=strict, tx_per_block=tx_per_block)
+
+    # Get the senders balance and the current stamp rate
+    balance = client.get_var(contract='currency', variable='balances', arguments=[sender], mark=False)
+    stamp_rate = client.get_var(contract='stamp_cost', variable='S', arguments=['value'], mark=False)
+
+    contract = transaction['payload']['contract']
+    func = transaction['payload']['function']
+    stamps_supplied = transaction['payload']['stamps_supplied']
+    if stamps_supplied is None:
+        stamps_supplied = 0
+
+    if stamp_rate is None:
+        stamp_rate = 0
+
+    if balance is None:
+        balance = 0
+
+    # Get how much they are sending
+    amount = transaction['payload']['kwargs'].get('amount')
+    if amount is None:
+        amount = 0
+
+    # Check if they have enough stamps for the operation
+    has_enough_stamps(balance, stamp_rate, stamps_supplied, contract=contract, function=func, amount=amount)
+
+    # Check if contract name is valid
+    name = transaction['payload']['kwargs'].get('name')
+    contract_name_is_valid(contract, func, name)
+

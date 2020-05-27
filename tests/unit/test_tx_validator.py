@@ -4,6 +4,7 @@ from cilantro_ee.crypto.transaction import build_transaction
 from cilantro_ee.crypto.wallet import Wallet, verify
 from contracting.db.encoder import encode, decode
 from cilantro_ee import storage
+from contracting.client import ContractingClient
 
 class TestTransactionBuilder(TestCase):
     def test_init_valid_doesnt_assert(self):
@@ -94,9 +95,13 @@ class TestTransactionBuilder(TestCase):
 
         self.assertDictEqual(decoded['payload'], expected)
 
+
 class TestValidator(TestCase):
     def setUp(self):
         self.driver = storage.NonceStorage()
+        self.driver.flush()
+
+    def tearDown(self):
         self.driver.flush()
 
     def test_check_tx_formatting_succeeds(self):
@@ -309,3 +314,86 @@ class TestValidator(TestCase):
                 function='submit_contract',
                 name='co_hello'
             )
+
+    def test_transaction_is_not_expired_true_if_within_timeout(self):
+        w = Wallet()
+
+        tx = build_transaction(
+            wallet=w,
+            processor='b' * 64,
+            stamps=123,
+            nonce=0,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 123,
+                'to': 'jeff'
+            }
+        )
+
+        decoded = decode(tx)
+
+        self.assertTrue(transaction.transaction_is_not_expired(decoded))
+
+    def test_transaction_is_expired_false_if_outside_timeout(self):
+        w = Wallet()
+
+        tx = build_transaction(
+            wallet=w,
+            processor='b' * 64,
+            stamps=123,
+            nonce=0,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 123,
+                'to': 'jeff'
+            }
+        )
+
+        decoded = decode(tx)
+        decoded['metadata']['timestamp'] -= 1000
+
+        self.assertFalse(transaction.transaction_is_not_expired(decoded))
+
+    def test_transaction_is_valid_complete_test_passes(self):
+        w = Wallet()
+
+        tx = build_transaction(
+            wallet=w,
+            processor='b' * 64,
+            stamps=123,
+            nonce=0,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 123,
+                'to': 'jeff'
+            }
+        )
+
+        decoded = decode(tx)
+
+        client = ContractingClient()
+        client.flush()
+
+        client.set_var(
+            contract='currency',
+            variable='balances',
+            arguments=[w.verifying_key],
+            value=1_000_000
+        )
+
+        client.set_var(
+            contract='stamp_cost',
+            variable='S',
+            arguments=['value'],
+            value=20_000
+        )
+
+        transaction.transaction_is_valid(
+            transaction=decoded,
+            expected_processor='b' * 64,
+            client=client,
+            nonces=self.driver
+        )

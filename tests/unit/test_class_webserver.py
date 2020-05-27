@@ -367,10 +367,26 @@ def get():
     def test_good_transaction_is_put_into_queue(self):
         self.assertEqual(len(self.ws.queue), 0)
 
+        w = Wallet()
+
+        self.ws.client.set_var(
+            contract='currency',
+            variable='balances',
+            arguments=[w.verifying_key],
+            value=1_000_000
+        )
+
+        self.ws.client.set_var(
+            contract='stamp_cost',
+            variable='S',
+            arguments=['value'],
+            value=1_000_000
+        )
+
         tx = build_transaction(
-            wallet=Wallet(),
+            wallet=w,
             processor=self.ws.wallet.verifying_key,
-            stamps=123,
+            stamps=6000,
             nonce=0,
             contract='currency',
             function='transfer',

@@ -52,6 +52,7 @@ class MockMaster(MockNode):
             bootnodes=self.bootnodes,
             blocks=self.blocks,
             driver=self.driver,
+            webserver_port=self.webserver_port
         )
 
         await self.obj.start()
@@ -87,21 +88,22 @@ class MockDelegate(MockNode):
     def stop(self):
         self.obj.start()
 
+
 class MockNetwork:
-    def __init__(self, ctx, num_of_delegates, num_of_masternodes, bootnodes, constitution):
+    def __init__(self, num_of_masternodes, num_of_delegates, ctx):
         self.masternodes = []
         self.delegates = []
 
-        self.bootnodes = bootnodes
-        self.constitution = constitution
-
         self.ctx = ctx
 
-        for i in range(start=0, stop=num_of_masternodes):
+        for i in range(0, num_of_masternodes):
             self.build_masternode(i)
 
-        for i in range(start=num_of_masternodes, stop=num_of_delegates):
+        for i in range(num_of_masternodes, num_of_delegates + num_of_masternodes):
             self.build_delegate(i)
+
+        self.constitution = None
+        self.bootnodes = None
 
         self.prepare_nodes_to_start()
 
@@ -122,7 +124,10 @@ class MockNetwork:
             bootnodes[d.wallet.verifying_key] = d.ip
 
         for node in self.masternodes + self.delegates:
-            node.set_start_variables(bootnodes=bootnodes, constitution=self.constitution)
+            node.set_start_variables(bootnodes=bootnodes, constitution=constitution)
+
+        self.constitution = constitution
+        self.bootnodes = bootnodes
 
     def build_delegate(self, index):
         self.delegates.append(MockDelegate(self.ctx, index))
@@ -130,12 +135,15 @@ class MockNetwork:
     def build_masternode(self, index):
         self.masternodes.append(MockMaster(self.ctx, index=index))
 
-    def fund(self, vk, min_balance=500):
+    def fund(self, vk, min_balance=50000):
         current_balance = self.get_var(
             contract='currency',
             variable='balances',
             arguments=[vk]
         )
+
+        if current_balance is None:
+            current_balance = 0
 
         if current_balance < min_balance:
             new_balance = current_balance + min_balance
@@ -146,19 +154,32 @@ class MockNetwork:
                 value=new_balance
             )
 
-    def get_var(self, contract, variable, arguments):
-        values = set()
+    def get_var(self, contract, variable, arguments, delegates=False):
+        true_value = None
         for master in self.masternodes:
             value = master.driver.get_var(
                 contract=contract,
                 variable=variable,
                 arguments=arguments
             )
-            values.add(value)
+            if true_value is None:
+                true_value = value
+            else:
+                assert true_value == value, 'Masters have inconsistent state!'
 
-        assert len(values) == 1, 'Masters have inconsistent state!'
+        if delegates:
+            for delegate in self.delegates:
+                value = delegate.driver.get_var(
+                    contract=contract,
+                    variable=variable,
+                    arguments=arguments
+                )
+                if true_value is None:
+                    true_value = value
+                else:
+                    assert true_value == value, 'Masters have inconsistent state!'
 
-        return values.pop()
+        return true_value
 
     def set_var(self, contract, variable, arguments, value):
         for node in self.masternodes + self.delegates:
@@ -171,14 +192,18 @@ class MockNetwork:
                 value=value
             )
 
-    async def start_nodes(self):
+    async def start(self):
         coroutines = [node.start() for node in self.masternodes + self.delegates]
 
         await asyncio.gather(
             *coroutines
         )
 
-    async def generate_passing_tx(self, wallet, contract, function, kwargs, stamps=1_000_000, mn_idx=0, random_select=False):
+    def stop(self):
+        for node in self.masternodes + self.delegates:
+            node.stop()
+
+    async def make_and_push_tx(self, wallet, contract, function, kwargs={}, stamps=1_000_000, mn_idx=0, random_select=False):
         # Mint money if we have to
         self.fund(wallet.verifying_key)
 
@@ -191,7 +216,7 @@ class MockNetwork:
         processor = node.wallet.verifying_key
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(f'{node.webserver_ip}/nonce')
+            response = await client.get(f'{node.webserver_ip}/nonce/{wallet.verifying_key}')
             nonce = response.json()['nonce']
 
         tx = transaction.build_transaction(
@@ -207,6 +232,6 @@ class MockNetwork:
         async with httpx.AsyncClient() as client:
             await client.post(f'{node.webserver_ip}/', data=tx)
 
-    def flush_all(self):
+    def flush(self):
         for node in self.masternodes + self.delegates:
             node.flush()

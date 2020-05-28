@@ -28,6 +28,34 @@ class TestFullFlowWithMocks(TestCase):
         self.ctx.destroy()
         self.loop.close()
 
+    def test_mock_network_init_makes_correct_number_of_nodes(self):
+        n = mocks.MockNetwork(num_of_delegates=1, num_of_masternodes=1, ctx=self.ctx)
+        self.assertEqual(len(n.masternodes), 1)
+        self.assertEqual(len(n.delegates), 1)
+
+    def test_mock_network_init_makes_correct_number_of_nodes_many_nodes(self):
+        n = mocks.MockNetwork(num_of_delegates=123, num_of_masternodes=143, ctx=self.ctx)
+        self.assertEqual(len(n.masternodes), 143)
+        self.assertEqual(len(n.delegates), 123)
+
+    def test_mock_network_init_creates_correct_bootnodes(self):
+        # 2 mn, 3 delegate
+        expected_ips = [
+            'tcp://127.0.0.1:18000',
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002',
+            'tcp://127.0.0.1:18003',
+            'tcp://127.0.0.1:18004',
+        ]
+
+        n = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
+
+        self.assertEqual(n.masternodes[0].ip, expected_ips[0])
+        self.assertEqual(n.masternodes[1].ip, expected_ips[1])
+        self.assertEqual(n.delegates[0].ip, expected_ips[2])
+        self.assertEqual(n.delegates[1].ip, expected_ips[3])
+        self.assertEqual(n.delegates[2].ip, expected_ips[4])
+
     def test_startup_with_manual_node_creation_and_single_block_works(self):
         m = mocks.MockMaster(ctx=self.ctx, index=1)
         d = mocks.MockDelegate(ctx=self.ctx, index=2)
@@ -85,240 +113,178 @@ class TestFullFlowWithMocks(TestCase):
         # self.assertEqual(dbal, 1338)
         self.assertEqual(mbal, 1338)
 
-    def test_startup_network_and_process_two_blocks_works_from_webserver(self):
-        mw = Wallet()
-        mip = 'tcp://127.0.0.1:18001'
-
-        dw = Wallet()
-        dip = 'tcp://127.0.0.1:18002'
-
-        bootnodes = {
-            mw.verifying_key: mip,
-            dw.verifying_key: dip
-        }
-
-        constitution = {
-            'masternodes': [mw.verifying_key],
-            'delegates': [dw.verifying_key]
-        }
-
-        mnd = ContractDriver(driver=InMemDriver())
-        mn = masternode.Masternode(
-            socket_base=mip,
-            ctx=self.ctx,
-            wallet=mw,
-            constitution=constitution,
-            driver=mnd,
-            bootnodes=bootnodes
-        )
-
-        dld = ContractDriver(driver=InMemDriver())
-        dl = delegate.Delegate(
-            socket_base=dip,
-            ctx=self.ctx,
-            wallet=dw,
-            constitution=constitution,
-            driver=dld,
-            bootnodes=bootnodes
-        )
+    def test_startup_and_blocks_from_network_object_works(self):
+        network = mocks.MockNetwork(ctx=self.ctx, num_of_masternodes=1, num_of_delegates=1)
 
         sender = Wallet()
 
         async def test():
-            await asyncio.gather(
-                mn.start(),
-                dl.start()
-            )
+            await network.start()
 
-            mnd.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
-            dld.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
-
-            tx = transaction.build_transaction(
+            await network.make_and_push_tx(
                 wallet=sender,
                 contract='currency',
                 function='transfer',
                 kwargs={
                     'amount': 1338,
                     'to': 'jeff'
-                },
-                stamps=5000,
-                nonce=0,
-                processor=mw.verifying_key
+                }
             )
-
-            async with httpx.AsyncClient() as client:
-                await client.post('http://0.0.0.0:8080/', data=tx)
 
             await asyncio.sleep(2)
 
-            tx = transaction.build_transaction(
+            await network.make_and_push_tx(
                 wallet=sender,
                 contract='currency',
                 function='transfer',
                 kwargs={
                     'amount': 444,
                     'to': 'stu'
-                },
-                stamps=5000,
-                nonce=0,
-                processor=mw.verifying_key
+                }
             )
-
-            async with httpx.AsyncClient() as client:
-                await client.post('http://0.0.0.0:8080/', data=tx)
 
             await asyncio.sleep(2)
 
-            mn.stop()
-            dl.stop()
+            network.stop()
 
         self.loop.run_until_complete(test())
 
-        dbal = dld.get_var(contract='currency', variable='balances', arguments=['jeff'])
-        mbal = mnd.get_var(contract='currency', variable='balances', arguments=['jeff'])
+        v1 = network.get_var(contract='currency', variable='balances', arguments=['jeff'], delegates=True)
 
-        self.assertEqual(dbal, 1338)
-        self.assertEqual(mbal, 1338)
+        self.assertEqual(v1, 1338)
 
-        mbal = mnd.get_var(contract='currency', variable='balances', arguments=['stu'])
+        v2 = network.get_var(contract='currency', variable='balances', arguments=['stu'])
 
-        self.assertEqual(mbal, 444)
+        self.assertEqual(v2, 444)
 
-    def test_two_masters_two_delegates_processes_two_blocks(self):
-        mw1 = Wallet()
-        mip1 = 'tcp://127.0.0.1:18001'
-        mw2 = Wallet()
-        mip2 = 'tcp://127.0.0.1:18002'
-
-        dw1 = Wallet()
-        dip1 = 'tcp://127.0.0.1:18003'
-        dw2 = Wallet()
-        dip2 = 'tcp://127.0.0.1:18004'
-
-        bootnodes = {
-            mw1.verifying_key: mip1,
-            mw2.verifying_key: mip2,
-            dw1.verifying_key: dip1,
-            dw2.verifying_key: dip2
-        }
-
-        constitution = {
-            'masternodes': [mw1.verifying_key, mw2.verifying_key],
-            'delegates': [dw1.verifying_key, dw2.verifying_key]
-        }
-
-        mnd1 = ContractDriver(driver=InMemDriver())
-        mn1 = masternode.Masternode(
-            socket_base=mip1,
-            ctx=self.ctx,
-            wallet=mw1,
-            constitution=constitution,
-            driver=mnd1,
-            bootnodes=bootnodes,
-            webserver_port=8080
-        )
-
-        mnd2 = ContractDriver(driver=InMemDriver())
-        mn2 = masternode.Masternode(
-            socket_base=mip2,
-            ctx=self.ctx,
-            wallet=mw2,
-            constitution=constitution,
-            driver=mnd2,
-            bootnodes=bootnodes,
-            webserver_port=8081
-        )
-
-        dld1 = ContractDriver(driver=InMemDriver())
-        dl1 = delegate.Delegate(
-            socket_base=dip1,
-            ctx=self.ctx,
-            wallet=dw1,
-            constitution=constitution,
-            driver=dld1,
-            bootnodes=bootnodes
-        )
-
-        dld2 = ContractDriver(driver=InMemDriver())
-        dl2 = delegate.Delegate(
-            socket_base=dip2,
-            ctx=self.ctx,
-            wallet=dw2,
-            constitution=constitution,
-            driver=dld2,
-            bootnodes=bootnodes
-        )
+    def test_startup_and_blocks_from_network_object_works_no_wait(self):
+        network = mocks.MockNetwork(ctx=self.ctx, num_of_masternodes=1, num_of_delegates=1)
 
         sender = Wallet()
 
         async def test():
-            await asyncio.gather(
-                mn1.start(),
-                mn2.start(),
-                dl1.start(),
-                dl2.start()
-            )
+            await network.start()
 
-            mnd1.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
-            mnd2.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
-            dld1.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
-            dld2.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
-
-            tx = transaction.build_transaction(
+            await network.make_and_push_tx(
                 wallet=sender,
                 contract='currency',
                 function='transfer',
                 kwargs={
                     'amount': 1338,
                     'to': 'jeff'
-                },
-                stamps=5000,
-                nonce=0,
-                processor=mw1.verifying_key
+                }
             )
 
-            async with httpx.AsyncClient() as client:
-                await client.post('http://0.0.0.0:8080/', data=tx)
-
-            await asyncio.sleep(2)
-
-            tx = transaction.build_transaction(
+            await network.make_and_push_tx(
                 wallet=sender,
                 contract='currency',
                 function='transfer',
                 kwargs={
                     'amount': 444,
                     'to': 'stu'
-                },
-                stamps=5000,
-                nonce=0,
-                processor=mw2.verifying_key
+                }
             )
-
-            async with httpx.AsyncClient() as client:
-                await client.post('http://0.0.0.0:8081/', data=tx)
 
             await asyncio.sleep(2)
 
-            mn1.stop()
-            mn2.stop()
-            dl1.stop()
-            dl2.stop()
+            network.stop()
 
         self.loop.run_until_complete(test())
 
-        dbal1 = dld1.get_var(contract='currency', variable='balances', arguments=['jeff'])
-        dbal2 = dld1.get_var(contract='currency', variable='balances', arguments=['jeff'])
-        mbal1 = mnd1.get_var(contract='currency', variable='balances', arguments=['jeff'])
-        mbal2 = mnd1.get_var(contract='currency', variable='balances', arguments=['jeff'])
+        v1 = network.get_var(contract='currency', variable='balances', arguments=['jeff'], delegates=True)
 
-        self.assertEqual(dbal1, 1338)
-        self.assertEqual(dbal2, 1338)
-        self.assertEqual(mbal1, 1338)
-        self.assertEqual(mbal2, 1338)
+        self.assertEqual(v1, 1338)
 
-        mbal1 = mnd1.get_var(contract='currency', variable='balances', arguments=['stu'])
-        mbal2 = mnd2.get_var(contract='currency', variable='balances', arguments=['stu'])
+        v2 = network.get_var(contract='currency', variable='balances', arguments=['stu'])
 
-        self.assertEqual(mbal1, 444)
-        self.assertEqual(mbal2, 444)
+        self.assertEqual(v2, 444)
+        network.flush()
+
+    def test_add_new_masternode_with_transactions(self):
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=1, ctx=self.ctx)
+
+        stu = Wallet()
+        candidate = Wallet()
+
+        async def test():
+            await network.start()
+
+            network.fund(stu.verifying_key, 1_000_000)
+            network.fund(candidate.verifying_key, 1_000_000)
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='elect_masternodes',
+                function='register'
+            )
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='elect_masternodes',
+                function='vote_candidate',
+                kwargs={
+                    'address': candidate.verifying_key
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('introduce_motion', 2)
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[1].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await asyncio.sleep(2)
+
+        self.loop.run_until_complete(test())
+
+        network.stop()
+
+        masters = network.get_var(contract='masternodes', variable='S', arguments=['members'])
+        self.assertListEqual(
+            masters,
+            [*[node.wallet.verifying_key for node in network.masternodes], candidate.verifying_key]
+        )

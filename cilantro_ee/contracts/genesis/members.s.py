@@ -122,7 +122,6 @@ def pass_current_motion():
         # Get the top member
         member_candidates = importlib.import_module(candidate_contract.get())
         new_mem = member_candidates.top_member()
-        print(f'NEW MEMBER: {new_mem}')
 
         # Append it to the list, and remove it from pending
         if new_mem is not None:

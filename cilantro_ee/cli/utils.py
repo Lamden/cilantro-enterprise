@@ -46,11 +46,11 @@ def run_install(only_contaract=False):
     if not only_contaract:
         path =  os.path.join(os.path.dirname(cilantro_ee.__file__),  '..')
         os.chdir(f'{path}')
-        subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+        subprocess.check_call(['python3', "setup.py", "install"])  #"develop"
 
     path2 =  os.path.join(os.path.dirname(contracting.__file__),  '..')
     os.chdir(f'{path2}')
-    return subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
+    return subprocess.check_call(['python3', "setup.py", "install"])  #"develop"
 
 
 def get_version(path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')):

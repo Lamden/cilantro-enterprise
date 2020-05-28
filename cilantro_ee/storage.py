@@ -136,14 +136,14 @@ class BlockStorage:
     BLOCK = 0
     TX = 1
 
-    def __init__(self, port=27027, config_path=cilantro_ee.__path__[0]):
+    def __init__(self, port=27027, config_path=cilantro_ee.__path__[0], db='blockchain'):
         # Setup configuration file to read constants
         self.config_path = config_path
 
         self.port = port
 
         self.client = MongoClient()
-        self.db = self.client.get_database('blockchain')
+        self.db = self.client.get_database(db)
 
         self.blocks = self.db['blocks']
         self.txs = self.db['tx']

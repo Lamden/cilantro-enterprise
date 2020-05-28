@@ -40,27 +40,27 @@ class WorkProcessor(router.Processor):
             self.verify_work(msg)
 
     def verify_work(self, msg):
-        if msg['sender'] not in self.masters:
-            return
+        # if msg['sender'] not in self.masters:
+        #     return
+        #
+        # if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
+        #     return
+        #
+        # if int(time.time()) - msg['timestamp'] > self.expired_batch:
+        #     return
 
-        if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
-            return
-
-        if int(time.time()) - msg['timestamp'] > self.expired_batch:
-            return
-
-        for tx in msg['transactions']:
-            try:
-                transaction.transaction_is_valid(
-                    transaction=tx,
-                    expected_processor=msg['sender'],
-                    client=self.client,
-                    nonces=self.nonces,
-                    strict=False,
-                    timeout=self.expired_batch + self.tx_timeout
-                )
-            except transaction.TransactionException:
-                return
+        # for tx in msg['transactions']:
+        #     try:
+        #         transaction.transaction_is_valid(
+        #             transaction=tx,
+        #             expected_processor=msg['sender'],
+        #             client=self.client,
+        #             nonces=self.nonces,
+        #             strict=False,
+        #             timeout=self.expired_batch + self.tx_timeout
+        #         )
+        #     except transaction.TransactionException:
+        #         return
 
         self.work[msg['sender']] = msg
 
@@ -103,7 +103,7 @@ class Delegate(base.Node):
         self.parallelism = parallelism
         self.executor = Executor(driver=self.driver)
 
-        self.work_processor = WorkProcessor()
+        self.work_processor = WorkProcessor(client=self.client, nonces=self.nonces)
         self.router.add_service(WORK_SERVICE, self.work_processor)
 
         self.log = get_logger(f'DEL {self.wallet.vk_pretty[4:12]}')
@@ -123,7 +123,7 @@ class Delegate(base.Node):
 
         self.log.error(f'{len(current_masternodes)} MNS!')
 
-        w = await self.work_processor.accept_work(expected_batched=len(current_masternodes))
+        w = await self.work_processor.accept_work(expected_batched=len(current_masternodes), masters=current_masternodes)
 
         self.log.info(f'Got {len(w)} batch(es) of work')
 
@@ -134,7 +134,7 @@ class Delegate(base.Node):
 
     async def wait_for_new_block_confirmation(self):
         block = await self.new_block_processor.wait_for_next_nbn()
-        self.update_state(block)
+        self.process_new_block(block)
 
     async def process_new_work(self):
         if len(self.get_masternode_peers()) == 0:
@@ -147,7 +147,7 @@ class Delegate(base.Node):
 
         while len(self.new_block_processor.q) > 0:
             block = self.new_block_processor.q.pop(0)
-            self.update_state(block)
+            self.process_new_block(block)
 
         results = execution.execute_work(
             executor=self.executor,
@@ -167,6 +167,7 @@ class Delegate(base.Node):
             ctx=self.ctx
         )
 
+        self.new_block_processor.clean()
         self.driver.clear_pending_state()
 
     async def loop(self):

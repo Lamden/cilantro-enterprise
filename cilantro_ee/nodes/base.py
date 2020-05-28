@@ -83,7 +83,6 @@ class NewBlock(router.Processor):
 
     def clean(self):
         num = storage.get_latest_block_height(self.driver)
-        log.debug(self.q)
         self.q = [nbn for nbn in self.q if nbn['number'] > num]
 
 
@@ -183,7 +182,7 @@ class Node:
             self.update_state(block)
 
     def should_process(self, block):
-        log.debug(block)
+        log.debug(f'got block #{block["number"]}')
         # Test if block failed immediately
         if block['hash'] == 'f' * 64:
             return False
@@ -194,6 +193,7 @@ class Node:
 
         # Test if block contains the same metastate
         if block['number'] != current_height + 1:
+            log.debug('Lower number block...')
             return False
 
         if block['previous'] != current_hash:
@@ -207,11 +207,13 @@ class Node:
         )
 
         # Return if the block contains the expected information
+
         return block == expected_block
 
     def update_state(self, block):
         # Check if the block is valid
         if self.should_process(block):
+            log.debug('Updating with new block')
             # Commit the state changes and nonces to the database
             storage.update_state_with_block(
                 block=block,
@@ -250,6 +252,11 @@ class Node:
 
         # Get the set of VKs we are looking for from the constitution argument
         vks = self.constitution['masternodes'] + self.constitution['delegates']
+
+        for node in self.bootnodes.keys():
+            self.socket_authenticator.add_verifying_key(node)
+
+        self.socket_authenticator.configure()
 
         # Use it to boot up the network
         await self.network.start(bootnodes=self.bootnodes, vks=vks)

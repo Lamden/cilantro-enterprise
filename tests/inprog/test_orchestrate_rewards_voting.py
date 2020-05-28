@@ -296,9 +296,9 @@ class TestGovernanceOrchestration(unittest.TestCase):
             await o.start_network
             await asyncio.sleep(5)
             await send_tx_batch(o.masternodes[0], block_0)
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)
             await send_tx_batch(o.masternodes[0], block_1)
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
@@ -498,6 +498,18 @@ class TestGovernanceOrchestration(unittest.TestCase):
             sender=o.delegates[2].wallet
         ))
 
+        block_2 = []
+
+        block_2.append(o.make_tx(
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 1,
+                'to': o.delegates[0].wallet.verifying_key
+            },
+            sender=o.delegates[1].wallet
+        ))
+
         async def test():
 
             await o.start_network
@@ -505,6 +517,8 @@ class TestGovernanceOrchestration(unittest.TestCase):
             await send_tx_batch(o.masternodes[0], block_0)
             await asyncio.sleep(3)
             await send_tx_batch(o.masternodes[0], block_1)
+            await asyncio.sleep(3)
+            await send_tx_batch(o.masternodes[0], block_2)
             await asyncio.sleep(3)
 
         loop = asyncio.get_event_loop()

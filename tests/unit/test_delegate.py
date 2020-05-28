@@ -301,10 +301,7 @@ def get():
             'input_hash': 'A' * 64
         }
 
-        work = [
-            (tx_batch_1['timestamp'], tx_batch_1),
-            (tx_batch_2['timestamp'], tx_batch_2)
-        ]
+        work = [tx_batch_1, tx_batch_2]
 
         results = execution.execute_work(
             executor=self.client.executor,
@@ -353,9 +350,7 @@ def get():
             'input_hash': 'A' * 64
         }
 
-        work = [
-            (tx_batch_1['timestamp'], tx_batch_1),
-        ]
+        work = [tx_batch_1]
 
         w = Wallet()
 
@@ -430,8 +425,7 @@ def get():
         _, _, _, w, _, _ = self.loop.run_until_complete(tasks)
 
         self.assertEqual(len(w), 1)
-        self.assertEqual(w[0][0], w[0][1]['timestamp'])
-        self.assertEqual(w[0][1]['sender'], mw.verifying_key)
+        self.assertEqual(w[0]['sender'], mw.verifying_key)
 
     def test_acquire_work_2_masters_gathers_tx_batches_pads_work_and_waits_if_missing(self):
         ips = [
@@ -490,13 +484,11 @@ def get():
         _, _, _, w, _, _ = self.loop.run_until_complete(tasks)
 
         self.assertEqual(len(w), 2)
-        self.assertEqual(w[0][0], w[0][1]['timestamp'])
-        self.assertEqual(w[0][1]['sender'], mw.verifying_key)
+        self.assertEqual(w[0]['sender'], mw.verifying_key)
 
-        self.assertEqual(w[1][0], w[1][1]['timestamp'])
-        self.assertEqual(w[1][1]['sender'], mw2.verifying_key)
-        self.assertEqual(w[1][1]['input_hash'], mw2.verifying_key)
-        self.assertEqual(w[1][1]['signature'], '0' * 128)
+        self.assertEqual(w[1]['sender'], mw2.verifying_key)
+        self.assertEqual(w[1]['input_hash'], mw2.verifying_key)
+        self.assertEqual(w[1]['signature'], '0' * 128)
 
     def test_process_new_work_processes_tx_batch(self):
         ips = [
@@ -621,6 +613,167 @@ def get():
         # self.assertEqual(sbc[0]['previous'], '0' * 64)
         # self.assertEqual(sbc[0]['signer'], dw.verifying_key)
 
+    def test_masternode_delegate_single_loop_commits_state_changes(self):
+        ips = [
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002'
+        ]
+
+        dw = Wallet()
+        mw = Wallet()
+
+        self.authenticator.add_verifying_key(mw.verifying_key)
+        self.authenticator.add_verifying_key(dw.verifying_key)
+        self.authenticator.configure()
+
+        mnd = ContractDriver(driver=InMemDriver())
+        mn = masternode.Masternode(
+            socket_base=ips[0],
+            ctx=self.ctx,
+            wallet=mw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=mnd
+        )
+        sender = Wallet()
+        mnd.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
+
+        dld = ContractDriver(driver=InMemDriver())
+        dld.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
+        dl = delegate.Delegate(
+            socket_base=ips[1],
+            ctx=self.ctx,
+            wallet=dw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=dld
+        )
+
+        tx = transaction.build_transaction(
+            wallet=sender,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 1338,
+                'to': 'jeff'
+            },
+            stamps=5000,
+            nonce=0,
+            processor=mw.verifying_key
+        )
+
+        tx_decoded = decode(tx)
+        mn.tx_batcher.queue.append(tx_decoded)
+
+        peers = {
+            mw.verifying_key: ips[0],
+            dw.verifying_key: ips[1]
+        }
+
+        mn.network.peers = peers
+        dl.network.peers = peers
+
+        tasks = asyncio.gather(
+            mn.router.serve(),
+            dl.router.serve(),
+            mn.loop(),
+            dl.loop(),
+            stop_server(mn.router, 1),
+            stop_server(dl.router, 1),
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        dbal = dld.get_var(contract='currency', variable='balances', arguments=['jeff'])
+        mbal = mnd.get_var(contract='currency', variable='balances', arguments=['jeff'])
+
+        self.assertEqual(dbal, 1338)
+        self.assertEqual(mbal, 1338)
+
+    def test_masternode_delegate_single_loop_updates_block_num(self):
+        ips = [
+            'tcp://127.0.0.1:18001',
+            'tcp://127.0.0.1:18002'
+        ]
+
+        dw = Wallet()
+        mw = Wallet()
+
+        self.authenticator.add_verifying_key(mw.verifying_key)
+        self.authenticator.add_verifying_key(dw.verifying_key)
+        self.authenticator.configure()
+
+        mnd = ContractDriver(driver=InMemDriver())
+        mn = masternode.Masternode(
+            socket_base=ips[0],
+            ctx=self.ctx,
+            wallet=mw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=mnd
+        )
+        sender = Wallet()
+        mnd.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
+
+        dld = ContractDriver(driver=InMemDriver())
+        dld.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
+        dl = delegate.Delegate(
+            socket_base=ips[1],
+            ctx=self.ctx,
+            wallet=dw,
+            constitution={
+                'masternodes': [mw.verifying_key],
+                'delegates': [dw.verifying_key]
+            },
+            driver=dld
+        )
+
+        tx = transaction.build_transaction(
+            wallet=sender,
+            contract='currency',
+            function='transfer',
+            kwargs={
+                'amount': 1338,
+                'to': 'jeff'
+            },
+            stamps=5000,
+            nonce=0,
+            processor=mw.verifying_key
+        )
+
+        tx_decoded = decode(tx)
+        mn.tx_batcher.queue.append(tx_decoded)
+
+        peers = {
+            mw.verifying_key: ips[0],
+            dw.verifying_key: ips[1]
+        }
+
+        mn.network.peers = peers
+        dl.network.peers = peers
+
+        tasks = asyncio.gather(
+            mn.router.serve(),
+            dl.router.serve(),
+            mn.loop(),
+            dl.loop(),
+            stop_server(mn.router, 1),
+            stop_server(dl.router, 1),
+        )
+
+        self.loop.run_until_complete(tasks)
+
+        dh = storage.get_latest_block_height(dld)
+        mh = storage.get_latest_block_height(mnd)
+
+        self.assertEqual(dh, 1)
+        self.assertEqual(mh, 1)
 
 class MockWork:
     def __init__(self, sender):
@@ -723,7 +876,7 @@ class TestWork(TestCase):
 
         filtered = work.filter_work([w, None])
 
-        self.assertEqual(filtered, [(0, w)])
+        self.assertEqual(filtered, [w])
 
     def test_filter_sorts_by_time_stamp(self):
         w = {
@@ -740,4 +893,4 @@ class TestWork(TestCase):
 
         filtered = work.filter_work([w, w2, w3])
 
-        self.assertEqual(filtered, [(1, w3), (123, w2), (125, w)])
+        self.assertEqual(filtered, [w3, w2, w])

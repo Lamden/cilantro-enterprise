@@ -37,18 +37,23 @@ def pad_work(work: list, expected_masters: list):
 
 
 def filter_work(work):
-    filtered_work = []
-    for tx_batch in work:
-        # Filter out None responses
-        if tx_batch is None:
-            continue
-
-        # Add the rest to a priority queue based on their timestamp
-        heapq.heappush(filtered_work, (tx_batch['timestamp'], tx_batch))
-
-    # Actually sorts the heap. This can be rewritten to use heap push pop.
-    w = []
-    for i in range(len(filtered_work)):
-        w.append(heapq.heappop(filtered_work))
-
-    return w
+    actual_work = [w for w in work if w is not None]
+    return sorted(actual_work, key=lambda x: x['timestamp'])
+    # filtered_work = []
+    # print(work)
+    # for tx_batch in work:
+    #     # Filter out None responses
+    #     if tx_batch is None:
+    #         continue
+    #
+    #     # Add the rest to a priority queue based on their timestamp
+    #     print(filtered_work)
+    #     print(tx_batch)
+    #     heapq.heappush(filtered_work, (tx_batch['timestamp'], tx_batch))
+    #
+    # # Actually sorts the heap. This can be rewritten to use heap push pop.
+    # w = []
+    # for i in range(len(filtered_work)):
+    #     w.append(heapq.heappop(filtered_work))
+    #
+    # return w

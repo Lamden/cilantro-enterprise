@@ -24,6 +24,8 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
         auto_commit=False
     )
 
+    log.debug(output)
+
     tx_hash = tx_hash_from_tx(transaction)
 
     writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
@@ -77,9 +79,7 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
     subblocks = []
     i = 0
 
-    while len(work) > 0:
-        _, tx_batch = heapq.heappop(work)
-
+    for tx_batch in work:
         results = execute_tx_batch(
             executor=executor,
             driver=driver,

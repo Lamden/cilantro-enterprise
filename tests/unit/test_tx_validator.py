@@ -6,6 +6,7 @@ from contracting.db.encoder import encode, decode
 from cilantro_ee import storage
 from contracting.client import ContractingClient
 
+
 class TestTransactionBuilder(TestCase):
     def test_init_valid_doesnt_assert(self):
         build_transaction(

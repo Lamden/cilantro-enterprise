@@ -149,15 +149,15 @@ class Router(JSONAsyncInbox):
         service = msg.get('service')
         request = msg.get('msg')
 
-        logger.debug(f'Message recieved for: {service}.')
+        #logger.debug(f'Message recieved for: {service}.')
 
         if service is None:
-            logger.debug('No service found for message.')
+            #logger.debug('No service found for message.')
             await super().return_msg(_id, OK)
             return
 
         if request is None:
-            logger.debug('No request found in message.')
+            #logger.debug('No request found in message.')
             await super().return_msg(_id, OK)
             return
 
@@ -232,7 +232,7 @@ async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: s
     event = await socket.poll(timeout=timeout, flags=zmq.POLLIN)
     msg = None
     if event:
-        logger.debug(f'Message received on {ip}')
+        #logger.debug(f'Message received on {ip}')
         response = await socket.recv()
 
         msg = decode(response)

@@ -3,7 +3,7 @@ from contracting.db.encoder import encode, decode
 from cilantro_ee.crypto.wallet import Wallet
 import asyncio
 from copy import deepcopy
-from contracting.db.driver import ContractDriver, InMemDriver
+from contracting.db.driver import ContractDriver, InMemDriver, Driver
 from cilantro_ee.nodes.delegate.delegate import Delegate
 from cilantro_ee.nodes.masternode.masternode import Masternode
 
@@ -23,6 +23,7 @@ def make_ipc(p):
         os.mkdir(p)
     except:
         pass
+
 
 def make_network(masternodes, delegates, ctx):
     mn_wallets = [Wallet() for _ in range(masternodes)]
@@ -47,7 +48,7 @@ def make_network(masternodes, delegates, ctx):
 
     node_count = 0
     for wallet in mn_wallets:
-        driver = ContractDriver(driver=InMemDriver())
+        driver = ContractDriver(driver=Driver(collection=wallet.verifying_key))
         # driver = IsolatedDriver()
         port = 18000 + node_count
         tcp = f'tcp://127.0.0.1:{port}'
@@ -59,14 +60,14 @@ def make_network(masternodes, delegates, ctx):
             bootnodes=bootnodes,
             constitution=deepcopy(constitution),
             webserver_port=18080 + node_count,
-            driver=driver
+            driver=driver,
         )
 
         mns.append(mn)
         node_count += 1
 
     for wallet in dl_wallets:
-        driver = ContractDriver(driver=InMemDriver())
+        driver = ContractDriver(driver=Driver(collection=wallet.verifying_key))
         # driver = IsolatedDriver()
         port = 18000 + node_count
         tcp = f'tcp://127.0.0.1:{port}'

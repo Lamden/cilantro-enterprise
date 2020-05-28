@@ -50,7 +50,7 @@ def unregister():
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # VOTE CANDIDATE
 @export
 def vote_candidate(address: str):
-    assert candidate_state['registered', address]
+    assert candidate_state['registered', address], 'Candidate not registered.'
 
     # Determine if caller can vote
     v = candidate_state['last_voted', ctx.caller]

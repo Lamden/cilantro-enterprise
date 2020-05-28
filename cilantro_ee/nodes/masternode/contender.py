@@ -11,7 +11,7 @@ import time
 
 
 class SBCInbox(router.Processor):
-    def __init__(self, expected_subblocks=4, debug=True):
+    def __init__(self, expected_subblocks=4, debug=False):
         self.q = []
         self.expected_subblocks = expected_subblocks
         self.log = get_logger('Subblock Gatherer')
@@ -252,7 +252,7 @@ class BlockContender:
 
 # Can probably move this into the masternode. Move the sbc inbox there and deprecate this class
 class Aggregator:
-    def __init__(self, driver, expected_subblocks=4, seconds_to_timeout=10):
+    def __init__(self, driver, expected_subblocks=4, seconds_to_timeout=10, debug=False):
         self.expected_subblocks = expected_subblocks
         self.sbc_inbox = SBCInbox(
             expected_subblocks=self.expected_subblocks,
@@ -263,6 +263,7 @@ class Aggregator:
         self.seconds_to_timeout = seconds_to_timeout
 
         self.log = get_logger('AGG')
+        self.log.propagate = debug
 
     async def gather_subblocks(self, total_contacts, quorum_ratio=0.66, adequate_ratio=0.5, expected_subblocks=4):
         self.sbc_inbox.expected_subblocks = expected_subblocks

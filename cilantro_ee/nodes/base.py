@@ -291,6 +291,7 @@ class Node:
 
                         self.log.info(f'New branch {branch_name} was reloaded OK.')
                 else:
+                    self.log.info(f'Update failed. Old branches restored')
                     version_reboot(old_branch_name, old_contract_name)
             else:
                 self.log.info('waiting for vote on upgrade')

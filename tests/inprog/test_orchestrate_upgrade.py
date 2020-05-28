@@ -198,7 +198,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
             kwargs={
                 'cilantro_branch_name': 'ori1-rel-gov-socks-upg',
                 'contract_branch_name': 'dev',
-                'pepper': '0817263ce1d035cef2b005930e24d208e8d3448a8cee97c679cec13a53ce3ea4',
+                'pepper': 'dfc0abaa4c418f230d977b8b9b3709f747b109194f1aafcc93f0b3142ba5e9a7',
                 'initiator_vk': stu.verifying_key().hex()
             },
             sender=candidate

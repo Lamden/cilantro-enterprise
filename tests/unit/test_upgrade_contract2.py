@@ -2,7 +2,7 @@ import unittest
 import os
 import subprocess
 from cilantro_ee.contracts import sync
-from cilantro_ee.cli.utils import build_pepper
+from cilantro_ee.cli.utils import build_pepper, get_version
 from cilantro_ee.crypto.wallet import Wallet
 # from contracting.db.driver import ContractDriver
 # from contracting.client import ContractingClient
@@ -53,7 +53,7 @@ class TestUpdateContractFix(TestCase):
         upgrade = self.client.get_contract('upgrade')
         p = build_pepper()
         br_name = 'ori1-rel-gov-socks'
-        upgrade.trigger_upgrade(git_branch_name=br_name, pepper= p, initiator_vk=self.mn_wallets[0])
+        upgrade.trigger_upgrade(cilantro_branch_name=br_name, contract_branch_name=br_name, pepper= p, initiator_vk=self.mn_wallets[0])
 
         upgrade.quick_write(variable='tot_mn', value=3)
         upgrade.quick_write(variable='tot_dl', value=3)
@@ -96,8 +96,11 @@ class TestUpdateContractFix(TestCase):
         new_branch_name=None
         # subprocess.check_call(['git', "rev-parse", "--abbrev", "-ref", "HEAD"])  # git rev-parse --abbrev-ref HEAD
         from subprocess import check_output
-        new_branch_name = check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip()
+        new_branch_name = check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip().decode()
         print (new_branch_name)
+        old_branch = get_version()
+        flag = 'ori1-rel-gov-socks-upg' == old_branch
+        print(flag)
 
 
 

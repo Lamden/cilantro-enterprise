@@ -57,7 +57,7 @@ def get_version(path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..'
     cur_branch_name = None
     try:
         os.chdir(path)
-        cur_branch_name = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip()
+        cur_branch_name = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip().decode()
     except OSError as err:
         print("OS error: {0}".format(err))
     except:

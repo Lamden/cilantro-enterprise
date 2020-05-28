@@ -275,6 +275,7 @@ class Node:
                 old_branch_name = get_version()
                 old_contract_name = get_version(os.path.join(os.path.dirname(contracting.__file__),  '..'))
                 only_contract = branch_name==old_branch_name
+                self.log.info(f'Old CIL branch={old_branch_name}  Old contract branch={old_contract_name}  Only contract update={only_contract}')
                 if version_reboot(branch_name, contract_name, only_contract):
                     p = build_pepper(cil_path)
                     if self.pepper != p:

@@ -36,7 +36,7 @@ class MockMaster(MockNode):
     def __init__(self, ctx, index=1):
         super().__init__(ctx, index)
 
-        self.webserver_port = 8080 + index
+        self.webserver_port = 18080 + index
         self.webserver_ip = f'http://0.0.0.0:{self.webserver_port}'
 
         self.blocks = storage.BlockStorage(db=f'blockchain-{index}')
@@ -63,7 +63,7 @@ class MockMaster(MockNode):
         self.blocks.drop_collections()
 
     def stop(self):
-        self.obj.start()
+        self.obj.stop()
 
 
 class MockDelegate(MockNode):
@@ -86,7 +86,7 @@ class MockDelegate(MockNode):
         self.started = True
 
     def stop(self):
-        self.obj.start()
+        self.obj.stop()
 
 
 class MockNetwork:
@@ -136,7 +136,7 @@ class MockNetwork:
         self.masternodes.append(MockMaster(self.ctx, index=index))
 
     def fund(self, vk, min_balance=50000):
-        current_balance = self.get_var(
+        current_balance = self.masternodes[0].driver.get_var(
             contract='currency',
             variable='balances',
             arguments=[vk]
@@ -235,3 +235,8 @@ class MockNetwork:
     def flush(self):
         for node in self.masternodes + self.delegates:
             node.flush()
+
+    def refresh(self):
+        self.flush()
+        for node in self.masternodes + self.delegates:
+            node.obj.seed_genesis_contracts()

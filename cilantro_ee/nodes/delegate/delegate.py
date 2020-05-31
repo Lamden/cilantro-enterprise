@@ -108,8 +108,6 @@ class Delegate(base.Node):
 
         self.log = get_logger(f'DEL {self.wallet.vk_pretty[4:12]}')
 
-        self.masternode_contract = self.client.get_contract('masternodes')
-
     async def start(self):
         self.log.debug('Starting')
         await super().start()
@@ -128,7 +126,7 @@ class Delegate(base.Node):
         self.log.info(f'Got {len(w)} batch(es) of work')
 
         expected_masters = set(current_masternodes)
-        work.pad_work(work=w, expected_masters=expected_masters)
+        work.pad_work(work=w, expected_masters=list(expected_masters))
 
         return work.filter_work(w)
 

@@ -109,8 +109,6 @@ class Masternode(base.Node):
         # Network upgrade flag
         self.active_upgrade = False
 
-        self.masternode_contract = self.client.get_contract('masternodes')
-
     async def start(self):
         self.router.add_service(base.BLOCK_SERVICE, BlockService(self.blocks, self.driver))
 
@@ -232,9 +230,11 @@ class Masternode(base.Node):
         await self.send_work()
 
         # this really should just give us a block straight up
+        masters = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'], mark=False)
+
         block = await self.aggregator.gather_subblocks(
             total_contacts=len(self.get_delegate_peers()),
-            expected_subblocks=len(self.masternode_contract.quick_read("S", "members"))
+            expected_subblocks=len(masters)
         )
 
         encoded_block = encode(block)

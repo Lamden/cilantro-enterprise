@@ -17,7 +17,7 @@ DEFAULT_DOMAIN = '*'
 
 class SocketAuthenticator:
     def __init__(self, client: ContractingClient, ctx: zmq.asyncio.Context, bootnodes: dict={},
-                 loop=asyncio.get_event_loop(), domain='*', cert_dir=CERT_DIR, debug=True):
+                 loop=asyncio.get_event_loop(), domain='*', cert_dir=CERT_DIR, debug=False):
 
         # Create the directory if it doesn't exist
         self.client = client
@@ -41,8 +41,8 @@ class SocketAuthenticator:
             self.authenticator = AsyncioAuthenticator(context=self.ctx, loop=self.loop)
             self.authenticator.start()
 
-        except ZMQBaseError as e:
-            self.log.error(e)
+        except ZMQBaseError:
+            self.log.error('Error starting ZMQ Authenticator. Is it already running?')
 
         finally:
             for node in bootnodes.keys():

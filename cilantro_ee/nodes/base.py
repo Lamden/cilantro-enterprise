@@ -113,11 +113,7 @@ class Node:
         self.bootnodes = bootnodes
         self.constitution = constitution
 
-        sync.setup_genesis_contracts(
-            initial_masternodes=self.constitution['masternodes'],
-            initial_delegates=self.constitution['delegates'],
-            client=self.client
-        )
+        self.seed_genesis_contracts()
 
         self.socket_authenticator = authentication.SocketAuthenticator(
             bootnodes=self.bootnodes, ctx=self.ctx, client=self.client
@@ -143,6 +139,13 @@ class Node:
         self.router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
 
         self.running = False
+
+    def seed_genesis_contracts(self):
+        sync.setup_genesis_contracts(
+            initial_masternodes=self.constitution['masternodes'],
+            initial_delegates=self.constitution['delegates'],
+            client=self.client
+        )
 
     async def catchup(self, mn_seed, mn_vk):
         # Get the current latest block stored and the latest block of the network
@@ -247,7 +250,6 @@ class Node:
         self.upgrade_manager.version_check()
 
     async def start(self):
-
         asyncio.ensure_future(self.router.serve())
 
         # Get the set of VKs we are looking for from the constitution argument

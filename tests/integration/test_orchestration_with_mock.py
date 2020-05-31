@@ -6,9 +6,10 @@ from cilantro_ee.nodes import masternode, delegate
 from cilantro_ee import storage
 import zmq.asyncio
 import asyncio
-
+from copy import deepcopy
 from unittest import TestCase
 import httpx
+
 
 from . import mocks
 
@@ -201,13 +202,14 @@ class TestFullFlowWithMocks(TestCase):
         network.flush()
 
     def test_add_new_masternode_with_transactions(self):
-        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=1, ctx=self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
 
         stu = Wallet()
         candidate = Wallet()
 
         async def test():
             await network.start()
+            network.refresh()
 
             network.fund(stu.verifying_key, 1_000_000)
             network.fund(candidate.verifying_key, 1_000_000)
@@ -277,7 +279,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
         self.loop.run_until_complete(test())
 
@@ -288,3 +290,108 @@ class TestFullFlowWithMocks(TestCase):
             masters,
             [*[node.wallet.verifying_key for node in network.masternodes], candidate.verifying_key]
         )
+
+        network.flush()
+
+    def test_vote_new_masternode_in_can_join_quorum_afterwards(self):
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+
+        stu = Wallet()
+        candidate = Wallet()
+
+        async def test():
+            await network.start()
+            network.refresh()
+
+            network.fund(stu.verifying_key, 1_000_000)
+            network.fund(candidate.verifying_key, 1_000_000)
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='elect_masternodes',
+                function='register'
+            )
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='elect_masternodes',
+                function='vote_candidate',
+                kwargs={
+                    'address': candidate.verifying_key
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('introduce_motion', 2)
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[1].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await asyncio.sleep(4)
+
+            canidate_master = mocks.MockMaster(
+                ctx=self.ctx,
+                index=999
+            )
+
+            constitution = deepcopy(network.constitution)
+            bootnodes = deepcopy(network.bootnodes)
+
+            constitution['masternodes'].append(candidate.verifying_key)
+            # bootnodes[candidate.verifying_key] = canidate_master.ip
+
+            print(bootnodes)
+
+            canidate_master.set_start_variables(bootnodes=bootnodes, constitution=constitution)
+
+            await canidate_master.start()
+
+        self.loop.run_until_complete(test())

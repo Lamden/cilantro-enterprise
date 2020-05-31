@@ -102,9 +102,12 @@ class AsyncInbox:
                 self.setup_socket()
 
     def setup_socket(self):
-        self.socket = self.ctx.socket(zmq.ROUTER)
-        self.socket.setsockopt(zmq.LINGER, self.linger)
-        self.socket.bind(self.address)
+        try:
+            self.socket = self.ctx.socket(zmq.ROUTER)
+            self.socket.setsockopt(zmq.LINGER, self.linger)
+            self.socket.bind(self.address)
+        except ZMQBaseError as e:
+            logger.error(f'Setup socket error: {str(e)}')
 
     def stop(self):
         self.running = False
@@ -140,24 +143,26 @@ class JSONAsyncInbox(AsyncInbox):
 
 
 class Router(JSONAsyncInbox):
-    def __init__(self, *args, **kwargs):
-        self.services = {}
-
+    def __init__(self, debug=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.services = {}
+        self.log = get_logger(self.address)
+        self.log.propagate = debug
 
     async def handle_msg(self, _id, msg):
         service = msg.get('service')
         request = msg.get('msg')
 
-        #logger.debug(f'Message recieved for: {service}.')
+        self.log.debug(f'Message recieved for: {service}.')
 
         if service is None:
-            #logger.debug('No service found for message.')
+            self.log.debug('No service found for message.')
             await super().return_msg(_id, OK)
             return
 
         if request is None:
-            #logger.debug('No request found in message.')
+            self.log.debug('No request found in message.')
             await super().return_msg(_id, OK)
             return
 

@@ -2,11 +2,11 @@ from cilantro_ee import storage, network, router, authentication, rewards, upgra
 from cilantro_ee.crypto import canonical
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.contracts import sync
-from contracting.db.driver import ContractDriver
+from contracting.db.driver import ContractDriver, encode
 import cilantro_ee
 import zmq.asyncio
 import asyncio
-
+import json
 from contracting.client import ContractingClient
 
 from cilantro_ee.logger.base import get_logger
@@ -241,7 +241,10 @@ class Node:
 
         # Store the block if it's a masternode
         if self.store:
-            self.blocks.store_block(block)
+            encoded_block = encode(block)
+            encoded_block = json.loads(encoded_block)
+
+            self.blocks.store_block(encoded_block)
 
         # Prepare for the next block by flushing out driver and notification state
         self.new_block_processor.clean()

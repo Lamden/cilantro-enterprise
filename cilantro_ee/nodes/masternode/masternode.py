@@ -237,10 +237,7 @@ class Masternode(base.Node):
             expected_subblocks=len(masters)
         )
 
-        encoded_block = encode(block)
-        encoded_block = json.loads(encoded_block)
-
-        self.process_new_block(encoded_block)
+        self.process_new_block(block)
 
         self.new_block_processor.clean()
 

@@ -136,7 +136,7 @@ class WebServer:
         error = transaction.check_tx_formatting(tx, self.wallet.verifying_key)
         if error is not None:
             print(error)
-            return response.json(transaction.EXCEPTION_MAP[error])
+            return response.json(transaction.EXCEPTION_MAP[type(error)])
 
         try:
             transaction.transaction_is_valid(
@@ -164,7 +164,9 @@ class WebServer:
                 value=pending_nonce
             )
         except TransactionException as e:
-            return response.json(transaction.EXCEPTION_MAP[e])
+            return response.json(
+                transaction.EXCEPTION_MAP[type(e)]
+            )
 
         # Add TX to the processing queue
         self.queue.append(tx)

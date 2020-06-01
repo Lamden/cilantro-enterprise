@@ -324,6 +324,8 @@ class TestFullFlowWithMocks(TestCase):
                 function='register'
             )
 
+            await asyncio.sleep(1)
+
             await network.make_and_push_tx(
                 wallet=stu,
                 contract='currency',
@@ -334,6 +336,8 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
+            await asyncio.sleep(1)
+
             await network.make_and_push_tx(
                 wallet=stu,
                 contract='elect_masternodes',
@@ -342,6 +346,8 @@ class TestFullFlowWithMocks(TestCase):
                     'address': candidate.verifying_key
                 }
             )
+
+            await asyncio.sleep(1)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -365,6 +371,8 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
+            await asyncio.sleep(1)
+
             await network.make_and_push_tx(
                 wallet=network.masternodes[1].wallet,
                 contract='election_house',
@@ -377,21 +385,38 @@ class TestFullFlowWithMocks(TestCase):
 
             await asyncio.sleep(4)
 
-            canidate_master = mocks.MockMaster(
+            candidate_master = mocks.MockMaster(
                 ctx=self.ctx,
                 index=999
             )
+
+            candidate_master.wallet = candidate
 
             constitution = deepcopy(network.constitution)
             bootnodes = deepcopy(network.bootnodes)
 
             constitution['masternodes'].append(candidate.verifying_key)
-            # bootnodes[candidate.verifying_key] = canidate_master.ip
 
-            print(bootnodes)
+            candidate_master.set_start_variables(bootnodes=bootnodes, constitution=constitution)
 
-            canidate_master.set_start_variables(bootnodes=bootnodes, constitution=constitution)
+            await candidate_master.start()
 
-            await canidate_master.start()
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'jeff'
+                }
+            )
+
+            await asyncio.sleep(4)
+
+            self.assertEqual(candidate_master.driver.get_var(
+                contract='currency',
+                variable='balances',
+                arguments=['jeff']
+            ), 1)
 
         self.loop.run_until_complete(test())

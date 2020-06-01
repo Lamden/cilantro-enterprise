@@ -6,7 +6,7 @@ from cilantro_ee.nodes import masternode, delegate
 import asyncio
 import random
 import httpx
-
+from cilantro_ee.logger.base import get_logger
 
 class MockNode:
     def __init__(self, ctx, index=1):
@@ -93,6 +93,8 @@ class MockNetwork:
     def __init__(self, num_of_masternodes, num_of_delegates, ctx):
         self.masternodes = []
         self.delegates = []
+
+        self.log = get_logger('MOCKNET')
 
         self.ctx = ctx
 
@@ -218,6 +220,8 @@ class MockNetwork:
         async with httpx.AsyncClient() as client:
             response = await client.get(f'{node.webserver_ip}/nonce/{wallet.verifying_key}')
             nonce = response.json()['nonce']
+
+        self.log.info(f'Nonce is {nonce}')
 
         tx = transaction.build_transaction(
             wallet=wallet,

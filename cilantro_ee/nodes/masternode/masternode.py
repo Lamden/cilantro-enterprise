@@ -129,7 +129,7 @@ class Masternode(base.Node):
             asyncio.ensure_future(self.new_blockchain_boot())
         # Otherwise, we are joining an existing network quorum
         else:
-            await self.join_quorum()
+            asyncio.ensure_future(self.join_quorum())
         self.log.debug('returned')
 
     async def hang(self):

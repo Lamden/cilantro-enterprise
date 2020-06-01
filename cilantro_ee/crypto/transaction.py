@@ -63,17 +63,17 @@ EXCEPTION_MAP = {
 
 def check_tx_formatting(tx: dict, expected_processor: str):
     if not check_format(tx, rules.TRANSACTION_RULES):
-        return TransactionFormattingError
+        raise TransactionFormattingError
 
     if not wallet.verify(
             tx['payload']['sender'],
             encode(tx['payload']),
             tx['metadata']['signature']
     ):
-        return TransactionSignatureInvalid
+        raise TransactionSignatureInvalid
 
     if tx['payload']['processor'] != expected_processor:
-        return TransactionProcessorInvalid
+        raise TransactionProcessorInvalid
 
 
 def get_nonces(sender, processor, driver: storage.NonceStorage):

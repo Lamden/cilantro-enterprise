@@ -145,9 +145,8 @@ class TestValidator(TestCase):
         decoded = decode(tx)
         decoded['payload']['nonce'] = -123
 
-        error = transaction.check_tx_formatting(decoded, 'b' * 64)
-
-        self.assertEqual(error, transaction.TransactionFormattingError)
+        with self.assertRaises(transaction.TransactionFormattingError):
+            transaction.check_tx_formatting(decoded, 'b' * 64)
 
     def test_check_tx_formatting_incorrect_processor_fails(self):
         w = Wallet()
@@ -167,9 +166,8 @@ class TestValidator(TestCase):
 
         decoded = decode(tx)
 
-        error = transaction.check_tx_formatting(decoded, 'c' * 64)
-
-        self.assertEqual(error, transaction.TransactionProcessorInvalid)
+        with self.assertRaises(transaction.TransactionProcessorInvalid):
+            transaction.check_tx_formatting(decoded, 'c' * 64)
 
     def test_check_tx_formatting_signature_fails(self):
         w = Wallet()
@@ -190,9 +188,8 @@ class TestValidator(TestCase):
         decoded = decode(tx)
         decoded['payload']['sender'] = 'a' * 64
 
-        error = transaction.check_tx_formatting(decoded, 'b' * 64)
-
-        self.assertEqual(error, transaction.TransactionSignatureInvalid)
+        with self.assertRaises(transaction.TransactionSignatureInvalid):
+            transaction.check_tx_formatting(decoded, 'b' * 64)
 
     def test_get_nonces_when_none_exist_return_zeros(self):
         n, p = transaction.get_nonces('a' * 64, 'b' * 64, self.driver)

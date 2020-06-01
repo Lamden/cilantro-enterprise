@@ -133,12 +133,9 @@ class WebServer:
             return response.json({'error': 'Malformed request body.'})
 
         # Check that the TX is correctly formatted
-        error = transaction.check_tx_formatting(tx, self.wallet.verifying_key)
-        if error is not None:
-            print(error)
-            return response.json(transaction.EXCEPTION_MAP[type(error)])
-
         try:
+            transaction.check_tx_formatting(tx, self.wallet.verifying_key)
+
             transaction.transaction_is_valid(
                 transaction=tx,
                 expected_processor=self.wallet.verifying_key,

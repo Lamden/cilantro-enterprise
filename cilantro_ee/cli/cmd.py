@@ -16,9 +16,8 @@ def flush(args):
     elif args.storage_type == 'all':
         b = BlockStorage()
         dbs = b.client.database_names()
-        print(dbs)
         for db in dbs:
-            if db == 'admin':
+            if db == 'admin' or db == 'config':
                 continue
             b.client.drop_database(db)
 

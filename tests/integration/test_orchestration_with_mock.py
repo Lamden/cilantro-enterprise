@@ -1,17 +1,14 @@
 from cilantro_ee.crypto import transaction
 from cilantro_ee.crypto.wallet import Wallet
-from contracting.db.driver import decode, ContractDriver, InMemDriver
+from contracting.db.driver import ContractDriver, InMemDriver
 from contracting.client import ContractingClient
-from cilantro_ee.nodes import masternode, delegate
-from cilantro_ee import storage
 import zmq.asyncio
 import asyncio
 from copy import deepcopy
 from unittest import TestCase
 import httpx
 
-
-from . import mocks
+from tests.integration.mock import mocks
 
 
 class TestFullFlowWithMocks(TestCase):
@@ -409,6 +406,257 @@ class TestFullFlowWithMocks(TestCase):
                     'amount': 1,
                     'to': 'jeff'
                 }
+            )
+
+            await asyncio.sleep(4)
+
+            self.assertEqual(candidate_master.driver.get_var(
+                contract='currency',
+                variable='balances',
+                arguments=['jeff']
+            ), 1)
+
+        self.loop.run_until_complete(test())
+
+    def test_vote_new_masternode_in_can_join_and_catches_up_to_state(self):
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+
+        stu = Wallet()
+        candidate = Wallet()
+
+        async def test():
+            await network.start()
+            network.refresh()
+
+            network.fund(stu.verifying_key, 1_000_000)
+            network.fund(candidate.verifying_key, 1_000_000)
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='elect_masternodes',
+                function='register'
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='elect_masternodes',
+                function='vote_candidate',
+                kwargs={
+                    'address': candidate.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('introduce_motion', 2)
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[1].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await asyncio.sleep(4)
+
+            candidate_master = mocks.MockMaster(
+                ctx=self.ctx,
+                index=999
+            )
+
+            candidate_master.wallet = candidate
+
+            constitution = deepcopy(network.constitution)
+            bootnodes = deepcopy(network.bootnodes)
+
+            constitution['masternodes'].append(candidate.verifying_key)
+
+            candidate_master.set_start_variables(bootnodes=bootnodes, constitution=constitution)
+
+            await candidate_master.start()
+
+            network.masternodes.append(candidate_master)
+
+            a = network.get_var(
+                contract='currency',
+                variable='balances',
+                arguments=[stu.verifying_key]
+            )
+
+            print(a)
+
+        self.loop.run_until_complete(test())
+
+    def test_vote_new_masternode_in_can_join_and_accept_transactions(self):
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+
+        stu = Wallet()
+        candidate = Wallet()
+
+        async def test():
+            await network.start()
+            network.refresh()
+
+            network.fund(stu.verifying_key, 1_000_000)
+            network.fund(candidate.verifying_key, 1_000_000)
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='elect_masternodes',
+                function='register'
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_masternodes'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='elect_masternodes',
+                function='vote_candidate',
+                kwargs={
+                    'address': candidate.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('introduce_motion', 2)
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[0].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=network.masternodes[1].wallet,
+                contract='election_house',
+                function='vote',
+                kwargs={
+                    'policy': 'masternodes',
+                    'value': ('vote_on_motion', True)
+                }
+            )
+
+            await asyncio.sleep(4)
+
+            candidate_master = mocks.MockMaster(
+                ctx=self.ctx,
+                index=999
+            )
+
+            candidate_master.wallet = candidate
+
+            constitution = deepcopy(network.constitution)
+            bootnodes = deepcopy(network.bootnodes)
+
+            constitution['masternodes'].append(candidate.verifying_key)
+
+            candidate_master.set_start_variables(bootnodes=bootnodes, constitution=constitution)
+
+            await candidate_master.start()
+
+            network.masternodes.append(candidate_master)
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'jeff'
+                },
+                mn_idx=2
             )
 
             await asyncio.sleep(4)

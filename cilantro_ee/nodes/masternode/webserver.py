@@ -83,6 +83,7 @@ class WebServer:
         self.app.add_route(self.get_variable, '/contracts/<contract>/<variable>')
         self.app.add_route(self.get_contracts, '/contracts', methods=['GET'])
         self.app.add_route(self.get_contract, '/contracts/<contract>', methods=['GET'])
+        self.app.add_route(self.get_constitution, '/constitution', methods=['GET'])
         #self.app.add_route(self.iterate_variable, '/contracts/<contract>/<variable>/iterate')
 
         # Latest Block Routes
@@ -130,6 +131,7 @@ class WebServer:
         # Check that the payload is valid JSON
         tx = decode(request.body)
         if tx is None:
+
             return response.json({'error': 'Malformed request body.'})
 
         # Check that the TX is correctly formatted
@@ -161,6 +163,7 @@ class WebServer:
                 value=pending_nonce
             )
         except TransactionException as e:
+            log.error(f'Tx has error: {type(e)}')
             return response.json(
                 transaction.EXCEPTION_MAP[type(e)]
             )
@@ -306,3 +309,20 @@ class WebServer:
 
         return response.json(tx, dumps=ByteEncoder().encode)
 
+    async def get_constitution(self, request):
+        masternodes = self.client.get_var(
+            contract='masternodes',
+            variable='S',
+            arguments=['members']
+        )
+
+        delegates = self.client.get_var(
+            contract='delegates',
+            variable='S',
+            arguments=['members']
+        )
+
+        return response.json({
+            'masternodes': masternodes,
+            'delegates': delegates
+        })

@@ -85,8 +85,8 @@ def setup_member_election_contracts(client: ContractingClient, masternode_price=
         })
 
 
-def setup_genesis_contracts(initial_masternodes, initial_delegates, client: ContractingClient):
-    submit_from_genesis_json_file(client=client)
+def setup_genesis_contracts(initial_masternodes, initial_delegates, client: ContractingClient, filename=DEFAULT_GENESIS_PATH, root=DEFAULT_PATH):
+    submit_from_genesis_json_file(client=client, filename=filename, root=root)
 
     setup_member_contracts(
         initial_masternodes=initial_masternodes,

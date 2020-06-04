@@ -8,6 +8,7 @@ import random
 import httpx
 from cilantro_ee.logger.base import get_logger
 
+
 class MockNode:
     def __init__(self, ctx, index=1):
         self.wallet = Wallet()

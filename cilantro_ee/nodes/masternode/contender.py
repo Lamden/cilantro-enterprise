@@ -295,7 +295,8 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
             await asyncio.sleep(0)
 
         if time.time() - started > self.seconds_to_timeout:
-            self.log.error('BLOCK TIMEOUT!')
+            self.log.info('Not enough consensus!')
+            self.log.info(contenders.responses)
 
         self.log.info('Done aggregating new block.')
 

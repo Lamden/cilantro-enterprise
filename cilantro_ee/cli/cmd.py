@@ -1,8 +1,9 @@
 import argparse
 from cilantro_ee.cli.utils import validate_ip, version_reboot
 from cilantro_ee.cli.start import start_node, setup_node, join_network
-from cilantro_ee.cli.update import verify_access, verify_pkg, trigger, vote, check_ready_quorum
-from cilantro_ee.storage import BlockStorage, StateDriver
+# from cilantro_ee.cli.update import verify_access, verify_pkg, trigger, vote, check_ready_quorum
+from cilantro_ee.storage import BlockStorage
+from contracting.client import ContractDriver
 
 
 def flush(args):
@@ -10,11 +11,11 @@ def flush(args):
         BlockStorage().drop_collections()
         print('All blocks deleted.')
     elif args.storage_type == 'state':
-        StateDriver().flush()
+        ContractDriver().flush()
         print('State deleted.')
     elif args.storage_type == 'all':
         BlockStorage().drop_collections()
-        StateDriver().flush()
+        ContractDriver().flush()
         print('All blocks deleted.')
         print('State deleted.')
     else:
@@ -97,22 +98,22 @@ def main():
     elif args.command == 'join':
         join_network(args)
 
-    elif args.command == 'update':
-
-        print(args)
-        ip = validate_ip(address=args.ip)
-
-        if args.pkg_hash:
-            trigger(pkg=args.pkg_hash, iaddr=ip)
-
-        if args.vote:
-            vote(iaddr=args.ip)
-
-        if args.now:
-            version_reboot()
-
-        if args.check:
-            check_ready_quorum(iaddr=args.ip)
+    # elif args.command == 'update':
+    #
+    #     print(args)
+    #     ip = validate_ip(address=args.ip)
+    #
+    #     if args.pkg_hash:
+    #         trigger(pkg=args.pkg_hash, iaddr=ip)
+    #
+    #     if args.vote:
+    #         vote(iaddr=args.ip)
+    #
+    #     if args.now:
+    #         version_reboot()
+    #
+    #     if args.check:
+    #         check_ready_quorum(iaddr=args.ip)
 
 
 if __name__ == '__main__':

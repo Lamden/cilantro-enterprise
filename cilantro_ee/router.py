@@ -199,6 +199,7 @@ async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.async
     try:
         socket.connect(ip)
     except ZMQBaseError:
+        socket.close()
         return None
 
     message = build_message(service=service, message=msg)
@@ -206,6 +207,7 @@ async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.async
     payload = encode(message).encode()
 
     await socket.send(payload, flags=zmq.NOBLOCK)
+    socket.close()
 
 
 async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: str, ctx: zmq.asyncio.Context,
@@ -243,7 +245,7 @@ async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: s
 
         msg = decode(response)
 
-        socket.close()
+    socket.close()
 
     return msg
 

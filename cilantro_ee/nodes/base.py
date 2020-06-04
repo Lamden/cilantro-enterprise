@@ -161,7 +161,7 @@ class Node:
 
         self.log.info(f'Current: {current}, Latest: {latest}')
 
-        if latest == 0 or latest is None:
+        if latest == 0 or latest is None or type(latest) == dict:
             return
 
         # Increment current by one. Don't count the genesis block.

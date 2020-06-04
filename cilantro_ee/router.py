@@ -185,6 +185,9 @@ class Router(JSONAsyncInbox):
 
 
 async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.asyncio.Context, linger=500, cert_dir=DEFAULT_DIR):
+    if wallet.verifying_key == vk:
+        return
+
     socket = ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.LINGER, linger)
     socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
@@ -212,6 +215,8 @@ async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.async
 
 async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: str, ctx: zmq.asyncio.Context,
                          linger=500, timeout=1000, cert_dir=DEFAULT_DIR):
+    if wallet.verifying_key == vk:
+        return
 
     socket = ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.LINGER, linger)

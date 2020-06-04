@@ -27,8 +27,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
         stu = Wallet()
         stu2 = Wallet()
 
-        # o = Orchestrator(2, 4, self.ctx)
-        o = Orchestrator(3, 4, self.ctx)
+        o = Orchestrator(2, 2, self.ctx)
+        # o = Orchestrator(3, 4, self.ctx)
 
         block_0 = []
 
@@ -198,7 +198,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
             kwargs={
                 'cilantro_branch_name': 'ori1-rel-gov-socks-upg',
                 'contract_branch_name': 'dev',
-                'pepper': 'dfc0abaa4c418f230d977b8b9b3709f747b109194f1aafcc93f0b3142ba5e9a7',
+                'pepper': '970fd301944a34591e4031a89d6cd8e7a0d9add9591bd261f5925637c4a7c3de',
                 'initiator_vk': stu.verifying_key().hex()
             },
             sender=candidate

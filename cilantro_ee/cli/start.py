@@ -88,7 +88,7 @@ def resolve_constitution(fp):
 
     for vk, ip in bootnodes.items():
         assert is_valid_ip(ip), 'Invalid IP string provided to boot node argument.'
-        formatted_bootnodes[vk] = f'tcp://{ip}'
+        formatted_bootnodes[vk] = f'tcp://{ip}:19000'
 
     return const, formatted_bootnodes
 
@@ -117,7 +117,7 @@ def start_node(args):
     assert len(bootnodes) > 0, 'Must provide at least one bootnode.'
 
     ip_str = requests.get('http://api.ipify.org').text
-    socket_base = f'tcp://{ip_str}'
+    socket_base = f'tcp://{ip_str}:19000'
 
     # Setup Environment
     CURR_DIR = pathlib.Path(os.getcwd())

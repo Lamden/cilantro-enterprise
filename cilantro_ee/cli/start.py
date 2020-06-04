@@ -75,11 +75,22 @@ def resolve_constitution(fp):
     f.close()
 
     assert 'masternodes' in j.keys(), 'No masternodes section.'
-    assert 'masternode_min_quorum' in j.keys(), 'No masternode_min_quorum section.'
     assert 'delegates' in j.keys(), 'No delegates section.'
-    assert 'delegate_min_quorum' in j.keys(), 'No delegate_min_quorum section.'
 
-    return j
+    const = {
+        'masternodes': list(j['masternodes'].keys()),
+        'delegates': list(j['delegates'].keys())
+    }
+
+    bootnodes = list(j['masternodes'].values()) + list(j['delegates'].values())
+
+    formatted_bootnodes = []
+
+    for node in bootnodes:
+        assert is_valid_ip(node), 'Invalid IP string provided to boot node argument.'
+        formatted_bootnodes.append(f'tcp://{node}')
+
+    return const, formatted_bootnodes
 
 
 def resolve_raw_constitution(text):
@@ -101,15 +112,9 @@ def start_node(args):
 
     wallet = Wallet(seed=sk)
 
-    bootnodes = []
-
-    for node in args.boot_nodes:
-        assert is_valid_ip(node), 'Invalid IP string provided to boot node argument.'
-        bootnodes.append(f'tcp://{node}')
+    const, bootnodes = resolve_constitution(args.constitution)
 
     assert len(bootnodes) > 0, 'Must provide at least one bootnode.'
-
-    const = resolve_constitution(args.constitution)
 
     ip_str = requests.get('http://api.ipify.org').text
     socket_base = f'tcp://{ip_str}'
@@ -118,7 +123,6 @@ def start_node(args):
     CURR_DIR = pathlib.Path(os.getcwd())
     os.environ['PKG_ROOT'] = str(CURR_DIR.parent)
     os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro_ee'
-
 
     if args.node_type == 'masternode':
         # Start mongo
@@ -228,7 +232,9 @@ def join_network(args):
 
     wallet = Wallet(seed=sk)
 
-    const = resolve_constitution(args.constitution)
+    response = requests.get(f'http://{args.mn_seed}:{args.mn_seed_port}/constitution')
+
+    const = response.json()
 
     mn_seed = f'tcp://{args.mn_seed}'
 
@@ -240,7 +246,6 @@ def join_network(args):
     os.environ['PKG_ROOT'] = str(CURR_DIR.parent)
     os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro_ee'
 
-
     if args.node_type == 'masternode':
         # Start mongo
         start_mongo()
@@ -251,7 +256,7 @@ def join_network(args):
             socket_base=socket_base,
             constitution=const,
             webserver_port=args.webserver_port,
-            mn_seed=mn_seed
+            bootnodes=[mn_seed]
         )
     elif args.node_type == 'delegate':
         start_mongo()
@@ -260,7 +265,7 @@ def join_network(args):
             ctx=zmq.asyncio.Context(),
             socket_base=socket_base,
             constitution=const,
-            mn_seed=mn_seed
+            bootnodes=[mn_seed]
         )
 
     loop = asyncio.get_event_loop()

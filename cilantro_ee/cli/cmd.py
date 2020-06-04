@@ -45,12 +45,10 @@ def setup_cilparser(parser):
     upd_parser.add_argument('-i', '--ip', type=str, help='Master Node TX End points',
                             required=True)
 
-
     start_parser = subparser.add_parser('start')
 
     start_parser.add_argument('node_type', type=str)
     start_parser.add_argument('-k', '--key', type=str)
-    start_parser.add_argument('-bn', '--boot-nodes', type=str, nargs='+')
     start_parser.add_argument('-c', '--constitution', type=str, default='~/constitution.json')
     start_parser.add_argument('-wp', '--webserver_port', type=int, default=18080)
 
@@ -63,7 +61,7 @@ def setup_cilparser(parser):
     join_parser.add_argument('node_type', type=str)
     join_parser.add_argument('-k', '--key', type=str)
     join_parser.add_argument('-m', '--mn_seed', type=str)
-    join_parser.add_argument('-c', '--constitution', type=str, default='~/constitution.json')
+    join_parser.add_argument('-mp', '--mn_seed_port', type=int, default=18080)
     join_parser.add_argument('-wp', '--webserver_port', type=int, default=18080)
 
     # create parser for view commands

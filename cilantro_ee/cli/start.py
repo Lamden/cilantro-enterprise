@@ -117,7 +117,7 @@ def start_node(args):
     assert len(bootnodes) > 0, 'Must provide at least one bootnode.'
 
     ip_str = requests.get('http://api.ipify.org').text
-    socket_base = f'tcp://{ip_str}:19000'
+    socket_base = f'tcp://*:19000'
 
     # Setup Environment
     CURR_DIR = pathlib.Path(os.getcwd())

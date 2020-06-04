@@ -89,7 +89,7 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
 
     while len(work) > 0:
         _, tx_batch = heapq.heappop(work)
-        log.info(f"execute_work tx={i}")
+
         results = execute_tx_batch(
             executor=executor,
             driver=driver,

@@ -276,8 +276,6 @@ class Node:
                 old_contract_name = get_version(os.path.join(os.path.dirname(contracting.__file__),  '..'))
                 only_contract = branch_name==old_branch_name
                 self.log.info(f'Old CIL branch={old_branch_name}  Old contract branch={old_contract_name}  Only contract update={only_contract}')
-                self.stop()
-                self.log.info(f'Stop node')
                 if version_reboot(branch_name, contract_name, only_contract):
                     p = build_pepper(cil_path)
                     if self.pepper != p:
@@ -295,8 +293,6 @@ class Node:
                 else:
                     self.log.info(f'Update failed. Old branches restored')
                     version_reboot(old_branch_name, old_contract_name)
-                self.start()
-                self.log.info(f'Start node')
             else:
                 self.log.info('waiting for vote on upgrade')
 

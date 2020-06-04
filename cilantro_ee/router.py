@@ -226,6 +226,7 @@ async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: s
         socket.connect(ip)
     except ZMQBaseError:
         logger.debug(f'Could not connect to {ip}')
+        socket.close()
         return None
 
     message = build_message(service=service, message=msg)

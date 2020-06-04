@@ -17,6 +17,8 @@ def flush(args):
         b = BlockStorage()
         dbs = b.client.database_names()
         for db in dbs:
+            if db == 'admin':
+                continue
             b.client.drop_database(db)
 
         ContractDriver().flush()

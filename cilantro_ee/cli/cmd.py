@@ -14,7 +14,11 @@ def flush(args):
         ContractDriver().flush()
         print('State deleted.')
     elif args.storage_type == 'all':
-        BlockStorage().drop_collections()
+        b = BlockStorage()
+        dbs = b.client.database_names()
+        for db in dbs:
+            b.client.drop_database(db)
+
         ContractDriver().flush()
         print('All blocks deleted.')
         print('State deleted.')

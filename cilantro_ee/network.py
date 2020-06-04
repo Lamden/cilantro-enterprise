@@ -140,7 +140,7 @@ class Network:
                     if self.peers.get(peer['vk']) is None:
                         self.peers[peer['vk']] = peer['ip']
 
-            LOGGER.debug(self.peers)
+            LOGGER.debug(f'Peers found so far: {self.peers}')
 
     def all_vks_found(self, vks):
         for vk in vks:

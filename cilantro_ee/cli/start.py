@@ -82,13 +82,13 @@ def resolve_constitution(fp):
         'delegates': list(j['delegates'].keys())
     }
 
-    bootnodes = list(j['masternodes'].values()) + list(j['delegates'].values())
+    bootnodes = {j['masternodes'], j['delegates']}
 
-    formatted_bootnodes = []
+    formatted_bootnodes = {}
 
-    for node in bootnodes:
-        assert is_valid_ip(node), 'Invalid IP string provided to boot node argument.'
-        formatted_bootnodes.append(f'tcp://{node}')
+    for vk, ip in bootnodes:
+        assert is_valid_ip(ip), 'Invalid IP string provided to boot node argument.'
+        formatted_bootnodes[vk] = f'tcp://{ip}'
 
     return const, formatted_bootnodes
 

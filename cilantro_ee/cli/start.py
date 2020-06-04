@@ -82,7 +82,7 @@ def resolve_constitution(fp):
         'delegates': list(j['delegates'].keys())
     }
 
-    bootnodes = {j['masternodes'], j['delegates']}
+    bootnodes = {**j['masternodes'], **j['delegates']}
 
     formatted_bootnodes = {}
 

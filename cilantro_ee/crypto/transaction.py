@@ -6,9 +6,6 @@ from contracting.db.encoder import encode
 from cilantro_ee import storage
 from cilantro_ee.crypto import wallet
 from contracting.client import ContractingClient
-from cilantro_ee.logger.base import get_logger
-
-log = get_logger('TXTEST')
 
 
 class TransactionException(Exception):
@@ -85,8 +82,6 @@ def get_nonces(sender, processor, driver: storage.NonceStorage):
         sender=sender
     )
 
-    log.debug(f'Nonce got was {nonce}')
-
     if nonce is None:
         nonce = 0
 
@@ -96,8 +91,6 @@ def get_nonces(sender, processor, driver: storage.NonceStorage):
     )
     if pending_nonce is None:
         pending_nonce = 0
-
-    log.debug(f'Pending nonce got was {pending_nonce}')
 
     return nonce, pending_nonce
 

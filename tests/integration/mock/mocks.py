@@ -8,9 +8,15 @@ import random
 import httpx
 from cilantro_ee.logger.base import get_logger
 
+import os
+
+MOCK_FOUNDER_SK = '016afd234c03229b44cfb3a067aa6d9ec3cd050774c6eff73aeb0b40cc8e3a12'
+
+TEST_FOUNDATION_WALLET = Wallet(MOCK_FOUNDER_SK)
+
 
 class MockNode:
-    def __init__(self, ctx, index=1):
+    def __init__(self, ctx, index=1, genesis_path=os.path.dirname(os.path.abspath(__file__))):
         self.wallet = Wallet()
         port = 18000 + index
         self.ip = f'tcp://127.0.0.1:{port}'
@@ -23,6 +29,7 @@ class MockNode:
         self.started = False
 
         self.obj = None
+        self.genesis_path = genesis_path
 
     def set_start_variables(self, bootnodes, constitution):
         self.bootnodes = bootnodes
@@ -53,7 +60,8 @@ class MockMaster(MockNode):
             bootnodes=self.bootnodes,
             blocks=self.blocks,
             driver=self.driver,
-            webserver_port=self.webserver_port
+            webserver_port=self.webserver_port,
+            genesis_path=self.genesis_path
         )
 
         await self.obj.start()
@@ -81,6 +89,7 @@ class MockDelegate(MockNode):
             constitution=self.constitution,
             bootnodes=self.bootnodes,
             driver=self.driver,
+            genesis_path=self.genesis_path
         )
 
         await self.obj.start()

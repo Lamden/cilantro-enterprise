@@ -87,8 +87,9 @@ class NewBlock(router.Processor):
 
 
 class Node:
-    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={},
-                 blocks=None, driver=ContractDriver(), debug=True, store=False, secure=True):
+    def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=None,
+                 driver=ContractDriver(), debug=True, store=False, secure=True,
+                 genesis_path=cilantro_ee.contracts.__path__[0]):
 
         self.driver = driver
         self.nonces = storage.NonceStorage()
@@ -105,9 +106,11 @@ class Node:
         self.wallet = wallet
         self.ctx = ctx
 
+        self.genesis_path = genesis_path
+
         self.client = ContractingClient(
             driver=self.driver,
-            submission_filename=cilantro_ee.contracts.__path__[0] + '/submission.s.py'
+            submission_filename=genesis_path + '/submission.s.py'
         )
 
         self.bootnodes = bootnodes
@@ -144,7 +147,9 @@ class Node:
         sync.setup_genesis_contracts(
             initial_masternodes=self.constitution['masternodes'],
             initial_delegates=self.constitution['delegates'],
-            client=self.client
+            client=self.client,
+            filename=self.genesis_path + '/genesis.json',
+            root=self.genesis_path
         )
 
     async def catchup(self, mn_seed, mn_vk):

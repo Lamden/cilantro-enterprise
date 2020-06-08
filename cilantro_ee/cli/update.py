@@ -2,13 +2,10 @@ import aiohttp
 import asyncio
 import requests
 from getpass import getpass
-from cilantro_ee.nodes.base import Node
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto.transaction import TransactionBuilder
 from cilantro_ee.cli.utils import get_update_state
 from cilantro_ee.cli.start import resolve_constitution
-
-from scripts.pkg import verify_pkg
 
 
 async def cil_interface(server, packed_data, sleep=2):

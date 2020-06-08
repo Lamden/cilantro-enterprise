@@ -6,7 +6,7 @@
 			"name": "currency",
 			"owner": null,
 			"constructor_args": {
-				"vk": "0000e9f4137969c4ee2fc047917dacd53aeb220fae0bdc87a82024c0ff3c9e50"
+				"vk": "203c3e9807590023cb59c47e619e4f8e1d594d39f421789239b3bac424b2f506"
 			}
 		},
 		{
@@ -35,7 +35,7 @@
 			"name": "foundation",
 			"owner": null,
 			"constructor_args": {
-				"vk": "0000e9f4137969c4ee2fc047917dacd53aeb220fae0bdc87a82024c0ff3c9e50"
+				"vk": "203c3e9807590023cb59c47e619e4f8e1d594d39f421789239b3bac424b2f506"
 			}
 		}
 	]

@@ -221,11 +221,15 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
+            await asyncio.sleep(1)
+
             await network.make_and_push_tx(
                 wallet=candidate,
                 contract='elect_masternodes',
                 function='register'
             )
+
+            await asyncio.sleep(1)
 
             await network.make_and_push_tx(
                 wallet=stu,
@@ -237,6 +241,8 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
+            await asyncio.sleep(1)
+
             await network.make_and_push_tx(
                 wallet=stu,
                 contract='elect_masternodes',
@@ -245,6 +251,8 @@ class TestFullFlowWithMocks(TestCase):
                     'address': candidate.verifying_key
                 }
             )
+
+            await asyncio.sleep(1)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -256,6 +264,8 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
+            await asyncio.sleep(1)
+
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
                 contract='election_house',
@@ -265,6 +275,8 @@ class TestFullFlowWithMocks(TestCase):
                     'value': ('vote_on_motion', True)
                 }
             )
+
+            await asyncio.sleep(1)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[1].wallet,
@@ -428,8 +440,29 @@ class TestFullFlowWithMocks(TestCase):
             await network.start()
             network.refresh()
 
-            network.fund(stu.verifying_key, 1_000_000)
-            network.fund(candidate.verifying_key, 1_000_000)
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': stu.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': candidate.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -534,8 +567,6 @@ class TestFullFlowWithMocks(TestCase):
                 arguments=[stu.verifying_key]
             )
 
-            print(a)
-
         self.loop.run_until_complete(test())
 
     def test_vote_new_masternode_in_can_join_and_accept_transactions(self):
@@ -548,8 +579,29 @@ class TestFullFlowWithMocks(TestCase):
             await network.start()
             network.refresh()
 
-            network.fund(stu.verifying_key, 1_000_000)
-            network.fund(candidate.verifying_key, 1_000_000)
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': stu.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': candidate.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -655,8 +707,7 @@ class TestFullFlowWithMocks(TestCase):
                 kwargs={
                     'amount': 1,
                     'to': 'jeff'
-                },
-                mn_idx=2
+                }
             )
 
             await asyncio.sleep(4)

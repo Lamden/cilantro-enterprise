@@ -319,14 +319,14 @@ class TestJSONAsyncInbox(TestCase):
 
         tasks = asyncio.gather(
             m.serve(),
-            get(b'{"howdy": "abc"}'),
+            get(b'{"howdy":"abc"}'),
             stop_server(m, 1),
         )
 
         loop = asyncio.get_event_loop()
         res = loop.run_until_complete(tasks)
 
-        self.assertEqual(res[1], b'{"howdy": "abc"}')
+        self.assertEqual(res[1], b'{"howdy":"abc"}')
 
     def test_secure_request_sends_as_service(self):
         authenticator = authentication.SocketAuthenticator(client=ContractingClient(), ctx=self.ctx)

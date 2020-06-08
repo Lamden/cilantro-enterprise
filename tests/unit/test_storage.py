@@ -233,7 +233,7 @@ class TestUpdatingState(TestCase):
         )
 
         n = self.nonces.get_latest_nonce(sender='abc', processor='def')
-        self.assertEqual(n, 123)
+        self.assertEqual(n, 124)
 
     def test_nonces_deleted_after_all_updates(self):
         self.nonces.set_pending_nonce(
@@ -300,10 +300,10 @@ class TestUpdatingState(TestCase):
         self.assertEqual(n, None)
 
         n = self.nonces.get_latest_nonce(sender='abc', processor='def')
-        self.assertEqual(n, 124)
+        self.assertEqual(n, 125)
 
         n = self.nonces.get_latest_nonce(sender='xxx', processor='yyy')
-        self.assertEqual(n, 42)
+        self.assertEqual(n, 43)
 
     def test_multiple_tx_state_updates_correctly(self):
         v1 = self.driver.get('hello', mark=False)
@@ -403,10 +403,10 @@ class TestUpdatingState(TestCase):
         self.assertEqual(n, None)
 
         n = self.nonces.get_latest_nonce(sender='abc', processor='def')
-        self.assertEqual(n, 124)
+        self.assertEqual(n, 125)
 
         n = self.nonces.get_latest_nonce(sender='xxx', processor='yyy')
-        self.assertEqual(n, 42)
+        self.assertEqual(n, 43)
 
     def test_update_state_with_block_sets_state_correctly(self):
         v1 = self.driver.get('hello', mark=False)

@@ -113,7 +113,7 @@ def update_state_with_transaction(tx, driver: ContractDriver, nonces: NonceStora
             nonces.set_nonce(
                 sender=tx['transaction']['payload']['sender'],
                 processor=tx['transaction']['payload']['processor'],
-                value=tx['transaction']['payload']['nonce']
+                value=tx['transaction']['payload']['nonce'] + 1
             )
 
             nonces_to_delete.append((tx['transaction']['payload']['sender'], tx['transaction']['payload']['processor']))

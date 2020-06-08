@@ -6,6 +6,9 @@ from contracting.db.encoder import encode
 from cilantro_ee import storage
 from cilantro_ee.crypto import wallet
 from contracting.client import ContractingClient
+from cilantro_ee.logger.base import get_logger
+
+log = get_logger('TXTEST')
 
 
 class TransactionException(Exception):
@@ -81,6 +84,9 @@ def get_nonces(sender, processor, driver: storage.NonceStorage):
         processor=processor,
         sender=sender
     )
+
+    log.debug(f'Nonce got was {nonce}')
+
     if nonce is None:
         nonce = 0
 
@@ -91,6 +97,8 @@ def get_nonces(sender, processor, driver: storage.NonceStorage):
     if pending_nonce is None:
         pending_nonce = 0
 
+    log.debug(f'Pending nonce got was {pending_nonce}')
+
     return nonce, pending_nonce
 
 
@@ -99,17 +107,19 @@ def get_new_pending_nonce(tx_nonce, nonce, pending_nonce, strict=True, tx_per_bl
     if tx_nonce - nonce > tx_per_block or pending_nonce - nonce >= tx_per_block:
         raise TransactionTooManyPendingException
 
+    expected_nonce = max(nonce, pending_nonce)
+
     if strict:
-        if tx_nonce != pending_nonce:
+        if tx_nonce != expected_nonce:
             raise TransactionNonceInvalid
-        pending_nonce += 1
+        expected_nonce += 1
 
     else:
-        if tx_nonce < pending_nonce:
+        if tx_nonce < expected_nonce:
             raise TransactionNonceInvalid
-        pending_nonce = tx_nonce + 1
+        expected_nonce = tx_nonce + 1
 
-    return pending_nonce
+    return expected_nonce
 
 
 def has_enough_stamps(balance, stamps_per_tau, stamps_supplied, contract=None, function=None, amount=0):

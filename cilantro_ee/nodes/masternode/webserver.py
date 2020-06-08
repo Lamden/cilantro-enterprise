@@ -298,6 +298,7 @@ class WebServer:
 
         if _hash is not None:
             try:
+                int(_hash, 16)
                 tx = self.blocks.get_tx(_hash)
             except ValueError:
                 return response.json({'error': 'Malformed hash.'}, status=400)

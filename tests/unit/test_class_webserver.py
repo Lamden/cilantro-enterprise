@@ -423,7 +423,7 @@ def get():
         self.ws.queue.clear()
 
     def test_get_tx_by_hash_if_it_exists(self):
-        b = b'\x00' * 32
+        b = '0' * 64
 
         tx = {
             'hash': b,
@@ -431,13 +431,13 @@ def get():
         }
 
         expected = {
-            'hash': b.hex(),
+            'hash': b,
             'some': 'data'
         }
 
         self.ws.blocks.put(tx, collection=self.ws.blocks.TX)
 
-        _, response = self.ws.app.test_client.get(f'/tx?hash={b.hex()}')
+        _, response = self.ws.app.test_client.get(f'/tx?hash={b}')
         self.assertDictEqual(response.json, expected)
 
     def test_malformed_tx_returns_error(self):

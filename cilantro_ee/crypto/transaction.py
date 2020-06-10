@@ -148,6 +148,8 @@ def build_transaction(wallet, contract: str, function: str, kwargs: dict, nonce:
         'stamps_supplied': stamps,
     }
 
+    payload = format_dictionary(payload) # Sort payload in case kwargs unsorted
+
     assert check_format(payload, rules.TRANSACTION_PAYLOAD_RULES), 'Invalid payload provided!'
 
     signature = wallet.sign(encode(payload))

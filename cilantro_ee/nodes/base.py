@@ -143,6 +143,8 @@ class Node:
 
         self.running = False
 
+        self.reward_manager = rewards.RewardManager()
+
     def seed_genesis_contracts(self):
         sync.setup_genesis_contracts(
             initial_masternodes=self.constitution['masternodes'],
@@ -230,7 +232,7 @@ class Node:
             )
 
             # Calculate and issue the rewards for the governance nodes
-            rewards.issue_rewards(
+            self.reward_manager.issue_rewards(
                 block=block,
                 client=self.client
             )

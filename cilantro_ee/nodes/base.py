@@ -89,7 +89,7 @@ class NewBlock(router.Processor):
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=None,
                  driver=ContractDriver(), debug=True, store=False, secure=True,
-                 genesis_path=cilantro_ee.contracts.__path__[0]):
+                 genesis_path=cilantro_ee.contracts.__path__[0], reward_manager=rewards.RewardManager()):
 
         self.driver = driver
         self.nonces = storage.NonceStorage()
@@ -143,7 +143,7 @@ class Node:
 
         self.running = False
 
-        self.reward_manager = rewards.RewardManager()
+        self.reward_manager = reward_manager
 
     def seed_genesis_contracts(self):
         sync.setup_genesis_contracts(

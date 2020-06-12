@@ -260,6 +260,8 @@ class Node:
         self.upgrade_manager.version_check()
 
     async def start(self):
+        asyncio.ensure_future(self.router.serve())
+
         # Get the set of VKs we are looking for from the constitution argument
         vks = self.constitution['masternodes'] + self.constitution['delegates']
 
@@ -267,10 +269,6 @@ class Node:
             self.socket_authenticator.add_verifying_key(node)
 
         self.socket_authenticator.configure()
-
-        asyncio.ensure_future(self.router.serve())
-
-        await asyncio.sleep(1)
 
         # Use it to boot up the network
         await self.network.start(bootnodes=self.bootnodes, vks=vks)

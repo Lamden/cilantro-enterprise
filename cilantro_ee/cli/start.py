@@ -236,7 +236,7 @@ def join_network(args):
 
     const = response.json()
 
-    mn_seed = f'tcp://{args.mn_seed}'
+    mn_seed = f'tcp://{args.mn_seed}:19000'
 
     mn_id_response = requests.get(f'http://{args.mn_seed}:{args.mn_seed_port}/id')
 

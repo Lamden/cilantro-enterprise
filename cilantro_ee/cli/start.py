@@ -243,7 +243,7 @@ def join_network(args):
     bootnodes = {mn_id_response.json()['verifying_key']: mn_seed}
 
     ip_str = requests.get('http://api.ipify.org').text
-    socket_base = f'tcp://{ip_str}'
+    socket_base = f'tcp://{ip_str}:19000'
 
     # Setup Environment
     CURR_DIR = pathlib.Path(os.getcwd())

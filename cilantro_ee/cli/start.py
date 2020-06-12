@@ -238,6 +238,10 @@ def join_network(args):
 
     mn_seed = f'tcp://{args.mn_seed}'
 
+    mn_id_response = requests.get(f'http://{args.mn_seed}:{args.mn_seed_port}/id')
+
+    bootnodes = {mn_id_response.json()['verifying_key']: mn_seed}
+
     ip_str = requests.get('http://api.ipify.org').text
     socket_base = f'tcp://{ip_str}'
 
@@ -256,7 +260,7 @@ def join_network(args):
             socket_base=socket_base,
             constitution=const,
             webserver_port=args.webserver_port,
-            bootnodes=[mn_seed]
+            bootnodes=bootnodes
         )
     elif args.node_type == 'delegate':
         start_mongo()
@@ -265,7 +269,7 @@ def join_network(args):
             ctx=zmq.asyncio.Context(),
             socket_base=socket_base,
             constitution=const,
-            bootnodes=[mn_seed]
+            bootnodes=bootnodes
         )
 
     loop = asyncio.get_event_loop()

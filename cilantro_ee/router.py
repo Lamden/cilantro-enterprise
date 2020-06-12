@@ -108,6 +108,7 @@ class AsyncInbox:
             self.socket.bind(self.address)
         except ZMQBaseError as e:
             logger.error(f'Setup socket error: {str(e)}')
+            logger.error(self.address)
 
     def stop(self):
         self.running = False

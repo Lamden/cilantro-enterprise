@@ -237,6 +237,8 @@ class Masternode(base.Node):
             expected_subblocks=len(masters)
         )
 
+        self.log.info(f'got block back: {block}')
+
         self.process_new_block(block)
 
         self.new_block_processor.clean()

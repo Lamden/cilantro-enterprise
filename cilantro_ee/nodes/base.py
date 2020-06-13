@@ -207,6 +207,7 @@ class Node:
             return False
 
         if block['previous'] != current_hash:
+            log.debug('Past hash mismatch')
             return False
 
         # If so, use metastate and subblocks to create the 'expected' block
@@ -217,8 +218,13 @@ class Node:
         )
 
         # Return if the block contains the expected information
+        good = block == expected_block
+        if good:
+            log.debug('Block is good')
+        else:
+            log.debug('Block is not expected')
 
-        return block == expected_block
+        return good
 
     def update_state(self, block):
         # Check if the block is valid

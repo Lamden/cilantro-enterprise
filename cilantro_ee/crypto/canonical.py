@@ -1,7 +1,6 @@
 import json
 from copy import deepcopy
 
-import bson
 import hashlib
 
 from contracting.db.encoder import encode
@@ -29,7 +28,7 @@ def format_dictionary(d: dict) -> dict:
 def tx_hash_from_tx(tx):
     h = hashlib.sha3_256()
     tx_dict = format_dictionary(tx)
-    encoded_tx = bson.BSON.encode(tx_dict)
+    encoded_tx = encode(tx_dict).encode()
     h.update(encoded_tx)
     return h.hexdigest()
 
@@ -81,11 +80,8 @@ def block_from_subblocks(subblocks, previous_hash: str, block_num: int) -> dict:
             del sb_without_sigs['signatures']
 
         encoded_sb = encode(sb_without_sigs)
-        e = json.loads(encoded_sb)
 
-        b = bson.BSON.encode(e)
-
-        block_hasher.update(b)
+        block_hasher.update(encoded_sb.encode())
 
     block = {
         'hash': block_hasher.digest().hex(),

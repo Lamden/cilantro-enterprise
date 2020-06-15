@@ -183,7 +183,7 @@ class Masternode(base.Node):
             block = block_from_subblocks(
                 subblocks=[],
                 previous_hash=storage.get_latest_block_hash(self.driver),
-                block_num=storage.get_latest_block_height(self.driver) + 1
+                block_num=storage.get_latest_block_height(self.driver) + 2
             )
 
             await router.secure_multicast(

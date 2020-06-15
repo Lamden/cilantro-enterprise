@@ -771,6 +771,8 @@ class TestFullFlowWithMocks(TestCase):
 
             await m.start()
 
+            await asyncio.sleep(4)
+
             await network.make_and_push_tx(
                 wallet=mocks.TEST_FOUNDATION_WALLET,
                 contract='currency',
@@ -792,6 +794,8 @@ class TestFullFlowWithMocks(TestCase):
                     'to': 'jeff'
                 }
             )
+
+            await asyncio.sleep(1)
 
             stu = m.driver.get_var(contract='currency', variable='balances', arguments=['stu'])
             stu2 = m.driver.get_var(contract='currency', variable='balances', arguments=['stu2'])

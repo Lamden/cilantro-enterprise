@@ -1,6 +1,7 @@
 import time
 import hashlib
 import asyncio
+import os
 import zmq.asyncio
 from contracting.db.encoder import encode
 
@@ -75,16 +76,22 @@ class JoinProcessor(router.Processor):
         if not primatives.check_format(msg, rules.JOIN_MESSAGE_RULES):
             return
 
-        response = await router.secure_request(msg={}, service=IDENTITY_SERVICE, wallet=self.wallet, vk=msg.get('vk'),
-                                               ip=msg.get('ip'), ctx=self.ctx)
+        vk = msg.get('vk')
 
-        if response is None:
-            LOGGER.error(f'No response for identity proof for {msg.get("ip")}')
+        filename = str(router.DEFAULT_DIR / f'{vk}.key')
+        if not os.path.exists(filename):
             return
 
-        if not verify_proof(response, PEPPER):
-            LOGGER.error(f'Bad proof verification for identity proof for {msg.get("ip")}')
-            return
+        # response = await router.secure_request(msg={}, service=IDENTITY_SERVICE, wallet=self.wallet, vk=msg.get('vk'),
+        #                                        ip=msg.get('ip'), ctx=self.ctx)
+
+        # if response is None:
+        #     LOGGER.error(f'No response for identity proof for {msg.get("ip")}')
+        #     return
+        #
+        # if not verify_proof(response, PEPPER):
+        #     LOGGER.error(f'Bad proof verification for identity proof for {msg.get("ip")}')
+        #     return
 
         if msg.get('vk') not in self.peers:
             await router.secure_multicast(msg=msg, service=JOIN_SERVICE, peer_map=self.peers, ctx=self.ctx, wallet=self.wallet)

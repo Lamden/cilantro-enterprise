@@ -7,7 +7,7 @@ from zmq.error import ZMQBaseError
 from zmq.auth.certs import load_certificate
 from cilantro_ee.logger.base import get_logger
 import pathlib
-
+import os
 CERT_DIR = 'cilsocks'
 DEFAULT_DIR = pathlib.Path.home() / CERT_DIR
 
@@ -197,7 +197,11 @@ async def secure_send(msg: dict, service, wallet: Wallet, vk, ip, ctx: zmq.async
     socket.curve_secretkey = wallet.curve_sk
     socket.curve_publickey = wallet.curve_vk
 
-    server_pub, _ = load_certificate(str(cert_dir / f'{vk}.key'))
+    filename = str(cert_dir / f'{vk}.key')
+    if not os.path.exists(filename):
+        return None
+
+    server_pub, _ = load_certificate(filename)
 
     socket.curve_serverkey = server_pub
 
@@ -227,7 +231,11 @@ async def secure_request(msg: dict, service: str, wallet: Wallet, vk: str, ip: s
     socket.curve_secretkey = wallet.curve_sk
     socket.curve_publickey = wallet.curve_vk
 
-    server_pub, _ = load_certificate(str(cert_dir / f'{vk}.key'))
+    filename = str(cert_dir / f'{vk}.key')
+    if not os.path.exists(filename):
+        return None
+
+    server_pub, _ = load_certificate(filename)
 
     socket.curve_serverkey = server_pub
 

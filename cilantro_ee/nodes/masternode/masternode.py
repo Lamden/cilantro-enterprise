@@ -179,25 +179,6 @@ class Masternode(base.Node):
             block = await self.new_block_processor.wait_for_next_nbn()
             self.process_new_block(block)
 
-        if len(members) == 1:
-            block = block_from_subblocks(
-                subblocks=[],
-                previous_hash=storage.get_latest_block_hash(self.driver),
-                block_num=storage.get_latest_block_height(self.driver) + 2
-            )
-
-            await router.secure_multicast(
-                msg=block,
-                service=base.NEW_BLOCK_SERVICE,
-                cert_dir=self.socket_authenticator.cert_dir,
-                wallet=self.wallet,
-                peer_map={
-                    **self.get_delegate_peers(),
-                    **self.get_masternode_peers()
-                },
-                ctx=self.ctx
-            )
-
     async def wait_for_block(self):
         self.new_block_processor.clean()
 
@@ -213,7 +194,18 @@ class Masternode(base.Node):
         # Catchup with NBNs until you have work, the join the quorum
         self.log.info('Join Quorum')
 
-        await self.intermediate_catchup()
+        # await self.intermediate_catchup()
+        #
+        # await self.hang()
+        # await self.wait_for_block()
+
+        while len(self.new_block_processor.q) <= 0:
+            if not self.running:
+                return
+            await asyncio.sleep(0)
+
+        block = self.new_block_processor.q.pop(0)
+        self.process_new_block(block)
 
         while self.running:
             await self.loop()

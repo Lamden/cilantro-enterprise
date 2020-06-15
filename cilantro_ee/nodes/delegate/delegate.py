@@ -40,27 +40,27 @@ class WorkProcessor(router.Processor):
             self.verify_work(msg)
 
     def verify_work(self, msg):
-        # if msg['sender'] not in self.masters:
-        #     return
-        #
-        # if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
-        #     return
-        #
-        # if int(time.time()) - msg['timestamp'] > self.expired_batch:
-        #     return
+        if msg['sender'] not in self.masters:
+            return
 
-        # for tx in msg['transactions']:
-        #     try:
-        #         transaction.transaction_is_valid(
-        #             transaction=tx,
-        #             expected_processor=msg['sender'],
-        #             client=self.client,
-        #             nonces=self.nonces,
-        #             strict=False,
-        #             timeout=self.expired_batch + self.tx_timeout
-        #         )
-        #     except transaction.TransactionException:
-        #         return
+        if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
+            return
+
+        if int(time.time()) - msg['timestamp'] > self.expired_batch:
+            return
+
+        for tx in msg['transactions']:
+            try:
+                transaction.transaction_is_valid(
+                    transaction=tx,
+                    expected_processor=msg['sender'],
+                    client=self.client,
+                    nonces=self.nonces,
+                    strict=False,
+                    timeout=self.expired_batch + self.tx_timeout
+                )
+            except transaction.TransactionException:
+                return
 
         self.work[msg['sender']] = msg
 
@@ -75,6 +75,21 @@ class WorkProcessor(router.Processor):
             self.verify_work(work_)
 
         self.todo.clear()
+
+    async def gather_transaction_batches(self, queue: dict, expected_batches: int, timeout=5):
+        # Wait until the queue is filled before starting timeout
+        while len(set(queue.keys())) == 0:
+            await asyncio.sleep(0)
+
+        # Now wait until the rest come in or the timeout is triggered
+        start = time.time()
+        while len(set(queue.keys())) < expected_batches and time.time() - start < timeout:
+            await asyncio.sleep(0)
+
+        work = deepcopy(list(queue.values()))
+        queue.clear()
+
+        return work
 
     async def accept_work(self, expected_batched, masters):
         self.accepting_work = True

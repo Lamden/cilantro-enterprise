@@ -222,4 +222,4 @@ def transaction_is_valid(transaction, expected_processor, client: ContractingCli
         name = transaction['payload']['kwargs'].get('name')
         contract_name_is_valid(contract, func, name)
     except Exception as e:
-        return TransactionException
+        raise TransactionException

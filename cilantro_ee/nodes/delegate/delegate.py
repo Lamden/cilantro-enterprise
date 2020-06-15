@@ -134,6 +134,7 @@ class Delegate(base.Node):
         return work.filter_work(w)
 
     async def wait_for_new_block_confirmation(self):
+        self.log.info('Waiting for block confirmation...')
         block = await self.new_block_processor.wait_for_next_nbn()
         self.process_new_block(block)
 

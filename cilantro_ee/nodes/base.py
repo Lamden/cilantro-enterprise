@@ -246,7 +246,7 @@ class Node:
         self.driver.clear_pending_state()
 
     def process_new_block(self, block):
-        self.log.info('Processing new block...')
+        self.log.info(f'Processing new block: {block}')
 
         # Update the state and refresh the sockets so new nodes can join
         self.update_state(block)

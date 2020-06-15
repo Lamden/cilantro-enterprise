@@ -199,7 +199,7 @@ class Masternode(base.Node):
         #await self.intermediate_catchup()
 
         await self.hang()
-        await self.wait_for_block()
+        #await self.wait_for_block()
 
         while self.running:
             await self.loop()

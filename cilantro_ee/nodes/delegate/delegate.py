@@ -62,6 +62,10 @@ class WorkProcessor(router.Processor):
             except transaction.TransactionException:
                 return
 
+        # Ignore duplicate messages
+        if self.work.get(msg['sender']) is not None:
+            return
+
         self.work[msg['sender']] = msg
 
     def process_todo_work(self):

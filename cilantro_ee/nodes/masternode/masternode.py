@@ -14,7 +14,6 @@ from contracting.db.encoder import encode
 from contracting.db.driver import ContractDriver
 
 from cilantro_ee.logger.base import get_logger
-from threading import Thread
 
 mn_logger = get_logger('Masternode')
 

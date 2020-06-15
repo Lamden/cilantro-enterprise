@@ -719,3 +719,88 @@ class TestFullFlowWithMocks(TestCase):
             ), 1)
 
         self.loop.run_until_complete(test())
+
+    def test_single_masternode_goes_offline_and_back_on_has_no_problem_rejoining(self):
+        network = mocks.MockNetwork(num_of_masternodes=1, num_of_delegates=2, ctx=self.ctx)
+
+        async def test():
+            await network.start()
+            network.refresh()
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu2'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu3'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            print('YEET')
+            m = network.masternodes[0]
+            m.stop()
+
+            await asyncio.sleep(1)
+
+            await m.start()
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu3'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'jeff'
+                }
+            )
+
+            stu = m.driver.get_var(contract='currency', variable='balances', arguments=['stu'])
+            stu2 = m.driver.get_var(contract='currency', variable='balances', arguments=['stu2'])
+            stu3 = m.driver.get_var(contract='currency', variable='balances', arguments=['stu3'])
+            jeff = m.driver.get_var(contract='currency', variable='balances', arguments=['jeff'])
+
+            self.assertEqual(stu, 1)
+            self.assertEqual(stu2, 1)
+            self.assertEqual(stu3, 2)
+            self.assertEqual(jeff, 1)
+
+        self.loop.run_until_complete(test())

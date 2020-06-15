@@ -13,6 +13,7 @@ from contracting.db.encoder import encode
 from contracting.db.driver import ContractDriver
 
 from cilantro_ee.logger.base import get_logger
+from threading import Thread
 
 mn_logger = get_logger('Masternode')
 
@@ -266,7 +267,7 @@ class Masternode(base.Node):
 
     def stop(self):
         super().stop()
-        self.webserver.app.stop()
+        self.webserver.coroutine.result().close()
 
 
 def get_genesis_block():

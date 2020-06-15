@@ -10,6 +10,7 @@ from contracting.compilation import parser
 from cilantro_ee import storage
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
 from cilantro_ee.crypto.transaction import TransactionException
+from threading import Thread
 
 import ssl
 import asyncio
@@ -97,10 +98,12 @@ class WebServer:
         # TX Route
         self.app.add_route(self.get_tx, '/tx', methods=['GET'])
 
+        self.coroutine = None
+
     async def start(self):
         # Start server with SSL enabled or not
         if self.ssl_enabled:
-            asyncio.ensure_future(
+            self.coroutine = asyncio.ensure_future(
                 self.app.create_server(
                     host='0.0.0.0',
                     port=self.ssl_port,
@@ -111,7 +114,7 @@ class WebServer:
                 )
             )
         else:
-            asyncio.ensure_future(
+            self.coroutine = asyncio.ensure_future(
                 self.app.create_server(
                     host='0.0.0.0',
                     port=self.port,

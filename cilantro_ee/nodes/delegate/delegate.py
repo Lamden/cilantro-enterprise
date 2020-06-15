@@ -40,27 +40,30 @@ class WorkProcessor(router.Processor):
             self.verify_work(msg)
 
     def verify_work(self, msg):
-        # if msg['sender'] not in self.masters:
-        #     return
-        #
-        # if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
-        #     return
-        #
-        # if int(time.time()) - msg['timestamp'] > self.expired_batch:
-        #     return
+        if msg['sender'] not in self.masters:
+            return
 
-        # for tx in msg['transactions']:
-        #     try:
-        #         transaction.transaction_is_valid(
-        #             transaction=tx,
-        #             expected_processor=msg['sender'],
-        #             client=self.client,
-        #             nonces=self.nonces,
-        #             strict=False,
-        #             timeout=self.expired_batch + self.tx_timeout
-        #         )
-        #     except transaction.TransactionException:
-        #         return
+        if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
+            return
+
+        if int(time.time()) - msg['timestamp'] > self.expired_batch:
+            return
+
+        for tx in msg['transactions']:
+            try:
+                transaction.transaction_is_valid(
+                    transaction=tx,
+                    expected_processor=msg['sender'],
+                    client=self.client,
+                    nonces=self.nonces,
+                    strict=False,
+                    timeout=self.expired_batch + self.tx_timeout
+                )
+            except transaction.TransactionException:
+                return
+
+        if self.work.get(msg['sender']) is not None:
+            return
 
         self.work[msg['sender']] = msg
 

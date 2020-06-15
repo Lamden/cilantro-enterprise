@@ -196,9 +196,9 @@ class Masternode(base.Node):
         # Catchup with NBNs until you have work, the join the quorum
         self.log.info('Join Quorum')
 
-        #await self.intermediate_catchup()
+        await self.intermediate_catchup()
 
-        #await self.hang()
+        await self.hang()
         #await self.wait_for_block()
 
         while self.running:

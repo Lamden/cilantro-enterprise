@@ -1,6 +1,6 @@
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.crypto import transaction
-from contracting.db.driver import ContractDriver, InMemDriver
+from contracting.db.driver import ContractDriver, Driver
 from cilantro_ee import storage
 from cilantro_ee.nodes import masternode, delegate
 import asyncio
@@ -20,7 +20,10 @@ class MockNode:
         self.wallet = Wallet()
         port = 18000 + index
         self.ip = f'tcp://127.0.0.1:{port}'
-        self.driver = ContractDriver(driver=InMemDriver())
+
+        self.driver = ContractDriver(driver=Driver(db=f'state-{index}'))
+        self.driver.flush()
+
         self.ctx = ctx
 
         self.bootnodes = {}

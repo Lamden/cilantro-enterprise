@@ -6,6 +6,7 @@ from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.storage import BlockStorage, get_latest_block_height
 from cilantro_ee.nodes.masternode import contender, webserver
 from cilantro_ee.formatting import primatives
+from cilantro_ee.crypto.canonical import block_from_subblocks
 import json
 
 from cilantro_ee.nodes import base
@@ -177,6 +178,25 @@ class Masternode(base.Node):
         while self.wallet.verifying_key not in members:
             block = await self.new_block_processor.wait_for_next_nbn()
             self.process_new_block(block)
+
+        if len(members) == 1:
+            block = block_from_subblocks(
+                subblocks=[],
+                previous_hash=storage.get_latest_block_hash(self.driver),
+                block_num=storage.get_latest_block_height(self.driver) + 1
+            )
+
+            await router.secure_multicast(
+                msg=block,
+                service=base.NEW_BLOCK_SERVICE,
+                cert_dir=self.socket_authenticator.cert_dir,
+                wallet=self.wallet,
+                peer_map={
+                    **self.get_delegate_peers(),
+                    **self.get_masternode_peers()
+                },
+                ctx=self.ctx
+            )
 
     async def wait_for_block(self):
         self.new_block_processor.clean()

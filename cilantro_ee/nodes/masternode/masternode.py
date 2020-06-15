@@ -200,7 +200,7 @@ class Masternode(base.Node):
         if self.wallet.verifying_key not in members or len(members) > 1:
             await self.intermediate_catchup()
 
-        await self.hang()
+        # await self.hang()
 
         while self.running:
             await self.loop()

@@ -763,7 +763,6 @@ class TestFullFlowWithMocks(TestCase):
 
             await asyncio.sleep(1)
 
-            print('YEET')
             m = network.masternodes[0]
             m.stop()
 
@@ -805,6 +804,105 @@ class TestFullFlowWithMocks(TestCase):
             self.assertEqual(stu, 1)
             self.assertEqual(stu2, 1)
             self.assertEqual(stu3, 2)
+            self.assertEqual(jeff, 1)
+
+        self.loop.run_until_complete(test())
+
+    def test_two_masters_one_offline_can_come_back_without_issue(self):
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+
+        async def test():
+            await network.start()
+            network.refresh()
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu2'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu3'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            m = network.masternodes[0]
+            m.stop()
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu3'
+                },
+                mn_idx=1
+            )
+
+            await asyncio.sleep(1)
+
+            await m.start()
+
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'stu3'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'jeff'
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            stu = m.driver.get_var(contract='currency', variable='balances', arguments=['stu'])
+            stu2 = m.driver.get_var(contract='currency', variable='balances', arguments=['stu2'])
+            stu3 = m.driver.get_var(contract='currency', variable='balances', arguments=['stu3'])
+            jeff = m.driver.get_var(contract='currency', variable='balances', arguments=['jeff'])
+
+            self.assertEqual(stu, 1)
+            self.assertEqual(stu2, 1)
+            self.assertEqual(stu3, 3)
             self.assertEqual(jeff, 1)
 
         self.loop.run_until_complete(test())

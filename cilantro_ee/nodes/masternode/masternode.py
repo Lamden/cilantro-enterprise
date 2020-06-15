@@ -172,15 +172,11 @@ class Masternode(base.Node):
             await self.loop()
 
     async def intermediate_catchup(self):
-        while self.running:
+        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
 
+        while self.wallet.verifying_key not in members:
             block = await self.new_block_processor.wait_for_next_nbn()
             self.process_new_block(block)
-
-            if self.wallet.verifying_key in self.driver.get_var(contract='masternodes',
-                                                                        variable='S',
-                                                                        arguments=['members']):
-                break
 
     async def wait_for_block(self):
         self.new_block_processor.clean()
@@ -197,10 +193,7 @@ class Masternode(base.Node):
         # Catchup with NBNs until you have work, the join the quorum
         self.log.info('Join Quorum')
 
-        #await self.intermediate_catchup()
-
-        await self.hang()
-        #await self.wait_for_block()
+        await self.intermediate_catchup()
 
         while self.running:
             await self.loop()

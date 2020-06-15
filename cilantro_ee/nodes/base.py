@@ -149,6 +149,7 @@ class Node:
         self.reward_manager = RewardManager(driver=self.driver, debug=True)
 
         self.running = False
+        self.upgrade = False  # submit_transaction, only proceed if self.upgrade == False
 
     async def catchup(self, mn_seed):
         current = self.driver.get_latest_block_num()
@@ -284,12 +285,13 @@ class Node:
                         version_reboot(old_branch_name, old_contract_name, only_contract)
                     else:
                         self.log.info('Pepper OK. restart new version')
+                        self.upgrade = True
                         run_install(only_contract)
                         if not only_contract:
                             importlib.reload(cilantro_ee)
                         importlib.reload(contracting)
-
                         self.log.info(f'New branch {branch_name} was reloaded OK.')
+                        self.upgrade = False
                 else:
                     self.log.info(f'Update failed. Old branches restored')
                     version_reboot(old_branch_name, old_contract_name)

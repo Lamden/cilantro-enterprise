@@ -1,7 +1,7 @@
 from sanic import Sanic
 from sanic import response
 from cilantro_ee.logger.base import get_logger
-# from sanic_cors import CORS
+from sanic_cors import CORS
 import json as _json
 from contracting.client import ContractingClient
 from contracting.db.encoder import encode, decode
@@ -42,7 +42,7 @@ class WebServer:
             'REQUEST_MAX_SIZE': 10000,
             'REQUEST_TIMEOUT': 5
         })
-        #self.cors = CORS(self.app, automatic_options=True)
+        self.cors = CORS(self.app, automatic_options=True)
 
         # Initialize the backend data interfaces
         self.client = contracting_client

@@ -42,7 +42,7 @@ class WebServer:
             'REQUEST_MAX_SIZE': 10000,
             'REQUEST_TIMEOUT': 5
         })
-        self.cors = CORS(self.app, automatic_options=True)
+        self.cors = CORS(self.app)
 
         # Initialize the backend data interfaces
         self.client = contracting_client

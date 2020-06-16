@@ -63,10 +63,14 @@ mongod --dbpath ~/blocks --logpath ~/logs.log --bind_ip 127.0.0.1 --fork
 nano ~/constitution.json
 
 {
-  "masternodes": [<list of vks here>],
-  "masternode_min_quorum": <int>,
-  "delegates": [<list of vks here>],
-  "delegate_min_quorum": <int>
+  "masternodes": {
+    <vk>: <ip>,
+    <vk>: <ip>
+  },
+  "delegates": {
+    <vk>: <ip>,
+    <vk>: <ip>
+  },
 }
 
 Ctrl+X, save the file.
@@ -74,10 +78,10 @@ Ctrl+X, save the file.
 
 ### Start your node (if you are starting a new network from scratch)
 ```
-cil start <masternode | delegate> -k <sk in hex format> -bn <list of ip addresses that are currently online>
+cil start <masternode | delegate> -k <sk in hex format>
 ```
 
 ### Join your node (if you are trying to join an existing running network)
 ```
-cil join <masternode | delegate> -k <sk in hex format> -mn <list of any masternode currently online>
+cil join <masternode | delegate> -k <sk in hex format> -m <ip address of any online masternode>
 ```

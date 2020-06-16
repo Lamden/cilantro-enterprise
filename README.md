@@ -46,7 +46,7 @@ cd ~
 git clone https://github.com/Lamden/cilantro-enterprise.git
 cd cilantro-enterprise
 git fetch
-git checkout ori1-rel-gov-socks
+git checkout dev-final
 python3 setup.py develop
 ```
 

@@ -42,7 +42,7 @@ class WebServer:
             'REQUEST_MAX_SIZE': 10000,
             'REQUEST_TIMEOUT': 5
         })
-        self.cors = CORS(self.app)
+        self.cors = None
 
         # Initialize the backend data interfaces
         self.client = contracting_client
@@ -123,6 +123,8 @@ class WebServer:
                     return_asyncio_server=True
                 )
             )
+
+        self.cors = CORS(self.app)
 
     # Main Endpoint to Submit TXs
     async def submit_transaction(self, request):

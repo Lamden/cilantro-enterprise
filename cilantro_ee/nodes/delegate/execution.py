@@ -28,7 +28,11 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
 
     tx_hash = tx_hash_from_tx(transaction)
 
-    writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
+    # Only apply the writes if the tx passes
+    if output['status_code'] == 0:
+        writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
+    else:
+        writes = {}
 
     tx_output = {
         'hash': tx_hash,

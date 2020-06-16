@@ -96,7 +96,7 @@ class TestFullFlowWithMocks(TestCase):
             )
 
             async with httpx.AsyncClient() as client:
-                await client.post('http://0.0.0.0:8080/', data=tx)
+                await client.post('http://0.0.0.0:18081/', data=tx)
 
             await asyncio.sleep(2)
 
@@ -312,8 +312,29 @@ class TestFullFlowWithMocks(TestCase):
             await network.start()
             network.refresh()
 
-            network.fund(stu.verifying_key, 1_000_000)
-            network.fund(candidate.verifying_key, 1_000_000)
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': stu.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': candidate.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -410,6 +431,8 @@ class TestFullFlowWithMocks(TestCase):
 
             await candidate_master.start()
 
+            await asyncio.sleep(4)
+
             await network.make_and_push_tx(
                 wallet=stu,
                 contract='currency',
@@ -420,12 +443,30 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(4)
+            await asyncio.sleep(6)
+
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': 'jeff2'
+                }
+            )
+
+            await asyncio.sleep(6)
 
             self.assertEqual(candidate_master.driver.get_var(
                 contract='currency',
                 variable='balances',
                 arguments=['jeff']
+            ), 1)
+
+            self.assertEqual(candidate_master.driver.get_var(
+                contract='currency',
+                variable='balances',
+                arguments=['jeff2']
             ), 1)
 
         self.loop.run_until_complete(test())
@@ -559,13 +600,29 @@ class TestFullFlowWithMocks(TestCase):
 
             await candidate_master.start()
 
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1,
+                    'to': stu.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
             network.masternodes.append(candidate_master)
 
-            a = network.get_var(
+            a = network.get_vars(
                 contract='currency',
                 variable='balances',
                 arguments=[stu.verifying_key]
             )
+
+            print(a)
 
         self.loop.run_until_complete(test())
 

@@ -171,13 +171,6 @@ class Masternode(base.Node):
         while self.running:
             await self.loop()
 
-    async def intermediate_catchup(self):
-        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
-
-        while self.wallet.verifying_key not in members:
-            block = await self.new_block_processor.wait_for_next_nbn()
-            self.process_new_block(block)
-
     async def wait_for_block(self):
         self.new_block_processor.clean()
 
@@ -198,13 +191,16 @@ class Masternode(base.Node):
         # await self.hang()
         # await self.wait_for_block()
 
-        while len(self.new_block_processor.q) <= 0:
-            if not self.running:
-                return
-            await asyncio.sleep(0)
+        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
 
-        block = self.new_block_processor.q.pop(0)
-        self.process_new_block(block)
+        if len(members) > 1:
+            while len(self.new_block_processor.q) <= 0:
+                if not self.running:
+                    return
+                await asyncio.sleep(0)
+
+            block = self.new_block_processor.q.pop(0)
+            self.process_new_block(block)
 
         while self.running:
             await self.loop()
@@ -271,6 +267,7 @@ class Masternode(base.Node):
 
     def stop(self):
         super().stop()
+        self.router.socket.close()
         self.webserver.coroutine.result().close()
 
 

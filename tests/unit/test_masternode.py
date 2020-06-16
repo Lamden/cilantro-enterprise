@@ -208,110 +208,110 @@ class TestMasternode(TestCase):
 
         self.loop.run_until_complete(tasks)
 
-    def test_intermediate_catchup_waits_until_key_in_governance(self):
-        # A subblock that will have no effect
-        sbs_1 = {
-            'transactions': [
-                {
-                    'stamps_used': 100,
-                    'state': [
-                        {
-                            'key': 'currency.balances:jeff',
-                            'value': 10000
-                        }
-                    ],
-                    'transaction': {
-                        'payload': {
-                            'sender': 'jeff',
-                            'nonce': 0,
-                            'processor': 'stu'
-                        }
-                    }
-                }
-            ]
-        }
+    # def test_intermediate_catchup_waits_until_key_in_governance(self):
+    #     # A subblock that will have no effect
+    #     sbs_1 = {
+    #         'transactions': [
+    #             {
+    #                 'stamps_used': 100,
+    #                 'state': [
+    #                     {
+    #                         'key': 'currency.balances:jeff',
+    #                         'value': 10000
+    #                     }
+    #                 ],
+    #                 'transaction': {
+    #                     'payload': {
+    #                         'sender': 'jeff',
+    #                         'nonce': 0,
+    #                         'processor': 'stu'
+    #                     }
+    #                 }
+    #             }
+    #         ]
+    #     }
+    #
+    #     # A subblock that will add our node to governance
+    #     node_wallet = Wallet()
+    #     sbs_2 = {
+    #         'transactions': [
+    #             {
+    #                 'stamps_used': 100,
+    #                 'state': [
+    #                     {
+    #                         'key': 'masternodes.S:members',
+    #                         'value': [node_wallet.verifying_key]
+    #                     }
+    #                 ],
+    #                 'transaction': {
+    #                     'payload': {
+    #                         'sender': 'jeff',
+    #                         'nonce': 0,
+    #                         'processor': 'stu'
+    #                     }
+    #                 }
+    #             }
+    #         ]
+    #     }
+    #
+    #     blocks = generate_blocks(2, subblocks=[[sbs_1], [sbs_2]])
+    #
+    #     driver = ContractDriver(driver=InMemDriver())
+    #     node = masternode.Masternode(
+    #         socket_base='tcp://127.0.0.1:18003',
+    #         ctx=self.ctx,
+    #         wallet=node_wallet,
+    #         constitution={
+    #             'masternodes': [Wallet().verifying_key],
+    #             'delegates': [Wallet().verifying_key]
+    #         },
+    #         driver=driver
+    #     )
+    #
+    #     async def add_block_late(timeout=1):
+    #         await asyncio.sleep(timeout)
+    #         node.new_block_processor.q.append(blocks[1])
+    #
+    #     node.new_block_processor.q.append(blocks[0])
+    #     node.running = True
+    #
+    #     tasks = asyncio.gather(
+    #         add_block_late(),
+    #         node.intermediate_catchup(),
+    #
+    #     )
+    #
+    #     self.loop.run_until_complete(tasks)
+    #
+    #     self.assertTrue(node.running)
 
-        # A subblock that will add our node to governance
-        node_wallet = Wallet()
-        sbs_2 = {
-            'transactions': [
-                {
-                    'stamps_used': 100,
-                    'state': [
-                        {
-                            'key': 'masternodes.S:members',
-                            'value': [node_wallet.verifying_key]
-                        }
-                    ],
-                    'transaction': {
-                        'payload': {
-                            'sender': 'jeff',
-                            'nonce': 0,
-                            'processor': 'stu'
-                        }
-                    }
-                }
-            ]
-        }
-
-        blocks = generate_blocks(2, subblocks=[[sbs_1], [sbs_2]])
-
-        driver = ContractDriver(driver=InMemDriver())
-        node = masternode.Masternode(
-            socket_base='tcp://127.0.0.1:18003',
-            ctx=self.ctx,
-            wallet=node_wallet,
-            constitution={
-                'masternodes': [Wallet().verifying_key],
-                'delegates': [Wallet().verifying_key]
-            },
-            driver=driver
-        )
-
-        async def add_block_late(timeout=1):
-            await asyncio.sleep(timeout)
-            node.new_block_processor.q.append(blocks[1])
-
-        node.new_block_processor.q.append(blocks[0])
-        node.running = True
-
-        tasks = asyncio.gather(
-            add_block_late(),
-            node.intermediate_catchup(),
-
-        )
-
-        self.loop.run_until_complete(tasks)
-
-        self.assertTrue(node.running)
-
-    def test_intermediate_catchup_stops_if_not_running(self):
-        driver = ContractDriver(driver=InMemDriver())
-        node_wallet = Wallet()
-        node = masternode.Masternode(
-            socket_base='tcp://127.0.0.1:18003',
-            ctx=self.ctx,
-            wallet=node_wallet,
-            constitution={
-                'masternodes': [Wallet().verifying_key],
-                'delegates': [Wallet().verifying_key]
-            },
-            driver=driver
-        )
-
-        async def stop_late(timeout=1):
-            await asyncio.sleep(timeout)
-            node.stop()
-
-        tasks = asyncio.gather(
-            stop_late(),
-            node.intermediate_catchup(),
-
-        )
-
-        self.loop.run_until_complete(tasks)
-
-        self.assertFalse(node.running)
+    # def test_intermediate_catchup_stops_if_not_running(self):
+    #     driver = ContractDriver(driver=InMemDriver())
+    #     node_wallet = Wallet()
+    #     node = masternode.Masternode(
+    #         socket_base='tcp://127.0.0.1:18003',
+    #         ctx=self.ctx,
+    #         wallet=node_wallet,
+    #         constitution={
+    #             'masternodes': [Wallet().verifying_key],
+    #             'delegates': [Wallet().verifying_key]
+    #         },
+    #         driver=driver
+    #     )
+    #
+    #     async def stop_late(timeout=1):
+    #         await asyncio.sleep(timeout)
+    #         node.stop()
+    #
+    #     tasks = asyncio.gather(
+    #         stop_late(),
+    #         node.intermediate_catchup(),
+    #
+    #     )
+    #
+    #     self.loop.run_until_complete(tasks)
+    #
+    #     self.assertFalse(node.running)
 
     def test_send_work_returns_if_no_one_online(self):
         driver = ContractDriver(driver=InMemDriver())

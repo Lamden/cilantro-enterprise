@@ -112,7 +112,6 @@ class AsyncInbox:
 
     def stop(self):
         self.running = False
-        self.socket.close()
 
 
 class JSONAsyncInbox(AsyncInbox):

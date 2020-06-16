@@ -51,6 +51,7 @@ class MockMaster(MockNode):
         self.webserver_ip = f'http://0.0.0.0:{self.webserver_port}'
 
         self.blocks = storage.BlockStorage(db=f'blockchain-{index}')
+        self.blocks.drop_collections()
 
     async def start(self):
         assert self.ready_to_start, 'Not ready to start!'
@@ -168,6 +169,17 @@ class MockNetwork:
                 arguments=[vk],
                 value=new_balance
             )
+
+    def get_vars(self, contract, variable, arguments):
+        values = []
+        for master in self.masternodes:
+            values.append(master.driver.get_var(
+                contract=contract,
+                variable=variable,
+                arguments=arguments
+            ))
+
+        return values
 
     def get_var(self, contract, variable, arguments, delegates=False):
         true_value = None

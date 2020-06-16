@@ -1,7 +1,6 @@
 from sanic import Sanic
 from sanic import response
 from cilantro_ee.logger.base import get_logger
-from sanic_cors import CORS
 import json as _json
 from contracting.client import ContractingClient
 from contracting.db.encoder import encode, decode
@@ -10,7 +9,6 @@ from contracting.compilation import parser
 from cilantro_ee import storage
 from cilantro_ee.crypto.canonical import tx_hash_from_tx
 from cilantro_ee.crypto.transaction import TransactionException
-from threading import Thread
 
 import ssl
 import asyncio
@@ -124,20 +122,18 @@ class WebServer:
                 )
             )
 
-        self.cors = CORS(self.app)
-
     # Main Endpoint to Submit TXs
     async def submit_transaction(self, request):
         log.debug(f'New request: {request}')
         # Reject TX if the queue is too large
         if len(self.queue) >= self.max_queue_len:
-            return response.json({'error': "Queue full. Resubmit shortly."}, status=503)
+            return response.json({'error': "Queue full. Resubmit shortly."}, status=503, headers={'Access-Control-Allow-Origin': '*'})
 
         # Check that the payload is valid JSON
         tx = decode(request.body)
         if tx is None:
 
-            return response.json({'error': 'Malformed request body.'})
+            return response.json({'error': 'Malformed request body.'}, headers={'Access-Control-Allow-Origin': '*'})
 
         # Check that the TX is correctly formatted
         try:
@@ -170,7 +166,7 @@ class WebServer:
         except TransactionException as e:
             log.error(f'Tx has error: {type(e)}')
             return response.json(
-                transaction.EXCEPTION_MAP[type(e)]
+                transaction.EXCEPTION_MAP[type(e)], headers={'Access-Control-Allow-Origin': '*'}
             )
 
         # Add TX to the processing queue
@@ -182,15 +178,15 @@ class WebServer:
         return response.json({
             'success': 'Transaction successfully submitted to the network.',
             'hash': tx_hash
-        })
+        }, headers={'Access-Control-Allow-Origin': '*'})
 
     # Network Status
     async def ping(self, request):
-        return response.json({'status': 'online'})
+        return response.json({'status': 'online'}, headers={'Access-Control-Allow-Origin': '*'})
 
     # Get VK of this Masternode for Nonces
     async def get_id(self, request):
-        return response.json({'verifying_key': self.wallet.verifying_key})
+        return response.json({'verifying_key': self.wallet.verifying_key}, headers={'Access-Control-Allow-Origin': '*'})
 
     # Get the Nonce of a VK
     async def get_nonce(self, request, vk):
@@ -200,46 +196,46 @@ class WebServer:
             'nonce': latest_nonce,
             'processor': self.wallet.verifying_key,
             'sender': vk
-        })
+        }, headers={'Access-Control-Allow-Origin': '*'})
 
     # Get all Contracts in State (list of names)
     async def get_contracts(self, request):
         contracts = self.client.get_contracts()
-        return response.json({'contracts': contracts})
+        return response.json({'contracts': contracts}, headers={'Access-Control-Allow-Origin': '*'})
 
     # Get the source code of a specific contract
     async def get_contract(self, request, contract):
         contract_code = self.client.raw_driver.get_contract(contract)
 
         if contract_code is None:
-            return response.json({'error': '{} does not exist'.format(contract)}, status=404)
-        return response.json({'name': contract, 'code': contract_code}, status=200)
+            return response.json({'error': '{} does not exist'.format(contract)}, status=404, headers={'Access-Control-Allow-Origin': '*'})
+        return response.json({'name': contract, 'code': contract_code}, status=200, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_methods(self, request, contract):
         contract_code = self.client.raw_driver.get_contract(contract)
 
         if contract_code is None:
-            return response.json({'error': '{} does not exist'.format(contract)}, status=404)
+            return response.json({'error': '{} does not exist'.format(contract)}, status=404, headers={'Access-Control-Allow-Origin': '*'})
 
         funcs = parser.methods_for_contract(contract_code)
 
-        return response.json({'methods': funcs}, status=200)
+        return response.json({'methods': funcs}, status=200, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_variables(self, request, contract):
         contract_code = self.client.raw_driver.get_contract(contract)
 
         if contract_code is None:
-            return response.json({'error': '{} does not exist'.format(contract)}, status=404)
+            return response.json({'error': '{} does not exist'.format(contract)}, status=404, headers={'Access-Control-Allow-Origin': '*'})
 
         variables = parser.variables_for_contract(contract_code)
 
-        return response.json(variables)
+        return response.json(variables, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_variable(self, request, contract, variable):
         contract_code = self.client.raw_driver.get_contract(contract)
 
         if contract_code is None:
-            return response.json({'error': '{} does not exist'.format(contract)}, status=404)
+            return response.json({'error': '{} does not exist'.format(contract)}, status=404, headers={'Access-Control-Allow-Origin': '*'})
 
         key = request.args.get('key')
         if key is not None:
@@ -249,9 +245,9 @@ class WebServer:
         value = self.client.raw_driver.get(k)
 
         if value is None:
-            return response.json({'value': None}, status=404)
+            return response.json({'value': None}, status=404, headers={'Access-Control-Allow-Origin': '*'})
         else:
-            return response.json({'value': value}, status=200, dumps=encode)
+            return response.json({'value': value}, status=200, dumps=encode, headers={'Access-Control-Allow-Origin': '*'})
 
     # async def iterate_variable(self, request, contract, variable):
     #     contract_code = self.client.raw_driver.get_contract(contract)
@@ -273,14 +269,14 @@ class WebServer:
 
     async def get_latest_block(self, request):
         index = self.blocks.get_last_n(n=1, collection=storage.BlockStorage.BLOCK)
-        return response.json(index[0], dumps=ByteEncoder().encode)
+        return response.json(index[0], dumps=ByteEncoder().encode, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_latest_block_number(self, request):
 
-        return response.json({'latest_block_number': storage.get_latest_block_height(self.driver)})
+        return response.json({'latest_block_number': storage.get_latest_block_height(self.driver)}, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_latest_block_hash(self, request):
-        return response.json({'latest_block_hash': storage.get_latest_block_hash(self.driver)})
+        return response.json({'latest_block_hash': storage.get_latest_block_hash(self.driver)}, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_block(self, request):
         num = request.args.get('num')
@@ -291,12 +287,12 @@ class WebServer:
         elif _hash is not None:
             block = self.blocks.get_block(_hash)
         else:
-            return response.json({'error': 'No number or hash provided.'}, status=400)
+            return response.json({'error': 'No number or hash provided.'}, status=400, headers={'Access-Control-Allow-Origin': '*'})
 
         if block is None:
-            return response.json({'error': 'Block not found.'}, status=400)
+            return response.json({'error': 'Block not found.'}, status=400, headers={'Access-Control-Allow-Origin': '*'})
 
-        return response.json(block, dumps=ByteEncoder().encode)
+        return response.json(block, dumps=ByteEncoder().encode, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_tx(self, request):
         _hash = request.args.get('hash')
@@ -306,14 +302,14 @@ class WebServer:
                 int(_hash, 16)
                 tx = self.blocks.get_tx(_hash)
             except ValueError:
-                return response.json({'error': 'Malformed hash.'}, status=400)
+                return response.json({'error': 'Malformed hash.'}, status=400, headers={'Access-Control-Allow-Origin': '*'})
         else:
-            return response.json({'error': 'No tx hash provided.'}, status=400)
+            return response.json({'error': 'No tx hash provided.'}, status=400, headers={'Access-Control-Allow-Origin': '*'})
 
         if tx is None:
-            return response.json({'error': 'Transaction not found.'}, status=400)
+            return response.json({'error': 'Transaction not found.'}, status=400, headers={'Access-Control-Allow-Origin': '*'})
 
-        return response.json(tx, dumps=ByteEncoder().encode)
+        return response.json(tx, dumps=ByteEncoder().encode, headers={'Access-Control-Allow-Origin': '*'})
 
     async def get_constitution(self, request):
         masternodes = self.client.get_var(
@@ -331,4 +327,4 @@ class WebServer:
         return response.json({
             'masternodes': masternodes,
             'delegates': delegates
-        })
+        }, headers={'Access-Control-Allow-Origin': '*'})

@@ -93,8 +93,7 @@ class JoinProcessor(router.Processor):
         #     LOGGER.error(f'Bad proof verification for identity proof for {msg.get("ip")}')
         #     return
 
-        if msg.get('vk') not in self.peers:
-            await router.secure_multicast(msg=msg, service=JOIN_SERVICE, peer_map=self.peers, ctx=self.ctx, wallet=self.wallet)
+        await router.secure_multicast(msg=msg, service=JOIN_SERVICE, peer_map=self.peers, ctx=self.ctx, wallet=self.wallet)
 
         self.peers[msg.get('vk')] = msg.get('ip')
 

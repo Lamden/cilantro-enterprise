@@ -63,15 +63,15 @@ class SocketAuthenticator:
             arguments=['members']
         )
 
-        on_deck_masternode = self.client.get_var(
-            contract='elect_masternodes',
-            variable='top_candidate'
-        )
-
-        on_deck_delegate = self.client.get_var(
-            contract='elect_delegates',
-            variable='top_candidate'
-        )
+        # on_deck_masternode = self.client.get_var(
+        #     contract='elect_masternodes',
+        #     variable='top_candidate'
+        # )
+        #
+        # on_deck_delegate = self.client.get_var(
+        #     contract='elect_delegates',
+        #     variable='top_candidate'
+        # )
 
         self.flush_all_keys()
 
@@ -81,11 +81,11 @@ class SocketAuthenticator:
         for dl in delegate_list:
             self.add_verifying_key(dl)
 
-        if on_deck_masternode is not None:
-            self.add_verifying_key(on_deck_masternode)
-
-        if on_deck_delegate is not None:
-            self.add_verifying_key(on_deck_delegate)
+        # if on_deck_masternode is not None:
+        #     self.add_verifying_key(on_deck_masternode)
+        #
+        # if on_deck_delegate is not None:
+        #     self.add_verifying_key(on_deck_delegate)
 
         self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
 

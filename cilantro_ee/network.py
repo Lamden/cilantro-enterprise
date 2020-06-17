@@ -16,6 +16,7 @@ LOGGER = get_logger('Network')
 
 JOIN_SERVICE = 'join'           # Unsecured
 IDENTITY_SERVICE = 'identity'   # Unsecured
+PEER_SERVICE = 'peers'
 
 
 def verify_proof(proof, pepper):
@@ -65,6 +66,16 @@ class IdentityProcessor(router.Processor):
         return proof
 
 
+class PeerProcessor(router.Processor):
+    def __init__(self, peers):
+        self.peers = peers
+
+    async def process_message(self, msg):
+        return {
+            'peers': [{'vk': v, 'ip': i} for v, i in self.peers.items()]
+        }
+
+
 class JoinProcessor(router.Processor):
     def __init__(self, ctx, peers, wallet):
         self.ctx = ctx
@@ -93,7 +104,7 @@ class JoinProcessor(router.Processor):
         #     LOGGER.error(f'Bad proof verification for identity proof for {msg.get("ip")}')
         #     return
 
-        if msg.get('vk') not in self.peers:
+        if msg.get('vk') not in self.peers or self.peers[msg.get('vk')] != msg.get('ip'):
             await router.secure_multicast(msg=msg, service=JOIN_SERVICE, peer_map=self.peers, ctx=self.ctx, wallet=self.wallet)
 
         self.peers[msg.get('vk')] = msg.get('ip')
@@ -121,14 +132,20 @@ class Network:
         self.vk = self.wallet.verifying_key
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers, wallet=self.wallet)
         self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
+        self.peer_processor = PeerProcessor(peers=self.peers)
 
         router.add_service(JOIN_SERVICE, self.join_processor)
         router.add_service(IDENTITY_SERVICE, self.identity_processor)
+        router.add_service(PEER_SERVICE, self.peer_processor)
 
         self.join_msg = {
             'ip': ip_string,
             'vk': self.wallet.verifying_key
         }
+
+    def update_peers(self, peers):
+        for peer in peers['peers']:
+            self.peers[peer['vk']] = peer['ip']
 
     async def start(self, bootnodes: dict, vks: list):
         # Join all bootnodes

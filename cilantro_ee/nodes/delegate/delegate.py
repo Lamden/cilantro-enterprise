@@ -1,5 +1,5 @@
 from cilantro_ee.nodes.delegate import execution, work
-from cilantro_ee import router, storage
+from cilantro_ee import router, storage, network
 from cilantro_ee.nodes import base
 from cilantro_ee.logger.base import get_logger
 import asyncio
@@ -133,10 +133,29 @@ class Delegate(base.Node):
 
         return work.filter_work(w)
 
+    async def update_sockets(self):
+        mns = self.get_masternode_peers()
+        iterator = iter(mns.items())
+        vk, ip = next(iterator)
+
+        peers = await router.secure_request(
+            msg={},
+            service=network.PEER_SERVICE,
+            cert_dir=self.socket_authenticator.cert_dir,
+            wallet=self.wallet,
+            ctx=self.ctx,
+            vk=vk,
+            ip=ip
+        )
+
+        self.network.update_peers(peers=peers)
+
     async def wait_for_new_block_confirmation(self):
         self.log.info('Waiting for block confirmation...')
         block = await self.new_block_processor.wait_for_next_nbn()
         self.process_new_block(block)
+
+        await self.update_sockets()
 
     async def process_new_work(self):
         if len(self.get_masternode_peers()) == 0:

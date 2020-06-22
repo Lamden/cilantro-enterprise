@@ -64,12 +64,12 @@ nano ~/constitution.json
 
 {
   "masternodes": {
-    <vk>: <ip>,
-    <vk>: <ip>
+    "<vk>": "<ip>",
+    "<vk>": "<ip>"
   },
   "delegates": {
-    <vk>: <ip>,
-    <vk>: <ip>
+    "<vk>": "<ip>",
+    "<vk>": "<ip>"
   },
 }
 

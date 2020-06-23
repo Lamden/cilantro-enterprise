@@ -260,7 +260,8 @@ def join_network(args):
             socket_base=socket_base,
             constitution=const,
             webserver_port=args.webserver_port,
-            bootnodes=bootnodes
+            bootnodes=bootnodes,
+            seed=mn_seed
         )
     elif args.node_type == 'delegate':
         start_mongo()
@@ -269,7 +270,8 @@ def join_network(args):
             ctx=zmq.asyncio.Context(),
             socket_base=socket_base,
             constitution=const,
-            bootnodes=bootnodes
+            bootnodes=bootnodes,
+            seed=mn_seed
         )
 
     loop = asyncio.get_event_loop()

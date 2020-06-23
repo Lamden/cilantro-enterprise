@@ -98,12 +98,14 @@ def ensure_in_constitution(verifying_key: str, constitution: dict):
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=None,
-                 driver=ContractDriver(), debug=True, store=False, secure=True,
+                 driver=ContractDriver(), debug=True, store=False, seed=None,
                  genesis_path=cilantro_ee.contracts.__path__[0], reward_manager=rewards.RewardManager()):
 
         self.driver = driver
         self.nonces = storage.NonceStorage()
         self.store = store
+
+        self.seed = seed
 
         self.blocks = blocks
 
@@ -289,10 +291,19 @@ class Node:
         # Use it to boot up the network
         await self.network.start(bootnodes=self.bootnodes, vks=vks)
 
-        # Take a masternode vk from the constitution and look up its IP
-        masternode = self.constitution['masternodes'][0]
+        masternode_ip = None
+        masternode = None
+
+        if self.seed is not None:
+            for k, v in self.constitution['masternodes']:
+                if v == self.seed:
+                    masternode = k
+                    masternode_ip = v
+        else:
+            masternode = self.constitution['masternodes'][0]
+            masternode_ip = self.network.peers[masternode]
+
         self.log.debug(f'Catching up from MN: {masternode}')
-        masternode_ip = self.network.peers[masternode]
 
         # Use this IP to request any missed blocks
         await self.catchup(mn_seed=masternode_ip, mn_vk=masternode)

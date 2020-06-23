@@ -9,10 +9,17 @@ from cilantro_ee import storage
 
 log = get_logger('EXE')
 
+import multiprocessing as mp
+from time import time
+__N_WORKER__ = 3
+PoolExecutor = None
+def setPoolExecutor(executor):
+    global PoolExecutor
+    PoolExecutor = executor
 
-def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}):
-    # Deserialize Kwargs. Kwargs should be serialized JSON moving into the future for DX.
 
+def execute_tx(transaction, stamp_cost, environment: dict={}):
+    executor = PoolExecutor
     output = executor.execute(
         sender=transaction['payload']['sender'],
         contract_name=transaction['payload']['contract'],
@@ -23,7 +30,6 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
         environment=environment,
         auto_commit=False
     )
-
     log.debug(output)
 
     tx_hash = tx_hash_from_tx(transaction)
@@ -38,11 +44,8 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
         'stamps_used': output['stamps_used'],
         'result': safe_repr(output['result'])
     }
-
     tx_output = format_dictionary(tx_output)
-
     executor.driver.pending_writes.clear() # add
-
     return tx_output
 
 
@@ -58,20 +61,48 @@ def generate_environment(driver, timestamp, input_hash):
         'now': now
     }
 
+result_list2 = []
+def tx_result(result):
+    result_list2.append(result)
 
 def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost):
     environment = generate_environment(driver, timestamp, input_hash)
-
     # Each TX Batch is basically a subblock from this point of view and probably for the near future
-    tx_data = []
+
+    pool = mp.Pool(processes=__N_WORKER__)
+    setPoolExecutor(executor)
+    i= 1
+    s = time()
+    global result_list2
+    result_list2 = []
+    log.debug(f"Start Pool  ")
+
     for transaction in batch['transactions']:
-        tx_data.append(execute_tx(executor=executor,
-                                  transaction=transaction,
-                                  environment=environment,
-                                  stamp_cost=stamp_cost)
-                       )
+        log.debug(f'Transaction {i}   {type(executor)}')  # {execute_tx(transaction, stamp_cost, environment)}
+        i += 1
+        pool.apply_async(execute_tx, args = (transaction, stamp_cost, environment, ) , callback = tx_result)
+
+    pool.close()
+    pool.join()
+    log.debug(f"End of pool. result_list={result_list2} duration= {time() - s}")
+    tx_data = result_list2
+    log.debug(f"tx_data={len(tx_data)}")
 
     return tx_data
+
+# def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost):
+#     environment = generate_environment(driver, timestamp, input_hash)
+#
+#     # Each TX Batch is basically a subblock from this point of view and probably for the near future
+#     tx_data = []
+#     for transaction in batch['transactions']:
+#         tx_data.append(execute_tx(executor=executor,
+#                                   transaction=transaction,
+#                                   environment=environment,
+#                                   stamp_cost=stamp_cost)
+#                        )
+#
+#     return tx_data
 
 
 def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost, parallelism=4):

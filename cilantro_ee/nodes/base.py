@@ -194,12 +194,12 @@ class Node:
                 wallet=self.wallet,
                 ctx=self.ctx
             )
-            self.update_state(block)
+            self.process_new_block(block)
 
         # Process any blocks that were made while we were catching up
         while len(self.new_block_processor.q) > 0:
             block = self.new_block_processor.q.pop(0)
-            self.update_state(block)
+            self.process_new_block(block)
 
     def should_process(self, block):
         log.debug(f'got block #{block["number"]}')
@@ -270,7 +270,7 @@ class Node:
             self.blocks.store_block(encoded_block)
 
         # Prepare for the next block by flushing out driver and notification state
-        self.new_block_processor.clean()
+        # self.new_block_processor.clean()
 
         # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager.version_check()

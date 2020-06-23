@@ -423,6 +423,30 @@ class TestFullFlowWithMocks(TestCase):
             await asyncio.sleep(1)
 
             await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[0].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[1].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+
+            await network.make_and_push_tx(
                 wallet=candidate,
                 contract='currency',
                 function='approve',

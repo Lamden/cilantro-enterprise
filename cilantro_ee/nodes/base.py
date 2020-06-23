@@ -295,7 +295,8 @@ class Node:
         masternode = None
 
         if self.seed is not None:
-            for k, v in self.constitution['masternodes'].items():
+            for k, v in self.bootnodes.items():
+                self.log.info(k, v)
                 if v == self.seed:
                     masternode = k
                     masternode_ip = v

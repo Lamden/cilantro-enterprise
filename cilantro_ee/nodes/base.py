@@ -86,6 +86,16 @@ class NewBlock(router.Processor):
         self.q = [nbn for nbn in self.q if nbn['number'] > num]
 
 
+def ensure_in_constitution(verifying_key: str, constitution: dict):
+    masternodes = constitution['masternodes']
+    delegates = constitution['delegates']
+
+    is_masternode = verifying_key in masternodes.values()
+    is_delegate = verifying_key in delegates.values()
+
+    assert is_masternode or is_delegate, 'You are not in the constitution!'
+
+
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=None,
                  driver=ContractDriver(), debug=True, store=False, secure=True,
@@ -227,6 +237,8 @@ class Node:
         return good
 
     def update_state(self, block):
+        self.driver.clear_pending_state()
+
         # Check if the block is valid
         if self.should_process(block):
             log.debug('Updating with new block')

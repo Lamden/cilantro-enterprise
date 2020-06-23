@@ -249,6 +249,15 @@ class Masternode(base.Node):
     async def loop(self):
         block = await self.get_work_processed()
 
+        await router.secure_multicast(
+            msg=block,
+            service=base.NEW_BLOCK_SERVICE,
+            cert_dir=self.socket_authenticator.cert_dir,
+            wallet=self.wallet,
+            peer_map=self.get_delegate_peers(),
+            ctx=self.ctx
+        )
+
         await self.hang()
 
         await router.secure_multicast(
@@ -256,10 +265,7 @@ class Masternode(base.Node):
             service=base.NEW_BLOCK_SERVICE,
             cert_dir=self.socket_authenticator.cert_dir,
             wallet=self.wallet,
-            peer_map={
-                **self.get_delegate_peers(),
-                **self.get_masternode_peers()
-            },
+            peer_map=self.get_masternode_peers(),
             ctx=self.ctx
         )
 

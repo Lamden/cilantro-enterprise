@@ -38,7 +38,8 @@ class WebServer:
         self.app = Sanic(__name__)
         self.app.config.update({
             'REQUEST_MAX_SIZE': 10000,
-            'REQUEST_TIMEOUT': 5
+            'REQUEST_TIMEOUT': 5,
+            'KEEP_ALIVE': False,
         })
         self.cors = None
 

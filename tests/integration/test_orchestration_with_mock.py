@@ -79,10 +79,20 @@ class TestFullFlowWithMocks(TestCase):
                 d.start()
             )
 
-            m.driver.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
-            d.driver.set_var(contract='currency', variable='balances', arguments=[sender.verifying_key], value=1_000_000)
+            tx_1 = transaction.build_transaction(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': sender.verifying_key
+                },
+                stamps=10000,
+                nonce=0,
+                processor=m.wallet.verifying_key
+            )
 
-            tx = transaction.build_transaction(
+            tx_2 = transaction.build_transaction(
                 wallet=sender,
                 contract='currency',
                 function='transfer',
@@ -96,7 +106,10 @@ class TestFullFlowWithMocks(TestCase):
             )
 
             async with httpx.AsyncClient() as client:
-                await client.post('http://0.0.0.0:18081/', data=tx)
+                await client.post('http://0.0.0.0:18081/', data=tx_1)
+                await asyncio.sleep(2)
+                await client.post('http://0.0.0.0:18081/', data=tx_2)
+                await asyncio.sleep(2)
 
             await asyncio.sleep(2)
 
@@ -118,6 +131,19 @@ class TestFullFlowWithMocks(TestCase):
 
         async def test():
             await network.start()
+            network.refresh()
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': sender.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=sender,
@@ -162,6 +188,19 @@ class TestFullFlowWithMocks(TestCase):
 
         async def test():
             await network.start()
+            network.refresh()
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': sender.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=sender,
@@ -172,6 +211,8 @@ class TestFullFlowWithMocks(TestCase):
                     'to': 'jeff'
                 }
             )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=sender,
@@ -208,8 +249,53 @@ class TestFullFlowWithMocks(TestCase):
             await network.start()
             network.refresh()
 
-            network.fund(stu.verifying_key, 1_000_000)
-            network.fund(candidate.verifying_key, 1_000_000)
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': stu.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': candidate.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[0].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[1].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -491,7 +577,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=mocks.TEST_FOUNDATION_WALLET,
@@ -503,7 +589,31 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[0].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[1].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -515,7 +625,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -523,7 +633,7 @@ class TestFullFlowWithMocks(TestCase):
                 function='register'
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=stu,
@@ -535,7 +645,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=stu,
@@ -546,7 +656,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -558,7 +668,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -570,7 +680,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[1].wallet,
@@ -646,7 +756,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=mocks.TEST_FOUNDATION_WALLET,
@@ -658,7 +768,31 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[0].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': network.masternodes[1].wallet.verifying_key
+                }
+            )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -670,7 +804,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -678,7 +812,7 @@ class TestFullFlowWithMocks(TestCase):
                 function='register'
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=stu,
@@ -690,7 +824,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=stu,
@@ -701,7 +835,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -713,7 +847,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -725,7 +859,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[1].wallet,

@@ -61,8 +61,6 @@ class TestAuthenticator(TestCase):
             value=fake_mns
         )
 
-        fake_od_m = Wallet().verifying_key
-
         fake_dels = [
             Wallet().verifying_key,
             Wallet().verifying_key
@@ -75,20 +73,6 @@ class TestAuthenticator(TestCase):
             value=fake_dels
         )
 
-        fake_od_d = Wallet().verifying_key
-
-        self.c.set_var(
-            contract='elect_masternodes',
-            variable='top_candidate',
-            value=fake_od_m
-        )
-
-        self.c.set_var(
-            contract='elect_delegates',
-            variable='top_candidate',
-            value=fake_od_d
-        )
-
         s = SocketAuthenticator(client=self.c, ctx=self.ctx)
         s.refresh_governance_sockets()
         s.authenticator.stop()
@@ -98,9 +82,6 @@ class TestAuthenticator(TestCase):
 
         for d in fake_dels:
             self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{d}.key')))
-
-        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{fake_od_m}.key')))
-        self.assertTrue(os.path.exists(os.path.join(s.cert_dir, f'{fake_od_d}.key')))
 
     def test_passing_bootnodes_adds_keys_on_initialization(self):
         w1 = Wallet()

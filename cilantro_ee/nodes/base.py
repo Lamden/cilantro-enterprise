@@ -276,6 +276,7 @@ class Node:
 
         # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager.version_check()
+        self.new_block_processor.clean()
 
     async def start(self):
         asyncio.ensure_future(self.router.serve())

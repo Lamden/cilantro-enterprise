@@ -191,16 +191,16 @@ class Masternode(base.Node):
         # await self.hang()
         # await self.wait_for_block()
 
-        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
-
-        if len(members) > 1:
-            while len(self.new_block_processor.q) <= 0:
-                if not self.running:
-                    return
-                await asyncio.sleep(0)
-
-            block = self.new_block_processor.q.pop(0)
-            self.process_new_block(block)
+        # members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
+        #
+        # if len(members) > 1:
+        #     while len(self.new_block_processor.q) <= 0:
+        #         if not self.running:
+        #             return
+        #         await asyncio.sleep(0)
+        #
+        #     block = self.new_block_processor.q.pop(0)
+        #     self.process_new_block(block)
 
         while self.running:
             await self.loop()
@@ -235,7 +235,7 @@ class Masternode(base.Node):
 
         block = await self.aggregator.gather_subblocks(
             total_contacts=len(self.get_delegate_peers()),
-            expected_subblocks=len(masters)
+            expected_subblocks=len(masters),
         )
 
         self.log.info(f'got block back: {block}')

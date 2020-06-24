@@ -115,6 +115,9 @@ class Delegate(base.Node):
         self.log.debug('Starting')
         await super().start()
 
+        members = self.driver.get_var(contract='delegates', variable='S', arguments=['members'])
+        assert self.wallet.verifying_key in members, 'You are not a delegate!'
+
         asyncio.ensure_future(self.run())
 
         self.log.info('Running...')

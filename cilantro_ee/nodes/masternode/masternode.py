@@ -115,6 +115,9 @@ class Masternode(base.Node):
 
         await super().start()
 
+        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
+        assert self.wallet.verifying_key in members, 'You are not a masternode!'
+
         # Start the block server so others can run catchup using our node as a seed.
         # Start the block contender service to participate in consensus
         self.router.add_service(base.CONTENDER_SERVICE, self.aggregator.sbc_inbox)
@@ -191,16 +194,17 @@ class Masternode(base.Node):
         # await self.hang()
         # await self.wait_for_block()
 
-        # members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
-        #
-        # if len(members) > 1:
-        #     while len(self.new_block_processor.q) <= 0:
-        #         if not self.running:
-        #             return
-        #         await asyncio.sleep(0)
-        #
-        #     block = self.new_block_processor.q.pop(0)
-        #     self.process_new_block(block)
+        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
+
+        if len(members) > 1:
+            while len(self.new_block_processor.q) <= 0:
+                if not self.running:
+                    return
+                await asyncio.sleep(0)
+
+            block = self.new_block_processor.q.pop(0)
+            self.process_new_block(block)
+            self.new_block_processor.clean()
 
         while self.running:
             await self.loop()

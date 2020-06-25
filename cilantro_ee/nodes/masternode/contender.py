@@ -243,9 +243,8 @@ class BlockContender:
                 block.append(None)
             else:
                 block.append(sb.serialized_solution)
-                previous = sb['previous']
 
-        return block, previous
+        return block
 
     @property
     def responses(self):
@@ -308,7 +307,12 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
 
         self.log.info('Done aggregating new block.')
 
-        block, previous = contenders.get_current_best_block()
+        block = contenders.get_current_best_block()
+        if block is None or block[0] is None:
+            previous = None
+        else:
+            previous = block[0].get('previous')
+
         if previous is None:
             previous = storage.get_latest_block_hash(self.driver)
 

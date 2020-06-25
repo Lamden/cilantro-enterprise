@@ -178,7 +178,8 @@ class Delegate(base.Node):
             driver=self.driver,
             work=filtered_work,
             wallet=self.wallet,
-            previous_block_hash=storage.get_latest_block_hash(self.driver),
+            previous_block_hash=self.current_hash,
+            current_height=self.current_height,
             stamp_cost=self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
         )
 
@@ -193,7 +194,7 @@ class Delegate(base.Node):
             ctx=self.ctx
         )
 
-        self.new_block_processor.clean()
+        self.new_block_processor.clean(self.current_height)
         self.driver.clear_pending_state()
 
     async def loop(self):

@@ -81,9 +81,8 @@ class NewBlock(router.Processor):
 
         return nbn
 
-    def clean(self):
-        num = storage.get_latest_block_height(self.driver)
-        self.q = [nbn for nbn in self.q if nbn['number'] > num]
+    def clean(self, height):
+        self.q = [nbn for nbn in self.q if nbn['number'] > height]
 
 
 def ensure_in_constitution(verifying_key: str, constitution: dict):
@@ -157,6 +156,9 @@ class Node:
 
         self.reward_manager = reward_manager
 
+        self.current_height = storage.get_latest_block_height(self.driver)
+        self.current_hash = storage.get_latest_block_hash(self.driver)
+
     def seed_genesis_contracts(self):
         sync.setup_genesis_contracts(
             initial_masternodes=self.constitution['masternodes'],
@@ -168,7 +170,7 @@ class Node:
 
     async def catchup(self, mn_seed, mn_vk):
         # Get the current latest block stored and the latest block of the network
-        current = storage.get_latest_block_height(self.driver)
+        current = self.current_height
         latest = await get_latest_block_height(
             ip=mn_seed,
             vk=mn_vk,
@@ -210,23 +212,21 @@ class Node:
             return False
 
         # Get current metastate
-        current_hash = storage.get_latest_block_hash(self.driver)
-        current_height = storage.get_latest_block_height(self.driver)
 
         # Test if block contains the same metastate
-        if block['number'] != current_height + 1:
+        if block['number'] != self.current_height + 1:
             log.debug('Lower number block...')
             return False
 
-        if block['previous'] != current_hash:
+        if block['previous'] != self.current_hash:
             log.debug('Past hash mismatch')
             return False
 
         # If so, use metastate and subblocks to create the 'expected' block
         expected_block = canonical.block_from_subblocks(
             subblocks=block['subblocks'],
-            previous_hash=current_hash,
-            block_num=current_height + 1
+            previous_hash=self.current_hash,
+            block_num=self.current_height + 1
         )
 
         # Return if the block contains the expected information
@@ -256,6 +256,10 @@ class Node:
                 block=block,
                 client=self.client
             )
+
+        self.current_height = storage.get_latest_block_height(self.driver)
+        self.current_hash = storage.get_latest_block_hash(self.driver)
+
         self.driver.commit()
         self.driver.clear_pending_state()
 
@@ -276,7 +280,7 @@ class Node:
 
         # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager.version_check()
-        self.new_block_processor.clean()
+        self.new_block_processor.clean(self.current_height)
 
     async def start(self):
         asyncio.ensure_future(self.router.serve())

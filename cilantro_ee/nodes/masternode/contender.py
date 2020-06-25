@@ -272,7 +272,7 @@ class Aggregator:
         self.log = get_logger('AGG')
         self.log.propagate = debug
 
-    async def gather_subblocks(self, total_contacts, quorum_ratio=0.66, adequate_ratio=0.5, expected_subblocks=4):
+    async def gather_subblocks(self, total_contacts, current_height=0, current_hash='0' * 64, quorum_ratio=0.66, adequate_ratio=0.5, expected_subblocks=4):
         self.sbc_inbox.expected_subblocks = expected_subblocks
 
         self.log.info(f'''
@@ -308,16 +308,9 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
         self.log.info('Done aggregating new block.')
 
         block = contenders.get_current_best_block()
-        if block is None or block[0] is None:
-            previous = None
-        else:
-            previous = block[0].get('previous')
-
-        if previous is None:
-            previous = storage.get_latest_block_hash(self.driver)
 
         return block_from_subblocks(
             block,
-            previous_hash=previous,
-            block_num=storage.get_latest_block_height(self.driver) + 1
+            previous_hash=current_hash,
+            block_num=current_height + 1
         )

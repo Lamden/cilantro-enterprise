@@ -129,7 +129,7 @@ class Masternode(base.Node):
 
         # If we have no blocks in our database, we are starting a new network from scratch
 
-        if storage.get_latest_block_height(self.driver) == 0:
+        if self.current_height == 0:
             asyncio.ensure_future(self.new_blockchain_boot())
         # Otherwise, we are joining an existing network quorum
         else:
@@ -175,7 +175,7 @@ class Masternode(base.Node):
             await self.loop()
 
     async def wait_for_block(self):
-        self.new_block_processor.clean()
+        self.new_block_processor.clean(self.current_height)
 
         while len(self.new_block_processor.q) <= 0:
             if not self.running:
@@ -204,7 +204,7 @@ class Masternode(base.Node):
 
             block = self.new_block_processor.q.pop(0)
             self.process_new_block(block)
-            self.new_block_processor.clean()
+            self.new_block_processor.clean(self.current_height)
 
         while self.running:
             await self.loop()
@@ -240,13 +240,15 @@ class Masternode(base.Node):
         block = await self.aggregator.gather_subblocks(
             total_contacts=len(self.get_delegate_peers()),
             expected_subblocks=len(masters),
+            current_height=self.current_height,
+            current_hash=self.current_hash
         )
 
         self.log.info(f'got block back: {block}')
 
         self.process_new_block(block)
 
-        self.new_block_processor.clean()
+        self.new_block_processor.clean(self.current_height)
 
         return block
 

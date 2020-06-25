@@ -78,13 +78,10 @@ def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost,
     return tx_data
 
 
-def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost, parallelism=4):
+def execute_work(executor, driver, work, wallet, previous_block_hash, current_height=0, stamp_cost=20000, parallelism=4):
     # Assume single threaded, single process for now.
     subblocks = []
     i = 0
-
-    block_hash = previous_block_hash
-    block_num = storage.get_latest_block_height(driver) + 1
 
     for tx_batch in work:
         results = execute_tx_batch(
@@ -94,8 +91,8 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
             timestamp=tx_batch['timestamp'],
             input_hash=tx_batch['input_hash'],
             stamp_cost=stamp_cost,
-            bhash=block_hash,
-            num=block_num
+            bhash=previous_block_hash,
+            num=current_height
         )
 
         if len(results) > 0:

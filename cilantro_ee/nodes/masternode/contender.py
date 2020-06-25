@@ -235,6 +235,7 @@ class BlockContender:
 
     def get_current_best_block(self):
         block = []
+        previous = None
 
         # Where None is appended = failed
         for sb in self.subblock_contenders:
@@ -242,8 +243,9 @@ class BlockContender:
                 block.append(None)
             else:
                 block.append(sb.serialized_solution)
+                previous = sb['previous']
 
-        return block
+        return block, previous
 
     @property
     def responses(self):
@@ -306,10 +308,12 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
 
         self.log.info('Done aggregating new block.')
 
-        block = contenders.get_current_best_block()
+        block, previous = contenders.get_current_best_block()
+        if previous is None:
+            previous = storage.get_latest_block_hash(self.driver)
 
         return block_from_subblocks(
             block,
-            previous_hash=storage.get_latest_block_hash(self.driver),
+            previous_hash=previous,
             block_num=storage.get_latest_block_height(self.driver) + 1
         )

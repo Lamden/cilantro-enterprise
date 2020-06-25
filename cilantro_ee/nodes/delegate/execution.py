@@ -83,7 +83,7 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
     subblocks = []
     i = 0
 
-    block_hash = storage.get_latest_block_hash(driver)
+    block_hash = previous_block_hash
     block_num = storage.get_latest_block_height(driver) + 1
 
     for tx_batch in work:

@@ -106,7 +106,7 @@ def get():
         self.assertEqual(result['status'], 0)
         self.assertEqual(result['state'][0]['key'], 'testing.v')
         self.assertEqual(result['state'][0]['value'],  'jeff')
-        self.assertEqual(result['stamps_used'], 1000)
+        self.assertEqual(result['stamps_used'], 1)
 
     def test_generate_environment_creates_datetime_wrapped_object(self):
         timestamp = int(time.time())
@@ -210,11 +210,11 @@ def get():
         self.assertEqual(td1['status'], 0)
         self.assertEqual(td1['state'][0]['key'], 'testing.v')
         self.assertEqual(td1['state'][0]['value'], 'howdy')
-        self.assertEqual(td1['stamps_used'], 1000)
+        self.assertEqual(td1['stamps_used'], 1)
 
         self.assertEqual(td2['status'], 0)
         self.assertEqual(len(td2['state']), 0)
-        self.assertEqual(td2['stamps_used'], 1000)
+        self.assertEqual(td2['stamps_used'], 1)
 
     def test_execute_work_multiple_transaction_batches_works(self):
         test_contract = '''
@@ -318,11 +318,11 @@ def get():
         self.assertEqual(td1['status'], 0)
         self.assertEqual(td1['state'][0]['key'], 'testing.v')
         self.assertEqual(td1['state'][0]['value'], 'howdy')
-        self.assertEqual(td1['stamps_used'], 1000)
+        self.assertEqual(td1['stamps_used'], 1)
 
         self.assertEqual(td2['status'], 0)
         self.assertEqual(len(td2['state']), 0)
-        self.assertEqual(td2['stamps_used'], 1000)
+        self.assertEqual(td2['stamps_used'], 1)
 
         self.assertEqual(sb1['input_hash'], tx_batch_1['input_hash'])
         self.assertEqual(sb1['subblock'], 0)
@@ -332,12 +332,12 @@ def get():
         self.assertEqual(td1['status'], 0)
         self.assertEqual(td1['state'][0]['key'], 'testing.v')
         self.assertEqual(td1['state'][0]['value'], '123')
-        self.assertEqual(td1['stamps_used'], 1000)
+        self.assertEqual(td1['stamps_used'], 1)
 
         self.assertEqual(td2['status'], 0)
         self.assertEqual(td2['state'][0]['key'], 'testing.v')
         self.assertEqual(td2['state'][0]['value'], 'poo')
-        self.assertEqual(td2['stamps_used'], 1000)
+        self.assertEqual(td2['stamps_used'], 1)
 
         self.assertEqual(sb2['input_hash'], tx_batch_2['input_hash'])
         self.assertEqual(sb2['subblock'], 1)

@@ -50,21 +50,21 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
     return tx_output
 
 
-def generate_environment(driver, timestamp, input_hash):
+def generate_environment(driver, timestamp, input_hash, bhash='0' * 64, num=1):
     now = Datetime._from_datetime(
         datetime.utcfromtimestamp(timestamp)
     )
 
     return {
-        'block_hash': storage.get_latest_block_hash(driver),
-        'block_num': storage.get_latest_block_height(driver) + 1,
+        'block_hash': bhash,
+        'block_num': num,
         '__input_hash': input_hash,  # Used for deterministic entropy for random games
         'now': now
     }
 
 
-def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost):
-    environment = generate_environment(driver, timestamp, input_hash)
+def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost, bhash='0' * 64, num=1):
+    environment = generate_environment(driver, timestamp, input_hash, bhash, num)
 
     # Each TX Batch is basically a subblock from this point of view and probably for the near future
     tx_data = []
@@ -83,6 +83,9 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
     subblocks = []
     i = 0
 
+    block_hash = storage.get_latest_block_hash(driver)
+    block_num = storage.get_latest_block_height(driver) + 1
+
     for tx_batch in work:
         results = execute_tx_batch(
             executor=executor,
@@ -90,7 +93,9 @@ def execute_work(executor, driver, work, wallet, previous_block_hash, stamp_cost
             batch=tx_batch,
             timestamp=tx_batch['timestamp'],
             input_hash=tx_batch['input_hash'],
-            stamp_cost=stamp_cost
+            stamp_cost=stamp_cost,
+            bhash=block_hash,
+            num=block_num
         )
 
         if len(results) > 0:

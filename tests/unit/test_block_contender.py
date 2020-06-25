@@ -95,7 +95,6 @@ class TestPotentialSolution(TestCase):
             'transactions': [],
             'merkle_leaves': ['a', 'b', 'c'],
             'subblock': 0,
-            'previous': 'b',
             'signatures': [
                 {
                     'signature': 'x',

@@ -95,7 +95,6 @@ class PotentialSolution:
             'transactions': self.struct['transactions'],
             'merkle_leaves': self.struct['merkle_tree']['leaves'],
             'subblock': self.struct['subblock'],
-            'previous': self.struct['previous'],
             'signatures': []
         }
 

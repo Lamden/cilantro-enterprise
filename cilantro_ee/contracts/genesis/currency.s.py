@@ -20,10 +20,6 @@ def balance_of(account: str):
     return balances[account]
 
 @export
-def total_supply():
-    return supply.get()
-
-@export
 def allowance(owner: str, spender: str):
     return balances[owner, spender]
 

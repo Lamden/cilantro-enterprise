@@ -62,7 +62,13 @@ def vote_candidate(address: str):
 
     # Update last voted variable
     candidate_state['last_voted', ctx.caller] = now
-    candidate_state['votes', address] += 1
+
+    votes = candidate_state['votes', address]
+
+    if votes is None:
+        candidate_state['votes', address] = 1
+    else:
+        candidate_state['votes', address] += 1
 
     if top_candidate.get() is not None:
         if candidate_state['votes', address] > candidate_state['votes', top_candidate.get()]:

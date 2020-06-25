@@ -1,6 +1,6 @@
 from contracting.db.encoder import encode, decode
 from contracting.db.driver import ContractDriver
-
+from collections import defaultdict
 from cilantro_ee import router, storage
 from cilantro_ee.crypto.canonical import merklize, block_from_subblocks
 from cilantro_ee.crypto.wallet import verify
@@ -11,7 +11,7 @@ import time
 
 
 class SBCInbox(router.Processor):
-    def __init__(self, expected_subblocks=4, debug=False):
+    def __init__(self, expected_subblocks=4, debug=True):
         self.q = []
         self.expected_subblocks = expected_subblocks
         self.log = get_logger('Subblock Gatherer')
@@ -190,10 +190,15 @@ class BlockContender:
 
         self.log = get_logger('AGG')
 
+        self.received = defaultdict(set)
+
     def add_sbcs(self, sbcs):
         for sbc in sbcs:
             # If it's out of range, ignore
             if sbc['subblock'] > self.total_subblocks - 1:
+                continue
+
+            if sbc['signer'] in self.received[sbc['subblock']]:
                 continue
 
             # If it's the first contender, create a new object and store it
@@ -209,6 +214,7 @@ class BlockContender:
             # Access the object at the SB index and add a potential solution
             s = self.subblock_contenders[sbc['subblock']]
             s.add_potential_solution(sbc)
+            self.received[sbc['subblock']].add(sbc['signer'])
 
     def current_responded_sbcs(self):
         i = 0

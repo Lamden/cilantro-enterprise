@@ -644,7 +644,7 @@ class TestFullFlowWithMocks(TestCase):
                 contract='currency',
                 function='approve',
                 kwargs={
-                    'amount': 100_000,
+                    'amount': 100_100,
                     'to': 'elect_masternodes'
                 }
             )
@@ -664,7 +664,7 @@ class TestFullFlowWithMocks(TestCase):
                 contract='currency',
                 function='approve',
                 kwargs={
-                    'amount': 100_000,
+                    'amount': 100_100,
                     'to': 'elect_masternodes'
                 }
             )

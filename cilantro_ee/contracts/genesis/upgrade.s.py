@@ -13,6 +13,8 @@ upg_lock = Variable() # network upgrade lock only one update can be performed
 upg_init_time = Variable()
 upg_pepper = Variable()
 upg_window = Variable()
+branch_name = Variable()
+c_branch_name = Variable()
 
 mn_vote = Variable()
 dl_vote = Variable()
@@ -35,15 +37,19 @@ def seed():
 
 
 @export
-def trigger_upgrade(pepper: str, initiator_vk: str):
+def trigger_upgrade(cilantro_branch_name: str, contract_branch_name: str, pepper: str, initiator_vk: str):
     if upg_lock.get() is True:
         assert_parallel_upg_check()
 
     # for now only master's trigger upgrade
+    # test_name.set(election_house.current_value_for_policy('masternodes')[0])
     if initiator_vk in election_house.current_value_for_policy('masternodes'):
         upg_lock.set(True)
         #upg_init_time.set(now)
         upg_pepper.set(pepper)
+        branch_name.set(cilantro_branch_name)
+        c_branch_name.set(contract_branch_name)
+
         #upg_window.set(datetime.Timedelta(seconds=3000000000))
         mn_vote.set(0)
         dl_vote.set(0)

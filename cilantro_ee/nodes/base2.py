@@ -4,21 +4,21 @@ from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.contracts import sync
 from contracting.db.driver import ContractDriver, encode
 import cilantro_ee
-import contracting
 import zmq.asyncio
 import asyncio
-import os
-import importlib
-
 import json
 from contracting.client import ContractingClient
-
-from cilantro_ee.cli.utils import version_reboot
-from cilantro_ee.cli.utils import build_pepper, run_install, get_version
-
 from cilantro_ee.logger.base import get_logger
 import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+import contracting
+import os
+import importlib
+from cilantro_ee.cli.utils import version_reboot
+from cilantro_ee.cli.utils import build_pepper, run_install, get_version
+from cilantro_ee.logger.base import get_logger
+from copy import deepcopy
+
 
 BLOCK_SERVICE = 'catchup'
 NEW_BLOCK_SERVICE = 'new_blocks'
@@ -101,7 +101,6 @@ def ensure_in_constitution(verifying_key: str, constitution: dict):
 
     assert is_masternode or is_delegate, 'You are not in the constitution!'
 
-
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=None,
                  driver=ContractDriver(), debug=True, store=False, seed=None,
@@ -160,13 +159,9 @@ class Node:
         self.router.add_service(NEW_BLOCK_SERVICE, self.new_block_processor)
 
         self.running = False
-        self.upgrade = False  # submit_transaction, only proceed if self.upgrade == False
+        self.upgrade = False
 
-        self.reward_manager = reward_manager
-
-        self.current_height = storage.get_latest_block_height(self.driver)
-        self.current_hash = storage.get_latest_block_hash(self.driver)
-
+        ### UPGRADE CONSTANTS
         self.version_state = self.client.get_contract('upgrade')
         self.active_upgrade = self.version_state.quick_read('upg_lock')
 
@@ -183,6 +178,12 @@ class Node:
         self.mn_votes = self.version_state.quick_read('mn_vote')
         self.dl_votes = self.version_state.quick_read('dl_vote')
         self.pepper = None
+        ### UPGRADE CONSTANTS
+
+        self.reward_manager = reward_manager
+
+        self.current_height = storage.get_latest_block_height(self.driver)
+        self.current_hash = storage.get_latest_block_hash(self.driver)
 
     def seed_genesis_contracts(self):
         sync.setup_genesis_contracts(
@@ -203,7 +204,7 @@ class Node:
             ctx=self.ctx
         )
 
-        #assert type(latest) != dict, 'Provided node is not in sync.'
+        # assert type(latest) != dict, 'Provided node is not in sync.'
 
         self.log.info(f'Current: {current}, Latest: {latest}')
 
@@ -304,7 +305,7 @@ class Node:
         # self.new_block_processor.clean()
 
         # Finally, check and initiate an upgrade if one needs to be done
-        #self.upgrade_manager.version_check()
+        self.upgrade_manager.version_check()
         self.new_block_processor.clean(self.current_height)
 
     async def start(self):
@@ -334,7 +335,6 @@ class Node:
             masternode = self.constitution['masternodes'][0]
             masternode_ip = self.network.peers[masternode]
 
-        #self.version_check()
         self.log.debug(f'Catching up from MN: {masternode}')
 
         # Use this IP to request any missed blocks
@@ -372,78 +372,3 @@ class Node:
 
     def get_masternode_peers(self):
         return self._get_member_peers('masternodes')
-
-    def version_check(self):
-        # check for trigger
-        self.version_state = self.client.get_contract('upgrade')
-        self.mn_votes = self.version_state.quick_read('mn_vote')
-        self.dl_votes = self.version_state.quick_read('dl_vote')
-        test_name = self.version_state.quick_read('test_name')
-
-        self.get_update_state()
-
-        if self.version_state:
-            self.log.info('Waiting for Consensys on vote')
-            self.log.info('num masters voted -> {}'.format(self.mn_votes))
-            self.log.info('num delegates voted -> {}'.format(self.dl_votes))
-            self.log.info('test_name -> {}'.format(test_name))
-
-            # check for vote consensys
-            vote_consensus = self.version_state.quick_read('upg_consensus')
-            if vote_consensus:
-                branch_name= self.version_state.quick_read('branch_name')
-                contract_name= self.version_state.quick_read('c_branch_name')
-                self.log.info(f'Rebooting Node with new verions {branch_name} {contract_name}')
-                cil_path = os.path.dirname(cilantro_ee.__file__)
-                self.log.info(f'CIL_PATH={cil_path}')
-                self.log.info(f'CONTRACTING_PATH={os.path.dirname(contracting.__file__)}')
-                old_branch_name = get_version()
-                old_contract_name = get_version(os.path.join(os.path.dirname(contracting.__file__),  '..'))
-                only_contract = branch_name==old_branch_name
-                self.log.info(f'Old CIL branch={old_branch_name}  Old contract branch={old_contract_name}  Only contract update={only_contract}')
-                if version_reboot(branch_name, contract_name, only_contract):
-                    p = build_pepper(cil_path)
-                    if self.pepper != p:
-                        self.log.error(f'peppers mismatch {self.pepper} {p}')
-                        self.log.error(f'Restore previous versions: {old_branch_name} {old_contract_name}')
-                        version_reboot(old_branch_name, old_contract_name, only_contract)
-                    else:
-                        self.log.info('Pepper OK. restart new version')
-                        self.upgrade = True
-                        run_install(only_contract)
-                        if not only_contract:
-                            importlib.reload(cilantro_ee)
-                        importlib.reload(contracting)
-                        self.log.info(f'New branch {branch_name} was reloaded OK.')
-                        self.upgrade = False
-                else:
-                    self.log.info(f'Update failed. Old branches restored')
-                    version_reboot(old_branch_name, old_contract_name)
-            else:
-                self.log.info('waiting for vote on upgrade')
-
-            # ready
-            #TODO we can merge it with vote - to be decided
-
-    def get_update_state(self):
-        self.active_upgrade = self.version_state.quick_read('upg_lock')
-        start_time = self.version_state.quick_read('upg_init_time')
-        window = self.version_state.quick_read('upg_window')
-        self.pepper = self.version_state.quick_read('upg_pepper')
-        self.mn_votes = self.version_state.quick_read('mn_vote')
-        self.dl_votes = self.version_state.quick_read('dl_vote')
-        consensus = self.version_state.quick_read('upg_consensus')
-
-        print("Upgrade -> {} Cil Pepper   -> {}\n"
-              "Init time -> {}, Time Window -> {}\n"
-              "Masters      -> {}\n"
-              "Delegates    -> {}\n"
-              "Votes        -> {}\n "
-              "MN-Votes     -> {}\n "
-              "DL-Votes     -> {}\n "
-              "Consensus    -> {}\n"
-              .format(self.active_upgrade,
-                      self.pepper, start_time, window, self.tol_mn,
-                      self.tot_dl, self.all_votes,
-                      self.mn_votes, self.dl_votes,
-                      consensus))

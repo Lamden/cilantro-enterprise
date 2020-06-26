@@ -210,7 +210,9 @@ class Masternode(base.Node):
             await self.loop()
 
     async def send_work(self):
-        self.active_upgrade = self.driver.get_var(contract='upgrade', variable='upg_lock', mark=False)
+        # Hangs until upgrade is done
+        while self.upgrade_manager.upgrade:
+            await asyncio.sleep(0)
 
         # Else, batch some more txs
         self.log.info(f'Sending {len(self.tx_batcher.queue)} transactions.')

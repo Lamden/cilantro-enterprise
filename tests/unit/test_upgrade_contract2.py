@@ -15,19 +15,17 @@ from datetime import datetime as dt, timedelta as td
 
 
 class TestUpdateContractFix(TestCase):
-
     def setUp(self):
         self.client = ContractingClient()
-        self.mn_wallets = [Wallet().verifying_key().hex() for _ in range(3)]
-        self.dn_wallets = [Wallet().verifying_key().hex() for _ in range(3)]
+        self.mn_wallets = [Wallet().verifying_key for _ in range(3)]
+        self.dn_wallets = [Wallet().verifying_key for _ in range(3)]
         # Sync contracts
-        sync.submit_from_genesis_json_file(cilantro_ee.contracts.__path__[0] + '/genesis.json', client=self.client)
-        sync.submit_node_election_contracts(
+        sync.setup_genesis_contracts(
             initial_masternodes=self.mn_wallets,
-            boot_mns=3,
             initial_delegates=self.dn_wallets,
-            boot_dels=3,
-            client=self.client
+            client=self.client,
+            filename=cilantro_ee.contracts.__path__[0] + '/genesis.json',
+            root=cilantro_ee.contracts.__path__[0]
         )
 
     def tearDown(self):
@@ -101,8 +99,6 @@ class TestUpdateContractFix(TestCase):
         old_branch = get_version()
         flag = 'ori1-rel-gov-socks-upg' == old_branch
         print(flag)
-
-
 
 if __name__ == '__main__':
     unittest.main()

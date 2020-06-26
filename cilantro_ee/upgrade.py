@@ -30,6 +30,7 @@ class UpgradeManager:
         self.contracting_branch_name = self.client.get_var(contract='upgrade', variable='c_branch_name')
 
         self.pepper = pepper
+        self.upgrade = False
 
     def version_check(self):
         # check for trigger
@@ -74,7 +75,7 @@ class UpgradeManager:
                             importlib.reload(cilantro_ee)
                         importlib.reload(contracting)
 
-                        self.log.info(f'New branch {branch_name} was reloaded OK.')
+                        self.log.info(f'New branch {self.branch_name} was reloaded OK.')
                         self.upgrade = False
                 else:
                     self.log.info(f'Update failed. Old branches restored')

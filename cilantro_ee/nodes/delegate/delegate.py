@@ -41,12 +41,15 @@ class WorkProcessor(router.Processor):
 
     def verify_work(self, msg):
         if msg['sender'] not in self.masters:
+            self.log.error(f'TX Batch received from non-master {msg["sender"][:8]}')
             return
 
         if not verify(vk=msg['sender'], msg=msg['input_hash'], signature=msg['signature']):
+            self.log.error(f'Invalidly signed TX Batch received from master {msg["sender"][:8]}')
             return
 
         if int(time.time()) - msg['timestamp'] > self.expired_batch:
+            self.log.error(f'Expired TX Batch received from master {msg["sender"][:8]}')
             return
 
         for tx in msg['transactions']:
@@ -59,10 +62,12 @@ class WorkProcessor(router.Processor):
                     strict=False,
                     timeout=self.expired_batch + self.tx_timeout
                 )
-            except transaction.TransactionException:
+            except transaction.TransactionException as e:
+                self.log.error(f'TX in batch has error: {type(e)}')
                 return
 
         if self.work.get(msg['sender']) is not None:
+            self.log.error(f'Duplicate TX Batch received from master {msg["sender"][:8]}')
             return
 
         self.work[msg['sender']] = msg

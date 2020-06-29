@@ -952,7 +952,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=mocks.TEST_FOUNDATION_WALLET,
@@ -964,7 +964,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=mocks.TEST_FOUNDATION_WALLET,
@@ -976,12 +976,12 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             m = network.masternodes[0]
             m.stop()
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await m.start()
 
@@ -997,7 +997,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=mocks.TEST_FOUNDATION_WALLET,
@@ -1009,7 +1009,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             stu = m.driver.get_var(contract='currency', variable='balances', arguments=['stu'])
             stu2 = m.driver.get_var(contract='currency', variable='balances', arguments=['stu2'])

@@ -13,13 +13,13 @@ log = get_logger('STATE')
 
 
 class NonceStorage:
-    def __init__(self, port=27027, config_path=cilantro_ee.__path__[0]):
+    def __init__(self, port=27027, db_name='blockchain', config_path=cilantro_ee.__path__[0]):
         self.config_path = config_path
 
         self.port = port
 
         self.client = MongoClient()
-        self.db = self.client.get_database('blockchain')
+        self.db = self.client.get_database(db_name)
         self.nonces = self.db['nonces']
         self.pending_nonces = self.db['pending_nonces']
 

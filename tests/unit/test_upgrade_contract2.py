@@ -1,24 +1,21 @@
 import unittest
 import os
-import subprocess
 from cilantro_ee.contracts import sync
 from cilantro_ee.cli.utils import build_pepper, get_version
 from cilantro_ee.crypto.wallet import Wallet
-# from contracting.db.driver import ContractDriver
-# from contracting.client import ContractingClient
 import cilantro_ee
-# =============
 from unittest import TestCase
 from contracting.client import ContractingClient
-from contracting.stdlib.bridge.time import Timedelta, DAYS, WEEKS, Datetime
-from datetime import datetime as dt, timedelta as td
 
 
 class TestUpdateContractFix(TestCase):
     def setUp(self):
         self.client = ContractingClient()
+        self.client.flush()
+
         self.mn_wallets = [Wallet().verifying_key for _ in range(3)]
         self.dn_wallets = [Wallet().verifying_key for _ in range(3)]
+
         # Sync contracts
         sync.setup_genesis_contracts(
             initial_masternodes=self.mn_wallets,
@@ -42,15 +39,18 @@ class TestUpdateContractFix(TestCase):
     def test_trigger(self):
         p = build_pepper()
         vk = self.mn_wallets[0]
+
         upgrade = self.client.get_contract('upgrade')
-        upgrade.trigger_upgrade(git_branch_name='dev', pepper=p, initiator_vk=vk)
+        upgrade.trigger_upgrade(cilantro_branch_name='dev', pepper=p, initiator_vk=vk)
         state = upgrade.quick_read(variable='upg_lock')
+
         self.assertEqual(state, True)
 
     def test_consensys_n_reset(self):
         upgrade = self.client.get_contract('upgrade')
         p = build_pepper()
         br_name = 'ori1-rel-gov-socks'
+
         upgrade.trigger_upgrade(cilantro_branch_name=br_name, contract_branch_name=br_name, pepper= p, initiator_vk=self.mn_wallets[0])
 
         upgrade.quick_write(variable='tot_mn', value=3)

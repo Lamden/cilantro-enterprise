@@ -24,6 +24,8 @@ class MockNode:
         self.driver = ContractDriver(driver=Driver(db=f'state-{index}'))
         self.driver.flush()
 
+        self.nonces = storage.NonceStorage(db_name=f'blockchain-{index}')
+
         self.ctx = ctx
 
         self.bootnodes = {}
@@ -65,7 +67,8 @@ class MockMaster(MockNode):
             blocks=self.blocks,
             driver=self.driver,
             webserver_port=self.webserver_port,
-            genesis_path=self.genesis_path
+            genesis_path=self.genesis_path,
+            nonces=self.nonces
         )
 
         await self.obj.start()
@@ -93,7 +96,8 @@ class MockDelegate(MockNode):
             constitution=self.constitution,
             bootnodes=self.bootnodes,
             driver=self.driver,
-            genesis_path=self.genesis_path
+            genesis_path=self.genesis_path,
+            nonces=self.nonces
         )
 
         await self.obj.start()

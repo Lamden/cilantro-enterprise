@@ -98,10 +98,10 @@ def ensure_in_constitution(verifying_key: str, constitution: dict):
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=None,
                  driver=ContractDriver(), debug=True, store=False, seed=None,
-                 genesis_path=cilantro_ee.contracts.__path__[0], reward_manager=rewards.RewardManager()):
+                 genesis_path=cilantro_ee.contracts.__path__[0], reward_manager=rewards.RewardManager(), nonces=storage.NonceStorage()):
 
         self.driver = driver
-        self.nonces = storage.NonceStorage()
+        self.nonces = nonces
         self.store = store
 
         self.seed = seed
@@ -280,7 +280,9 @@ class Node:
         # self.new_block_processor.clean()
 
         # Finally, check and initiate an upgrade if one needs to be done
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client, pepper='cilantro')
         self.upgrade_manager.version_check()
+
         self.new_block_processor.clean(self.current_height)
 
     async def start(self):

@@ -36,14 +36,14 @@ class UpgradeManager:
         # check for trigger
         enabled = self.client.get_contract('upgrade') is not None
         if enabled:
-            self.log.info('Waiting for Consensys on vote')
-            self.log.info('num masters voted -> {}'.format(self.masternode_votes))
-            self.log.info('num delegates voted -> {}'.format(self.delegate_votes))
-            self.log.info('test_name -> {}'.format(self.test_name))
+            self.log.info(f'# Master votes: {self.masternode_votes}, '
+                          f'# Del. votes: {self.delegate_votes}, '
+                          f'Test Name: {self.test_name}')
 
             # check for vote consensys
             if self.vote_consensus:
-                self.log.info(f'Rebooting Node with new verions {self.branch_name} {self.contracting_branch_name}')
+                self.log.info(f'Rebooting Node with new verions: '
+                              f'CIL -> {self.branch_name}, CON -> {self.contracting_branch_name}')
 
                 cil_path = os.path.dirname(cilantro_ee.__file__)
 
@@ -54,15 +54,15 @@ class UpgradeManager:
                 old_contract_name = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
                 only_contract = self.branch_name == old_branch_name
 
-                self.log.info(f'Old CIL branch={old_branch_name}  '
-                              f'Old contract branch={old_contract_name} '
+                self.log.info(f'Old CIL branch={old_branch_name}, '
+                              f'Old contract branch={old_contract_name}, '
                               f' Only contract update={only_contract}')
 
                 if version_reboot(self.branch_name, self.contracting_branch_name, only_contract):
                     p = build_pepper(cil_path)
                     if self.pepper != p:
-                        self.log.error(f'peppers mismatch {self.pepper} {p}')
-                        self.log.error(f'Restore previous versions: {old_branch_name} {old_contract_name}')
+                        self.log.error(f'peppers mismatch: {self.pepper} != {p}')
+                        self.log.error(f'Restore previous versions: {old_branch_name} -> {old_contract_name}')
 
                         version_reboot(old_branch_name, old_contract_name, only_contract)
                     else:
@@ -78,8 +78,5 @@ class UpgradeManager:
                         self.log.info(f'New branch {self.branch_name} was reloaded OK.')
                         self.upgrade = False
                 else:
-                    self.log.info(f'Update failed. Old branches restored')
-
+                    self.log.error(f'Update failed. Old branches restored.')
                     version_reboot(old_branch_name, old_contract_name)
-            else:
-                self.log.info('waiting for vote on upgrade')

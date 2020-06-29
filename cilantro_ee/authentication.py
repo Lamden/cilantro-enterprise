@@ -63,16 +63,6 @@ class SocketAuthenticator:
             arguments=['members']
         )
 
-        # on_deck_masternode = self.client.get_var(
-        #     contract='elect_masternodes',
-        #     variable='top_candidate'
-        # )
-        #
-        # on_deck_delegate = self.client.get_var(
-        #     contract='elect_delegates',
-        #     variable='top_candidate'
-        # )
-
         self.flush_all_keys()
 
         for mn in masternode_list:
@@ -81,11 +71,7 @@ class SocketAuthenticator:
         for dl in delegate_list:
             self.add_verifying_key(dl)
 
-        # if on_deck_masternode is not None:
-        #     self.add_verifying_key(on_deck_masternode)
-        #
-        # if on_deck_delegate is not None:
-        #     self.add_verifying_key(on_deck_delegate)
+        self.log.info(f'Refreshing keys for {len(masternode_list)} masters and {len(delegate_list)} delegates.')
 
         self.authenticator.configure_curve(domain=self.domain, location=self.cert_dir)
 
@@ -97,6 +83,7 @@ class SocketAuthenticator:
             pk = crypto_sign_ed25519_pk_to_curve25519(bvk)
         # Error is thrown if the VK is not within the possibility space of the ED25519 algorithm
         except RuntimeError:
+            self.log.error('ED25519 Cryptographic error. The key provided is not within the cryptographic key space.')
             return
 
         zvk = z85.encode(pk).decode('utf-8')

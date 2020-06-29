@@ -3,6 +3,8 @@ import decimal
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.client import ContractingClient
 
+from cilantro_ee.logger.base import get_logger
+
 decimal.getcontext().rounding = decimal.ROUND_DOWN
 
 REQUIRED_CONTRACTS = [
@@ -16,6 +18,8 @@ REQUIRED_CONTRACTS = [
 ]
 DUST_EXPONENT = 8
 
+log = get_logger('Rewards')
+
 
 class RewardManager:
     @staticmethod
@@ -26,6 +30,7 @@ class RewardManager:
     def is_setup(client: ContractingClient):
         for contract in REQUIRED_CONTRACTS:
             if not RewardManager.contract_exists(contract, client):
+                log.error('Reward contracts not setup.')
                 return False
         return True
 
@@ -36,6 +41,8 @@ class RewardManager:
         for sb in block['subblocks']:
             for tx in sb['transactions']:
                 total += tx['stamps_used']
+
+        log.info(f'{total} stamps in block #{block["number"]} to issue as rewards.')
 
         return total
 
@@ -86,6 +93,11 @@ class RewardManager:
         )
 
         # burn does nothing, as the stamps are already deducted from supply
+
+        log.info(f'Master reward: {format(master_reward, ".4f")}t per master. '
+                 f'Delegate reward: {format(delegate_reward, ".4f")}t per delegate. '
+                 f'Foundation reward: {format(foundation_reward, ".4f")}t. '
+                 f'Remainder is burned.')
 
         return master_reward, delegate_reward, foundation_reward
 

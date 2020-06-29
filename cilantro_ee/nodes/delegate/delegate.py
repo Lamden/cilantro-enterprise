@@ -21,7 +21,7 @@ class WorkProcessor(router.Processor):
         self.todo = []
         self.accepting_work = False
 
-        self.log = get_logger('DEL WI')
+        self.log = get_logger('Work Inbox')
         self.log.propagate = debug
 
         self.masters = []
@@ -33,7 +33,7 @@ class WorkProcessor(router.Processor):
 
     async def process_message(self, msg):
         if not self.accepting_work:
-            self.log.info('TODO')
+            self.log.error('Received work out of expected state. Storing in to-do list.')
             self.todo.append(msg)
 
         else:
@@ -73,7 +73,7 @@ class WorkProcessor(router.Processor):
         self.work[msg['sender']] = msg
 
     def process_todo_work(self):
-        self.log.info(f'Current todo {self.todo}')
+        self.log.info(f'{len(self.todo)} pieces of to-do work.')
 
         # Check if the tx batch is old
         # Check if the sender is a master
@@ -85,6 +85,7 @@ class WorkProcessor(router.Processor):
         self.todo.clear()
 
     async def accept_work(self, expected_batched, masters):
+        self.log.info(f'Accepting work from {len(masters)} master(s).')
         self.accepting_work = True
         self.masters = masters
         self.process_todo_work()
@@ -114,7 +115,7 @@ class Delegate(base.Node):
         self.work_processor = WorkProcessor(client=self.client, nonces=self.nonces)
         self.router.add_service(WORK_SERVICE, self.work_processor)
 
-        self.log = get_logger(f'DEL {self.wallet.vk_pretty[4:12]}')
+        self.log = get_logger(f'Delegate {self.wallet.vk_pretty[4:12]}')
 
     async def start(self):
         self.log.debug('Starting')
@@ -125,12 +126,8 @@ class Delegate(base.Node):
 
         asyncio.ensure_future(self.run())
 
-        self.log.info('Running...')
-
     async def acquire_work(self):
         current_masternodes = self.client.get_var(contract='masternodes', variable='S', arguments=['members'])
-
-        self.log.error(f'{len(current_masternodes)} MNS!')
 
         w = await self.work_processor.accept_work(expected_batched=len(current_masternodes), masters=current_masternodes)
 
@@ -172,7 +169,7 @@ class Delegate(base.Node):
         filtered_work = await self.acquire_work()
 
         # Run mini catch up here to prevent 'desyncing'
-        self.log.info(f'Pending Block Notifications to Process: {len(self.new_block_processor.q)}')
+        self.log.info(f'{len(self.new_block_processor.q)} new block(s) to process before execution.')
 
         while len(self.new_block_processor.q) > 0:
             block = self.new_block_processor.q.pop(0)
@@ -188,8 +185,6 @@ class Delegate(base.Node):
             stamp_cost=self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
         )
 
-        self.log.info(f'Sending to masters: {self.get_masternode_peers()}')
-
         await router.secure_multicast(
             msg=results,
             service=base.CONTENDER_SERVICE,
@@ -199,15 +194,19 @@ class Delegate(base.Node):
             ctx=self.ctx
         )
 
+        self.log.info(f'Work execution complete. Sending to masters.')
+
         self.new_block_processor.clean(self.current_height)
         self.driver.clear_pending_state()
 
     async def loop(self):
+        self.log.info('=== ENTERING PROCESS NEW WORK STATE ===')
         await self.process_new_work()
+        self.log.info('=== ENTERING BLOCK CONFIRMATION STATE ===')
         await self.wait_for_new_block_confirmation()
 
     async def run(self):
-        self.log.debug('Running...')
+        self.log.info('Done starting. Beginning participation in consensus.')
         while self.running:
             await self.loop()
 

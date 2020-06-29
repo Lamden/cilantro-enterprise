@@ -133,6 +133,7 @@ class Network:
         self.join_processor = JoinProcessor(ctx=self.ctx, peers=self.peers, wallet=self.wallet)
         self.identity_processor = IdentityProcessor(wallet=self.wallet, ip_string=ip_string, pepper=pepper)
         self.peer_processor = PeerProcessor(peers=self.peers)
+        self.log = get_logger('Peers')
 
         router.add_service(JOIN_SERVICE, self.join_processor)
         router.add_service(IDENTITY_SERVICE, self.identity_processor)
@@ -164,7 +165,8 @@ class Network:
                     if self.peers.get(peer['vk']) is None:
                         self.peers[peer['vk']] = peer['ip']
 
-            LOGGER.debug(f'Peers found so far: {self.peers}')
+            self.log.info(f'{len(self.peers)}/{len(vks)} peers found.')
+        self.log.info(f'All peers found. Continuing startup process.')
 
     def all_vks_found(self, vks):
         for vk in vks:

@@ -22,16 +22,12 @@ CONTENDER_SERVICE = 'contenders'
 GET_BLOCK = 'get_block'
 GET_HEIGHT = 'get_height'
 
-log = get_logger('Base')
-
 
 async def get_latest_block_height(wallet: Wallet, vk: str, ip: str, ctx: zmq.asyncio.Context):
     msg = {
         'name': GET_HEIGHT,
         'arg': ''
     }
-
-    log.debug('Sending latest block height msg...')
 
     response = await router.secure_request(
         ip=ip,
@@ -95,6 +91,7 @@ def ensure_in_constitution(verifying_key: str, constitution: dict):
 
     assert is_masternode or is_delegate, 'You are not in the constitution!'
 
+
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=None,
                  driver=ContractDriver(), debug=True, store=False, seed=None,
@@ -111,7 +108,7 @@ class Node:
         if self.store:
             self.blocks = storage.BlockStorage()
 
-        self.log = get_logger('NODE')
+        self.log = get_logger('Base')
         self.log.propagate = debug
         self.socket_base = socket_base
         self.wallet = wallet
@@ -161,6 +158,7 @@ class Node:
         self.current_hash = storage.get_latest_block_hash(self.driver)
 
     def seed_genesis_contracts(self):
+        self.log.info('Setting up genesis contracts.')
         sync.setup_genesis_contracts(
             initial_masternodes=self.constitution['masternodes'],
             initial_delegates=self.constitution['delegates'],
@@ -171,6 +169,7 @@ class Node:
 
     async def catchup(self, mn_seed, mn_vk):
         # Get the current latest block stored and the latest block of the network
+        self.log.info('Running catchup.')
         current = self.current_height
         latest = await get_latest_block_height(
             ip=mn_seed,
@@ -179,11 +178,10 @@ class Node:
             ctx=self.ctx
         )
 
-        # assert type(latest) != dict, 'Provided node is not in sync.'
-
-        self.log.info(f'Current: {current}, Latest: {latest}')
+        self.log.info(f'Current block: {current}, Latest available block: {latest}')
 
         if latest == 0 or latest is None or type(latest) == dict:
+            self.log.info('No need to catchup. Proceeding.')
             return
 
         # Increment current by one. Don't count the genesis block.
@@ -207,20 +205,22 @@ class Node:
             self.process_new_block(block)
 
     def should_process(self, block):
-        log.debug(f'got block #{block["number"]}')
+        self.log.info(f'Processing block #{block["number"]}')
         # Test if block failed immediately
         if block['hash'] == 'f' * 64:
+            self.log.error('Failed Block! Not storing.')
             return False
 
         # Get current metastate
 
         # Test if block contains the same metastate
         if block['number'] != self.current_height + 1:
-            log.debug('Lower number block...')
+            self.log.info(f'Block #{block["number"]} != {self.current_height + 1}. '
+                          f'Node has probably already processed this block. Continuing.')
             return False
 
         if block['previous'] != self.current_hash:
-            log.debug('Past hash mismatch')
+            self.log.error('Previous block hash != Current hash. Cryptographically invalid. Not storing.')
             return False
 
         # If so, use metastate and subblocks to create the 'expected' block
@@ -233,9 +233,9 @@ class Node:
         # Return if the block contains the expected information
         good = block == expected_block
         if good:
-            log.debug('Block is good')
+            self.log.info(f'Block #{block["number"]} passed all checks. Store.')
         else:
-            log.debug('Block is not expected')
+            self.log.error(f'Block #{block["number"]} has an encoding problem. Do not store.')
 
         return good
 
@@ -244,7 +244,7 @@ class Node:
 
         # Check if the block is valid
         if self.should_process(block):
-            log.debug('Updating with new block')
+            self.log.info('Storing new block.')
             # Commit the state changes and nonces to the database
             storage.update_state_with_block(
                 block=block,
@@ -252,14 +252,18 @@ class Node:
                 nonces=self.nonces
             )
 
+            self.log.info('Issuing rewards.')
             # Calculate and issue the rewards for the governance nodes
             self.reward_manager.issue_rewards(
                 block=block,
                 client=self.client
             )
 
+        self.log.info('Updating metadata.')
         self.current_height = storage.get_latest_block_height(self.driver)
         self.current_hash = storage.get_latest_block_hash(self.driver)
+
+        self.new_block_processor.clean(self.current_height)
 
         self.driver.commit()
         self.driver.clear_pending_state()
@@ -282,8 +286,6 @@ class Node:
         # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager = upgrade.UpgradeManager(client=self.client, pepper='cilantro')
         self.upgrade_manager.version_check()
-
-        self.new_block_processor.clean(self.current_height)
 
     async def start(self):
         asyncio.ensure_future(self.router.serve())
@@ -312,7 +314,7 @@ class Node:
             masternode = self.constitution['masternodes'][0]
             masternode_ip = self.network.peers[masternode]
 
-        self.log.debug(f'Catching up from MN: {masternode}')
+        self.log.info(f'Masternode Seed VK: {masternode}')
 
         # Use this IP to request any missed blocks
         await self.catchup(mn_seed=masternode_ip, mn_vk=masternode)

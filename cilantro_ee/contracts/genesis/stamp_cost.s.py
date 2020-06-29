@@ -3,7 +3,7 @@ import election_house
 S = Hash()
 
 @construct
-def seed(initial_rate: int=100_000,
+def seed(initial_rate: int=100,
          master_contract='masternodes',
          delegate_contract='delegates',
          election_max_length=datetime.DAYS * 1):

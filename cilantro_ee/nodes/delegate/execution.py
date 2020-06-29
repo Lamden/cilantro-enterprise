@@ -1,11 +1,9 @@
 from contracting.execution.executor import Executor
 from contracting.stdlib.bridge.time import Datetime
-from contracting.db.encoder import encode, decode, safe_repr
+from contracting.db.encoder import encode, safe_repr
 from cilantro_ee.crypto.canonical import tx_hash_from_tx, format_dictionary, merklize
 from cilantro_ee.logger.base import get_logger
 from datetime import datetime
-import heapq
-from cilantro_ee import storage
 
 log = get_logger('EXE')
 
@@ -24,7 +22,16 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
         auto_commit=False
     )
 
-    log.debug(output)
+    if output['status_code'] == 0:
+        log.info(f'TX executed successfully. '
+                 f'{output["stamps_used"]} stamps used. '
+                 f'{len(output["writes"])} writes. '
+                 f'Result = {output["result"]}')
+    else:
+        log.error(f'TX executed unsuccessfully. '
+                  f'{output["stamps_used"]} stamps used. '
+                  f'{len(output["writes"])} writes.'
+                  f' Result = {output["result"]}')
 
     tx_hash = tx_hash_from_tx(transaction)
 

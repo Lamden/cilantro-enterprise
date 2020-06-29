@@ -239,14 +239,14 @@ class Masternode(base.Node):
         # this really should just give us a block straight up
         masters = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'], mark=False)
 
+        self.log.info('=== ENTERING BUILD NEW BLOCK STATE ===')
+
         block = await self.aggregator.gather_subblocks(
             total_contacts=len(self.get_delegate_peers()),
             expected_subblocks=len(masters),
             current_height=self.current_height,
             current_hash=self.current_hash
         )
-
-        self.log.info(f'got block back: {block}')
 
         self.process_new_block(block)
 
@@ -255,6 +255,7 @@ class Masternode(base.Node):
         return block
 
     async def loop(self):
+        self.log.info('=== ENTERING SEND WORK STATE ===')
         block = await self.get_work_processed()
 
         await router.secure_multicast(

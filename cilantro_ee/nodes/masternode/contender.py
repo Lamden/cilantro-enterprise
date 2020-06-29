@@ -30,11 +30,9 @@ class SBCInbox(router.Processor):
 
             self.q.append(msg)
 
-            self.log.debug(f'Added Subblock Condender[{i}]')
-
     def sbc_is_valid(self, sbc, sb_idx=0):
         if sbc['subblock'] != sb_idx:
-            self.log.debug(f'Subblock Contender[{sb_idx}] is out order.')
+            self.log.error(f'Subblock Contender[{sb_idx}] is out order.')
             return False
 
         # Make sure signer is in the delegates
@@ -50,7 +48,7 @@ class SBCInbox(router.Processor):
         )
 
         if not valid_sig:
-            self.log.debug(f'Subblock Contender[{sb_idx}] from {sbc["signer"][:8]} has an invalid signature.')
+            self.log.error(f'Subblock Contender[{sb_idx}] from {sbc["signer"][:8]} has an invalid signature.')
             return False
 
         if len(sbc['merkle_tree']['leaves']) > 0:
@@ -59,13 +57,15 @@ class SBCInbox(router.Processor):
 
             # Missing leaves, etc
             if len(sbc['merkle_tree']['leaves']) != len(expected_tree) and len(sbc['transactions']) > 0:
-                self.log.debug('Merkle Tree Len mismatch')
+                self.log.error('Merkle Tree Len mismatch')
                 return False
 
             for i in range(len(expected_tree)):
                 if expected_tree[i] != sbc['merkle_tree']['leaves'][i]:
-                    self.log.debug('Subblock Contender[{}] from {} has an Merkle tree proof.')
+                    self.log.error('Subblock Contender[{}] from {} has an Merkle tree proof.')
                     return False
+
+        self.log.info(f'Subblock[{sbc["subblock"]}] from {sbc["signer"][:8]} is valid.')
 
         return True
 
@@ -187,7 +187,7 @@ class BlockContender:
         # Create an empty list to store the contenders as they come in
         self.subblock_contenders = [None for _ in range(self.total_subblocks)]
 
-        self.log = get_logger('AGG')
+        self.log = get_logger('Aggregator')
 
         self.received = defaultdict(set)
 
@@ -234,7 +234,6 @@ class BlockContender:
 
     def get_current_best_block(self):
         block = []
-        previous = None
 
         # Where None is appended = failed
         for sb in self.subblock_contenders:
@@ -256,6 +255,7 @@ class BlockContender:
 
         return m
 
+
 # Can probably move this into the masternode. Move the sbc inbox there and deprecate this class
 class Aggregator:
     def __init__(self, driver, expected_subblocks=4, seconds_to_timeout=10, debug=True):
@@ -274,13 +274,7 @@ class Aggregator:
     async def gather_subblocks(self, total_contacts, current_height=0, current_hash='0' * 64, quorum_ratio=0.66, adequate_ratio=0.5, expected_subblocks=4):
         self.sbc_inbox.expected_subblocks = expected_subblocks
 
-        self.log.info(f'''
-========
-Gathering subblocks:
-Total Contacts: {total_contacts}, Expected SBs: {expected_subblocks}
-Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
-========
-        ''')
+        self.log.info(f'Expecting {expected_subblocks} subblocks from {total_contacts} delegates.')
 
         contenders = BlockContender(
             total_contacts=total_contacts,
@@ -301,8 +295,7 @@ Quorum Ratio: {quorum_ratio}, Adequate Ratio: {adequate_ratio}
             await asyncio.sleep(0)
 
         if time.time() - started > self.seconds_to_timeout:
-            self.log.info('Not enough consensus!')
-            self.log.info(contenders.responses)
+            self.log.error('Inadequate consensus! Too many delegates are offline! Kick some out!')
 
         self.log.info('Done aggregating new block.')
 

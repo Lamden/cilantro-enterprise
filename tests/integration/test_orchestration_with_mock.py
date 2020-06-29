@@ -302,12 +302,12 @@ class TestFullFlowWithMocks(TestCase):
                 contract='currency',
                 function='approve',
                 kwargs={
-                    'amount': 100_000,
+                    'amount': 100_100,
                     'to': 'elect_masternodes'
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=candidate,
@@ -315,7 +315,7 @@ class TestFullFlowWithMocks(TestCase):
                 function='register'
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=stu,
@@ -327,7 +327,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=stu,
@@ -338,7 +338,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -350,7 +350,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[0].wallet,
@@ -362,7 +362,7 @@ class TestFullFlowWithMocks(TestCase):
                 }
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 wallet=network.masternodes[1].wallet,

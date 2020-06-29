@@ -175,7 +175,7 @@ class Orchestrator:
         self.nonces.clear()
         self.minted.clear()
 
-    def make_tx(self, contract, function, sender, kwargs={}, stamps=1_000_000, pidx=0):
+    def make_tx(self, contract, function, sender, kwargs={}, stamps=1_000_000, pidx=0, add_mint=True):
         processor = self.masternodes[pidx]
 
         batch = build_transaction(
@@ -190,8 +190,9 @@ class Orchestrator:
 
         self.nonces[sender.verifying_key + processor.wallet.verifying_key] += 1
 
-        if sender.verifying_key not in self.minted:
-            self.mint(1_000_000, sender)
+        if add_mint:
+            if sender.verifying_key not in self.minted:
+                self.mint(1_000_000, sender)
 
         return batch
 

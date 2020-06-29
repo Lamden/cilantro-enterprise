@@ -26,6 +26,61 @@ class TestFullFlowWithMocks(TestCase):
         self.ctx.destroy()
         self.loop.close()
 
+    def test_process_two_tx(self):
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+
+        stu = Wallet()
+        stu2 = Wallet()
+        candidate = Wallet()
+        candidate2 = Wallet()
+
+        async def test():
+            await network.start()
+            network.refresh()
+
+            await network.make_and_push_tx(
+                wallet=mocks.TEST_FOUNDATION_WALLET,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1_000_000,
+                    'to': stu.verifying_key
+                }
+            )
+
+            await asyncio.sleep(1)
+            await network.make_and_push_tx(
+                wallet=stu,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 1338,
+                    'to': candidate.verifying_key
+                },
+            )
+
+            await asyncio.sleep(1)
+            await network.make_and_push_tx(
+                wallet=candidate,
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 10,
+                    'to': candidate2.verifying_key
+                },
+            )
+
+            await asyncio.sleep(14)
+
+            self.assertEqual(network.get_var(
+                contract='currency',
+                variable='balances',
+                arguments=[candidate2.verifying_key]
+            ), 10)
+
+        self.loop.run_until_complete(test())
+
+
     def test_process_single_tx(self):
         network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
 
@@ -68,4 +123,3 @@ class TestFullFlowWithMocks(TestCase):
             ), 1338)
 
         self.loop.run_until_complete(test())
-

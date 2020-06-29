@@ -10,6 +10,7 @@ from cilantro_ee import storage
 log = get_logger('EXE')
 
 import multiprocessing as mp
+import copy
 from time import time
 __N_WORKER__ = 3
 PoolExecutor = None
@@ -18,7 +19,7 @@ def setPoolExecutor(executor):
     PoolExecutor = executor
 
 
-def execute_tx(transaction, stamp_cost, environment: dict={}):
+def execute_tx(transaction, stamp_cost, environment: dict={}, tx_number=0):
     executor = PoolExecutor
     output = executor.execute(
         sender=transaction['payload']['sender'],
@@ -42,7 +43,8 @@ def execute_tx(transaction, stamp_cost, environment: dict={}):
         'status': output['status_code'],
         'state': writes,
         'stamps_used': output['stamps_used'],
-        'result': safe_repr(output['result'])
+        'result': safe_repr(output['result']),
+        'tx_number': tx_number
     }
     tx_output = format_dictionary(tx_output)
     executor.driver.pending_writes.clear() # add
@@ -71,7 +73,7 @@ def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost)
 
     pool = mp.Pool(processes=__N_WORKER__)
     setPoolExecutor(executor)
-    i= 1
+    i= 0
     s = time()
     global result_list2
     result_list2 = []
@@ -79,15 +81,29 @@ def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost)
 
     for transaction in batch['transactions']:
         log.debug(f'Transaction {i}   {type(executor)}')  # {execute_tx(transaction, stamp_cost, environment)}
+        pool.apply_async(execute_tx, args = (transaction, stamp_cost, environment, i) , callback = tx_result)
         i += 1
-        pool.apply_async(execute_tx, args = (transaction, stamp_cost, environment, ) , callback = tx_result)
-
     pool.close()
     pool.join()
     log.debug(f"End of pool. result_list={result_list2} duration= {time() - s}")
-    tx_data = result_list2
-    log.debug(f"tx_data={len(tx_data)}")
 
+    tx_data = copy.deepcopy(result_list2)
+    result_list2 = []
+    tx_done_ok = [ tx['tx_number'] for tx in tx_data]
+    log.debug(f"tx_data={len(tx_data)}  tx_done_ok={tx_done_ok}")
+    if len(tx_done_ok) < len(batch['transactions']):
+        pool = mp.Pool(processes=__N_WORKER__)
+        i = 0
+        for transaction in batch['transactions']:
+            if i not in tx_done_ok:
+                log.debug(f'rerurn Transaction {i}')  # {execute_tx(transaction, stamp_cost, environment)}
+                pool.apply_async(execute_tx, args = (transaction, stamp_cost, environment) , callback = tx_result)
+                i += 1
+        pool.close()
+        pool.join()
+        log.debug(f"End of rerun. result_list={result_list2}")
+        for r in result_list2:
+            tx_data.append(r)
     return tx_data
 
 # def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost):

@@ -136,7 +136,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
         c = o.get_var('currency', 'balances', [stu2.verifying_key().hex()])
         print(f" 2) a,c ={a,c}")
 
-    def test_upgrade2(self):
+    def test_upgrade_falls_back_and_processes_transactions(self):
         current_branch = get_version()
         current_contracting_branch = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
 
@@ -290,6 +290,30 @@ class TestUpgradeOrchestration(unittest.TestCase):
             )
 
             await asyncio.sleep(7)
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 123,
+                    'to': 'test1'
+                },
+                wallet=candidate2,
+                mn_idx=1
+            )
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 321,
+                    'to': 'test2'
+                },
+                wallet=candidate2,
+                mn_idx=0
+            )
+
+            await asyncio.sleep(3)
 
         a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key])
         c = network.get_var('upgrade', 'upg_pepper', [network.masternodes[0].wallet.verifying_key])

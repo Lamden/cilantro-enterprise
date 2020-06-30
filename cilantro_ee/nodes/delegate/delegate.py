@@ -153,7 +153,8 @@ class Delegate(base.Node):
             ip=ip
         )
 
-        self.network.update_peers(peers=peers)
+        if peers is not None:
+            self.network.update_peers(peers=peers)
 
     async def wait_for_new_block_confirmation(self):
         self.log.info('Waiting for block confirmation...')

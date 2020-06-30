@@ -9,7 +9,7 @@ import importlib
 
 
 class UpgradeManager:
-    def __init__(self, client: ContractingClient, pepper, testing=True):
+    def __init__(self, client: ContractingClient, pepper, testing=False):
         self.client = client
         self.enabled = None
         self.log = get_logger('UPGRADE')

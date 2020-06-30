@@ -168,8 +168,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
             await network.fund(network.delegates[0].wallet.verifying_key)
             await network.fund(network.delegates[1].wallet.verifying_key)
 
-            await asyncio.sleep(5)
-
             await network.make_and_push_tx(
                 contract='currency',
                 function='approve',
@@ -179,6 +177,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 },
                 wallet=candidate
             )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 contract='currency',
@@ -190,6 +190,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
+            await asyncio.sleep(2)
+
             await network.make_and_push_tx(
                 contract='currency',
                 function='approve',
@@ -199,6 +201,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 },
                 wallet=candidate
             )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 contract='currency',
@@ -210,6 +214,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
+            await asyncio.sleep(2)
+
             # This will just run an upgrade that doesn't change anything
             await network.make_and_push_tx(
                 contract='upgrade',
@@ -217,11 +223,14 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 kwargs={
                     'cilantro_branch_name': current_branch,
                     'contract_branch_name': current_contracting_branch,
-                    'pepper': pepper,
+                    'pepper': 'cilantro',
                     'initiator_vk': stu.verifying_key
                 },
                 wallet=candidate
             )
+
+            await asyncio.sleep(2)
+
             await network.make_and_push_tx(
                 contract='upgrade',
                 function='vote',
@@ -230,6 +239,9 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 },
                 wallet=candidate
             )
+
+            await asyncio.sleep(2)
+
             await network.make_and_push_tx(
                 contract='upgrade',
                 function='vote',
@@ -239,6 +251,9 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate,
                 mn_idx=0
             )
+
+            await asyncio.sleep(2)
+
             await network.make_and_push_tx(
                 contract='upgrade',
                 function='vote',
@@ -248,6 +263,9 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate,
                 mn_idx=0
             )
+
+            await asyncio.sleep(2)
+
             await network.make_and_push_tx(
                 contract='upgrade',
                 function='vote',
@@ -257,6 +275,9 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate,
                 mn_idx=0
             )
+
+            await asyncio.sleep(2)
+
             await network.make_and_push_tx(
                 contract='upgrade',
                 function='vote',
@@ -266,6 +287,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate,
                 mn_idx=0
             )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 contract='currency',
@@ -277,6 +300,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate2,
                 mn_idx=1
             )
+
+            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 contract='currency',

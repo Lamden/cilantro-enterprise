@@ -4,8 +4,8 @@ from cilantro_ee.crypto.wallet import Wallet
 import zmq.asyncio
 from contracting.client import ContractingClient
 from decimal import Decimal
-from cilantro_ee.storage import MasterStorage
-
+from cilantro_ee import storage
+from .mock import mocks
 
 class TestUpgradeOrchestration(unittest.TestCase):
     def setUp(self):
@@ -14,7 +14,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         ContractingClient().flush()
-        MasterStorage().drop_collections()
+        storage.BlockStorage().drop_collections()
 
     def tearDown(self):
         self.ctx.destroy()
@@ -135,7 +135,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
 
 
     def test_upgrade2(self):
-
         candidate = Wallet()
         candidate2 = Wallet()
         # stu = Wallet()
@@ -143,12 +142,130 @@ class TestUpgradeOrchestration(unittest.TestCase):
         # dls = 2
         # o = Orchestrator(2, 4, self.ctx)
         # o = Orchestrator(mns, dls, self.ctx)
-        o = Orchestrator(3, 4, self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=3, num_of_delegates=4, ctx=self.ctx)
 
+        stu = network.masternodes[0].wallet
+        stu2= network.masternodes[1].wallet
+        stu3= network.masternodes[2].wallet
 
-        stu = o.masternodes[0].wallet
-        stu2= o.masternodes[1].wallet
-        stu3= o.masternodes[2].wallet
+        async def test():
+            await network.make_and_push_tx(
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_delegates'
+                },
+                wallet=candidate
+            )
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 99_000,
+                    'to': stu.verifying_key
+                },
+                wallet=candidate
+            )
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 200_000,
+                    'to': 'elect_delegates'
+                },
+                wallet=candidate
+            )
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 88_000,
+                    'to': stu2.verifying_key
+                },
+                wallet=candidate
+            )
+
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='trigger_upgrade',
+                kwargs={
+                    'cilantro_branch_name': 'ori1-rel-gov-socks-upg',
+                    'contract_branch_name': 'dev',
+                    'pepper': '33c0f7ee57da4941e60382c84b3a68b40aed92b0ed883710c01784ec00a227d6',
+                    'initiator_vk': stu.verifying_key
+                },
+                wallet=candidate
+            )
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.masternodes[0].wallet.verifying_key
+                },
+                wallet=candidate
+            )
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.masternodes[1].wallet.verifying_key
+                },
+                wallet=candidate,
+                mn_idx=0
+            )
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.masternodes[2].wallet.verifying_key
+                },
+                wallet=candidate,
+                mn_idx=0
+            )
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.delegates[0].wallet.verifying_key
+                },
+                wallet=candidate,
+                mn_idx=0
+            )
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.delegates[1].wallet.verifying_key
+                },
+                wallet=candidate,
+                mn_idx=0
+            )
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 111_000,
+                    'to': 'elect_delegates'
+                },
+                wallet=candidate2,
+                mn_idx=1
+            )
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 77_000,
+                    'to': stu.verifying_key
+                },
+                wallet=candidate2,
+                mn_idx=1
+            )
 
         block_0 = []
 

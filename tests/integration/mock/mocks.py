@@ -155,24 +155,16 @@ class MockNetwork:
     def build_masternode(self, index):
         self.masternodes.append(MockMaster(self.ctx, index=index))
 
-    def fund(self, vk, min_balance=50000):
-        current_balance = self.masternodes[0].driver.get_var(
+    async def fund(self, vk, amount=1_000_000):
+        await self.make_and_push_tx(
+            wallet=TEST_FOUNDATION_WALLET,
             contract='currency',
-            variable='balances',
-            arguments=[vk]
+            function='transfer',
+            kwargs={
+                'amount': amount,
+                'to': vk
+            }
         )
-
-        if current_balance is None:
-            current_balance = 0
-
-        if current_balance < min_balance:
-            new_balance = current_balance + min_balance
-            self.set_var(
-                contract='currency',
-                variable='balances',
-                arguments=[vk],
-                value=new_balance
-            )
 
     def get_vars(self, contract, variable, arguments):
         values = []
@@ -236,8 +228,6 @@ class MockNetwork:
 
     async def make_and_push_tx(self, wallet, contract, function, kwargs={}, stamps=1_000_000, mn_idx=0, random_select=False):
         # Mint money if we have to
-        self.fund(wallet.verifying_key)
-
         # Get our node we are going to send the tx to
         if random_select:
             node = random.choice(self.masternodes)

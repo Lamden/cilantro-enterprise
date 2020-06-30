@@ -90,3 +90,7 @@ class UpgradeManager:
                 else:
                     self.log.error(f'Update failed. Old branches restored.')
                     version_reboot(old_branch_name, old_contract_name)
+
+                self.client.set_var(contract='upgrade', variable='upg_init_time', value=None)
+                self.client.set_var(contract='upgrade', variable='upg_consensus', value=False)
+                self.client.set_var(contract='upgrade', variable='upg_lock', value=False)

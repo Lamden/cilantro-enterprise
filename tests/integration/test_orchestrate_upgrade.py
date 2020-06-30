@@ -10,6 +10,7 @@ from cilantro_ee.cli.utils import get_version, build_pepper
 import contracting
 import cilantro_ee
 
+
 class TestUpgradeOrchestration(unittest.TestCase):
     def setUp(self):
         self.ctx = zmq.asyncio.Context()
@@ -109,7 +110,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
             sender=candidate2
             , pidx=1
         ))
-
 
         async def test():
             await o.start_network
@@ -338,7 +338,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 mn_idx=0
             )
 
-            await asyncio.sleep(3)
+            await asyncio.sleep(60)
 
         a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key])
         c = network.get_var('upgrade', 'upg_pepper', [network.masternodes[0].wallet.verifying_key])

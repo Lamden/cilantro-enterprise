@@ -145,10 +145,21 @@ class TestUpgradeOrchestration(unittest.TestCase):
         network = mocks.MockNetwork(num_of_masternodes=3, num_of_delegates=4, ctx=self.ctx)
 
         stu = network.masternodes[0].wallet
-        stu2= network.masternodes[1].wallet
-        stu3= network.masternodes[2].wallet
+        stu2 = network.masternodes[1].wallet
+        stu3 = network.masternodes[2].wallet
 
         async def test():
+            await network.start()
+            network.refresh()
+
+            await network.fund(stu.verifying_key)
+            await network.fund(stu2.verifying_key)
+            await network.fund(stu3.verifying_key)
+            await network.fund(network.delegates[0].wallet.verifying_key)
+            await network.fund(network.delegates[1].wallet.verifying_key)
+
+            await asyncio.sleep(5)
+
             await network.make_and_push_tx(
                 contract='currency',
                 function='approve',
@@ -267,151 +278,10 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 mn_idx=1
             )
 
-        block_0 = []
+            await asyncio.sleep(7)
 
-        block_0.append(o.make_tx(
-            contract='currency',
-            function='approve',
-            kwargs={
-                'amount': 100_000,
-                'to': 'elect_delegates'
-            },
-            sender=candidate
-        ))
-
-        block_0.append(o.make_tx(
-            contract='currency',
-            function='transfer',
-            kwargs={
-                'amount': 99_000,
-                'to': stu.verifying_key().hex()
-            },
-            sender=candidate
-        ))
-
-        block_0.append(o.make_tx(
-            contract='currency',
-            function='approve',
-            kwargs={
-                'amount': 200_000,
-                'to': 'elect_delegates'
-            },
-            sender=candidate
-        ))
-
-        block_0.append(o.make_tx(
-            contract='currency',
-            function='transfer',
-            kwargs={
-                'amount': 88_000,
-                'to': stu2.verifying_key().hex()
-            },
-            sender=candidate
-        ))
-
-        block_0.append(o.make_tx(
-            contract='upgrade',
-            function='trigger_upgrade',
-            kwargs={
-                'cilantro_branch_name': 'ori1-rel-gov-socks-upg',
-                'contract_branch_name': 'dev',
-                'pepper': '33c0f7ee57da4941e60382c84b3a68b40aed92b0ed883710c01784ec00a227d6',
-                'initiator_vk': stu.verifying_key().hex()
-            },
-            sender=candidate
-        ))
-        block_0.append(o.make_tx(
-            contract='upgrade',
-            function='vote',
-            kwargs={
-                'vk': o.masternodes[0].wallet.verifying_key().hex()
-            },
-            sender=candidate
-        ))
-        block_0.append(o.make_tx(
-            contract='upgrade',
-            function='vote',
-            kwargs={
-                'vk': o.masternodes[1].wallet.verifying_key().hex()
-            },
-            sender=candidate
-            , pidx=0
-        ))
-        block_0.append(o.make_tx(
-            contract='upgrade',
-            function='vote',
-            kwargs={
-                'vk': o.masternodes[2].wallet.verifying_key().hex()
-            },
-            sender=candidate
-            , pidx=0
-        ))
-        block_0.append(o.make_tx(
-            contract='upgrade',
-            function='vote',
-            kwargs={
-                'vk': o.delegates[0].wallet.verifying_key().hex()
-            },
-            sender=candidate
-            , pidx=0
-        ))
-        block_0.append(o.make_tx(
-            contract='upgrade',
-            function='vote',
-            kwargs={
-                'vk': o.delegates[1].wallet.verifying_key().hex()
-            },
-            sender=candidate
-            , pidx=0
-        ))
-
-
-
-        block_1 = []
-
-        block_1.append(o.make_tx(
-            contract='currency',
-            function='approve',
-            kwargs={
-                'amount': 111_000,
-                'to': 'elect_delegates'
-            },
-            sender=candidate2
-            , pidx= 1
-        ))
-
-        block_1.append(o.make_tx(
-            contract='currency',
-            function='transfer',
-            kwargs={
-                'amount': 77_000,
-                'to': stu.verifying_key().hex()
-            },
-            sender=candidate2
-            , pidx=1
-        ))
-
-        # block_1.append(o.make_tx(
-        #     contract='currency',
-        #     function='approve',
-        #     kwargs={
-        #         'amount': 222_000,
-        #         'to': 'elect_delegates'
-        #     },
-        #     sender=candidate2
-        #     , pidx=1
-        # ))
-
-
-        async def test():
-            await o.start_network
-            await send_tx_batch(o.masternodes[0], block_0)
-            await asyncio.sleep(2)
-            await send_tx_batch(o.masternodes[1], block_1)
-            await asyncio.sleep(11)
-
-        a = o.get_var('upgrade', 'branch_name', [o.masternodes[0].wallet.verifying_key().hex()])
-        c = o.get_var('upgrade', 'upg_pepper', [o.masternodes[0].wallet.verifying_key().hex()])
+        a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key().hex()])
+        c = network.get_var('upgrade', 'upg_pepper', [network.masternodes[0].wallet.verifying_key().hex()])
 
         print(f" a,c ={a,c}")
 
@@ -419,7 +289,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        for node in o.masternodes + o.delegates:
+        for node in network.masternodes + network.delegates:
             v = node.driver.get_var(
                 contract='upgrade',
                 variable='upg_lock',
@@ -428,7 +298,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 contract='upgrade',
                 variable='test_name',
                 arguments=[])
-            print(f'node={node.wallet.verifying_key().hex()} lock={v} test={v2}')
+            print(f'node={node.wallet.verifying_key} lock={v} test={v2}')
             # self.assertDictEqual(v, {candidate.verifying_key().hex(): 1})
         print('OK')
 

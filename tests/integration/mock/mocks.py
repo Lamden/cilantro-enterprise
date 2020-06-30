@@ -22,9 +22,11 @@ class MockNode:
         self.ip = f'tcp://127.0.0.1:{port}'
 
         self.driver = ContractDriver(driver=Driver(db=f'state-{index}'))
+        self.driver.driver.client.drop_database(f'state-{index}')
         self.driver.flush()
 
         self.nonces = storage.NonceStorage(db_name=f'nonces-{index}')
+        self.nonces.client.drop_database(f'nonces-{index}')
 
         self.ctx = ctx
 
@@ -53,7 +55,7 @@ class MockMaster(MockNode):
         self.webserver_ip = f'http://0.0.0.0:{self.webserver_port}'
 
         self.blocks = storage.BlockStorage(db=f'blockchain-{index}')
-        self.blocks.drop_collections()
+        self.blocks.client.drop_database(f'blockchain-{index}')
 
     async def start(self):
         assert self.ready_to_start, 'Not ready to start!'
@@ -165,6 +167,8 @@ class MockNetwork:
                 'to': vk
             }
         )
+
+        await asyncio.sleep(2)
 
     def get_vars(self, contract, variable, arguments):
         values = []

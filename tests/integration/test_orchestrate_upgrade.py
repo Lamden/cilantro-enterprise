@@ -7,6 +7,7 @@ from decimal import Decimal
 from cilantro_ee import storage
 from .mock import mocks
 
+
 class TestUpgradeOrchestration(unittest.TestCase):
     def setUp(self):
         self.ctx = zmq.asyncio.Context()
@@ -132,7 +133,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
         a = o.get_var('currency', 'balances', [stu.verifying_key().hex()])
         c = o.get_var('currency', 'balances', [stu2.verifying_key().hex()])
         print(f" 2) a,c ={a,c}")
-
 
     def test_upgrade2(self):
         candidate = Wallet()
@@ -300,28 +300,10 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 contract='upgrade',
                 variable='test_name',
                 arguments=[])
+            self.assertTrue(v)
+
             print(f'node={node.wallet.verifying_key} lock={v} test={v2}')
             # self.assertDictEqual(v, {candidate.verifying_key().hex(): 1})
-        print('OK')
-
-
-    def test_loop(self):
-
-        candidate = Wallet()
-        candidate2 = Wallet()
-        stu = Wallet()
-        stu2 = Wallet()
-        mns = 2
-        dls = 2
-        # o = Orchestrator(mns, dls, self.ctx)
-
-        async def test():
-            # await asyncio.sleep(12)
-            asyncio.sleep(12)
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(test())
-
         print('OK')
 
     def test_impor(self):

@@ -26,7 +26,7 @@ class UpgradeManager:
             self.delegate_votes = 0
 
         self.test_name = self.client.get_var(contract='upgrade', variable='test_name')
-        self.branch_name = self.client.get_var(contract='upgrade', variable='test_name')
+        self.branch_name = self.client.get_var(contract='upgrade', variable='branch_name')
         self.contracting_branch_name = self.client.get_var(contract='upgrade', variable='c_branch_name')
 
         self.pepper = pepper
@@ -36,6 +36,12 @@ class UpgradeManager:
     def version_check(self):
         # check for trigger
         if self.testing:
+            self.log.info(f'# Master votes: {self.masternode_votes}, '
+                          f'# Del. votes: {self.delegate_votes}, '
+                          f'Test Name: {self.test_name}')
+            if self.vote_consensus:
+                self.log.info(f'Rebooting Node with new verions: '
+                              f'CIL -> {self.branch_name}, CON -> {self.contracting_branch_name}')
             return
 
         enabled = self.client.get_contract('upgrade') is not None

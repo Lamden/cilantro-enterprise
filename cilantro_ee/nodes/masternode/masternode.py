@@ -1,16 +1,13 @@
 import asyncio
 import hashlib
 import time
-from cilantro_ee import router, storage
+from cilantro_ee import router
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.storage import BlockStorage, get_latest_block_height
 from cilantro_ee.nodes.masternode import contender, webserver
 from cilantro_ee.formatting import primatives
-from cilantro_ee.crypto.canonical import block_from_subblocks
-import json
 
 from cilantro_ee.nodes import base
-from contracting.db.encoder import encode
 from contracting.db.driver import ContractDriver
 
 from cilantro_ee.logger.base import get_logger
@@ -115,7 +112,7 @@ class Masternode(base.Node):
 
         await super().start()
 
-        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
+        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'], mark=False)
         assert self.wallet.verifying_key in members, 'You are not a masternode!'
 
         # Start the block server so others can run catchup using our node as a seed.
@@ -194,7 +191,7 @@ class Masternode(base.Node):
         # await self.hang()
         # await self.wait_for_block()
 
-        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'])
+        members = self.driver.get_var(contract='masternodes', variable='S', arguments=['members'], mark=False)
 
         if len(members) > 1:
             while len(self.new_block_processor.q) <= 0:

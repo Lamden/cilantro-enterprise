@@ -33,6 +33,8 @@ def execute_tx(executor: Executor, transaction, stamp_cost, environment: dict={}
                   f'{len(output["writes"])} writes.'
                   f' Result = {output["result"]}')
 
+    log.debug(output['writes'])
+
     tx_hash = tx_hash_from_tx(transaction)
 
     # Only apply the writes if the tx passes

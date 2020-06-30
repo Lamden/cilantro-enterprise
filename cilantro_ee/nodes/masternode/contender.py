@@ -1,7 +1,6 @@
-from contracting.db.encoder import encode, decode
-from contracting.db.driver import ContractDriver
+from contracting.db.encoder import encode
 from collections import defaultdict
-from cilantro_ee import router, storage
+from cilantro_ee import router
 from cilantro_ee.crypto.canonical import merklize, block_from_subblocks
 from cilantro_ee.crypto.wallet import verify
 from cilantro_ee.logger.base import get_logger
@@ -9,6 +8,7 @@ from cilantro_ee.logger.base import get_logger
 import asyncio
 import time
 
+log = get_logger('Contender')
 
 class SBCInbox(router.Processor):
     def __init__(self, expected_subblocks=4, debug=True):
@@ -143,8 +143,11 @@ class SubBlockContender:
     @property
     def failed(self):
         # True if all responses are recorded and required consensus is not possible
-        return self.total_responses >= self.total_contacts and \
-               not self.has_required_consensus
+        if self.total_responses >= self.total_contacts and \
+               not self.has_required_consensus:
+            log.error('Failed block created!')
+            return True
+        return False
 
     @property
     def has_required_consensus(self):
@@ -295,7 +298,7 @@ class Aggregator:
             await asyncio.sleep(0)
 
         if time.time() - started > self.seconds_to_timeout:
-            self.log.error('Inadequate consensus! Too many delegates are offline! Kick some out!')
+            self.log.error('Block timeout. Too many delegates are offline! Kick out the non-responsive ones!')
 
         self.log.info('Done aggregating new block.')
 

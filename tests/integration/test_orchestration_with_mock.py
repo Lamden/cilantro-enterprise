@@ -240,10 +240,12 @@ class TestFullFlowWithMocks(TestCase):
         network.flush()
 
     def test_add_new_masternode_with_transactions(self):
-        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
 
         stu = Wallet()
         candidate = Wallet()
+
+        print(candidate.verifying_key)
 
         async def test():
             await network.start()
@@ -312,7 +314,8 @@ class TestFullFlowWithMocks(TestCase):
             await network.make_and_push_tx(
                 wallet=candidate,
                 contract='elect_masternodes',
-                function='register'
+                function='register',
+                kwargs={}
             )
 
             await asyncio.sleep(2)
@@ -389,7 +392,7 @@ class TestFullFlowWithMocks(TestCase):
         network.flush()
 
     def test_vote_new_masternode_in_can_join_quorum_afterwards(self):
-        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
 
         stu = Wallet()
         candidate = Wallet()
@@ -582,7 +585,7 @@ class TestFullFlowWithMocks(TestCase):
         self.loop.run_until_complete(test())
 
     def test_vote_new_masternode_in_can_join_and_catches_up_to_state(self):
-        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
 
         stu = Wallet()
         candidate = Wallet()
@@ -761,7 +764,7 @@ class TestFullFlowWithMocks(TestCase):
         self.loop.run_until_complete(test())
 
     def test_vote_new_masternode_in_can_join_and_accept_transactions(self):
-        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
 
         stu = Wallet()
         candidate = Wallet()
@@ -912,6 +915,8 @@ class TestFullFlowWithMocks(TestCase):
             candidate_master.set_start_variables(bootnodes=bootnodes, constitution=constitution)
 
             await candidate_master.start()
+
+            await asyncio.sleep(4)
 
             network.masternodes.append(candidate_master)
 

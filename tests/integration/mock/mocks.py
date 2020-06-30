@@ -24,7 +24,7 @@ class MockNode:
         self.driver = ContractDriver(driver=Driver(db=f'state-{index}'))
         self.driver.flush()
 
-        self.nonces = storage.NonceStorage(db_name=f'blockchain-{index}')
+        self.nonces = storage.NonceStorage(db_name=f'nonces-{index}')
 
         self.ctx = ctx
 

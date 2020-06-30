@@ -94,3 +94,4 @@ class UpgradeManager:
                 self.client.set_var(contract='upgrade', variable='upg_init_time', value=None)
                 self.client.set_var(contract='upgrade', variable='upg_consensus', value=False)
                 self.client.set_var(contract='upgrade', variable='upg_lock', value=False)
+                self.client.raw_driver.commit()

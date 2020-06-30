@@ -155,6 +155,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
             await network.fund(stu.verifying_key)
             await network.fund(stu2.verifying_key)
             await network.fund(stu3.verifying_key)
+            await network.fund(candidate.verifying_key)
+            await network.fund(candidate2.verifying_key)
             await network.fund(network.delegates[0].wallet.verifying_key)
             await network.fund(network.delegates[1].wallet.verifying_key)
 
@@ -280,8 +282,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
 
             await asyncio.sleep(7)
 
-        a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key().hex()])
-        c = network.get_var('upgrade', 'upg_pepper', [network.masternodes[0].wallet.verifying_key().hex()])
+        a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key])
+        c = network.get_var('upgrade', 'upg_pepper', [network.masternodes[0].wallet.verifying_key])
 
         print(f" a,c ={a,c}")
 

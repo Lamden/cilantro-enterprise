@@ -130,7 +130,7 @@ class Node:
             bootnodes=self.bootnodes, ctx=self.ctx, client=self.client
         )
 
-        self.upgrade_manager = upgrade.UpgradeManager(client=self.client, pepper='cilantro')
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
 
         self.router = router.Router(
             socket_id=socket_base,
@@ -284,7 +284,7 @@ class Node:
         # self.new_block_processor.clean()
 
         # Finally, check and initiate an upgrade if one needs to be done
-        self.upgrade_manager = upgrade.UpgradeManager(client=self.client, pepper='cilantro')
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
         self.upgrade_manager.version_check()
 
     async def start(self):

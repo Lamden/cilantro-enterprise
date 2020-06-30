@@ -108,5 +108,3 @@ class UpgradeManager:
                 self.client.set_var(contract='upgrade', variable='tot_dl', value=0)
 
                 self.log.info('Reset upgrade contract variables.')
-
-                self.client.raw_driver.commit()

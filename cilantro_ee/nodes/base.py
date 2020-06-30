@@ -265,9 +265,6 @@ class Node:
 
         self.new_block_processor.clean(self.current_height)
 
-        self.driver.commit()
-        self.driver.clear_pending_state()
-
     def process_new_block(self, block):
         # Update the state and refresh the sockets so new nodes can join
         self.update_state(block)
@@ -286,6 +283,9 @@ class Node:
         # Finally, check and initiate an upgrade if one needs to be done
         self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
         self.upgrade_manager.version_check()
+
+        self.driver.commit()
+        self.driver.clear_pending_state()
 
     async def start(self):
         asyncio.ensure_future(self.router.serve())

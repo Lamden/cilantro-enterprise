@@ -223,7 +223,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 kwargs={
                     'cilantro_branch_name': current_branch,
                     'contract_branch_name': current_contracting_branch,
-                    'pepper': 'cilantro',
+                    'pepper': pepper,
                     'initiator_vk': stu.verifying_key
                 },
                 wallet=candidate

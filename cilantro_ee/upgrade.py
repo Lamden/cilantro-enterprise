@@ -9,7 +9,7 @@ import importlib
 
 
 class UpgradeManager:
-    def __init__(self, client: ContractingClient, pepper):
+    def __init__(self, client: ContractingClient, pepper, testing=True):
         self.client = client
         self.enabled = None
         self.log = get_logger('UPGRADE')
@@ -31,9 +31,13 @@ class UpgradeManager:
 
         self.pepper = pepper
         self.upgrade = False
+        self.testing = testing
 
     def version_check(self):
         # check for trigger
+        if self.testing:
+            return
+
         enabled = self.client.get_contract('upgrade') is not None
         if enabled:
             self.log.info(f'# Master votes: {self.masternode_votes}, '

@@ -42,6 +42,7 @@ def verify_cil_pkg(pkg_hash):
 def run(*args):
     return subprocess.check_call(['git'] + list(args))
 
+
 def run_install(only_contaract=False):
     if not only_contaract:
         path =  os.path.join(os.path.dirname(cilantro_ee.__file__),  '..')
@@ -63,6 +64,7 @@ def get_version(path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..'
     except:
         print("Unexpected error:", sys.exc_info())
     return cur_branch_name
+
 
 def version_reboot(new_branch_name, new_contract_name='dev', contract_only=False):
     try:

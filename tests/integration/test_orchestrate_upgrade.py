@@ -6,7 +6,9 @@ from contracting.client import ContractingClient
 from decimal import Decimal
 from cilantro_ee import storage
 from .mock import mocks
-
+from cilantro_ee.cli.utils import get_version, build_pepper
+import contracting
+import cilantro_ee
 
 class TestUpgradeOrchestration(unittest.TestCase):
     def setUp(self):
@@ -135,6 +137,12 @@ class TestUpgradeOrchestration(unittest.TestCase):
         print(f" 2) a,c ={a,c}")
 
     def test_upgrade2(self):
+        current_branch = get_version()
+        current_contracting_branch = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
+
+        cil_path = os.path.dirname(cilantro_ee.__file__)
+        pepper = build_pepper(cil_path)
+
         candidate = Wallet()
         candidate2 = Wallet()
         # stu = Wallet()
@@ -202,13 +210,14 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
+            # This will just run an upgrade that doesn't change anything
             await network.make_and_push_tx(
                 contract='upgrade',
                 function='trigger_upgrade',
                 kwargs={
-                    'cilantro_branch_name': 'ori1-rel-gov-socks-upg',
-                    'contract_branch_name': 'dev',
-                    'pepper': '33c0f7ee57da4941e60382c84b3a68b40aed92b0ed883710c01784ec00a227d6',
+                    'cilantro_branch_name': current_branch,
+                    'contract_branch_name': current_contracting_branch,
+                    'pepper': pepper,
                     'initiator_vk': stu.verifying_key
                 },
                 wallet=candidate

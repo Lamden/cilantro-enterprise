@@ -29,7 +29,7 @@ class UpgradeManager:
         self.branch_name = self.client.get_var(contract='upgrade', variable='branch_name')
         self.contracting_branch_name = self.client.get_var(contract='upgrade', variable='c_branch_name')
 
-        self.pepper = pepper
+        self.pepper = self.client.get_var(contract='upgrade', variable='upg_pepper')
         self.upgrade = False
         self.testing = testing
 

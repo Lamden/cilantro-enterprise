@@ -91,7 +91,22 @@ class UpgradeManager:
                     self.log.error(f'Update failed. Old branches restored.')
                     version_reboot(old_branch_name, old_contract_name)
 
+                self.log.info('Upgrade process has concluded.')
+
                 self.client.set_var(contract='upgrade', variable='upg_init_time', value=None)
                 self.client.set_var(contract='upgrade', variable='upg_consensus', value=False)
+
                 self.client.set_var(contract='upgrade', variable='upg_lock', value=False)
+                self.client.set_var(contract='upgrade', variable='upg_pepper', value=None)
+
+                self.client.set_var(contract='upgrade', variable='branch_name', value=None)
+                self.client.set_var(contract='upgrade', variable='c_branch_name', value=None)
+
+                self.client.set_var(contract='upgrade', variable='mn_vote', value=0)
+                self.client.set_var(contract='upgrade', variable='dl_vote', value=0)
+                self.client.set_var(contract='upgrade', variable='tot_mn', value=0)
+                self.client.set_var(contract='upgrade', variable='tot_dl', value=0)
+
+                self.log.info('Reset upgrade contract variables.')
+
                 self.client.raw_driver.commit()

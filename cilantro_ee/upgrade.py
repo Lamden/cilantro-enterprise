@@ -63,38 +63,40 @@ class UpgradeManager:
                 old_branch_name = get_version()
                 old_contract_name = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
                 only_contract = self.branch_name == old_branch_name
-
-                self.log.info(f'Old CIL branch={old_branch_name}, '
-                              f'Old contract branch={old_contract_name}, '
-                              f' Only contract update={only_contract}')
-
-                if version_reboot(self.branch_name, self.contracting_branch_name, only_contract):
-                    p = build_pepper(cil_path)
-                    if self.pepper != p:
-                        self.log.error(f'peppers mismatch: {self.pepper} != {p}')
-                        self.log.error(f'Restore previous versions: {old_branch_name} -> {old_contract_name}')
-
-                        version_reboot(old_branch_name, old_contract_name, only_contract)
-                        self.reset()
-                    else:
-                        self.log.info('Pepper OK. restart new version')
-
-                        self.upgrade = True
-                        run_install(only_contract)
-
-                        self.reset()
-
-                        if not only_contract:
-                            importlib.reload(cilantro_ee)
-                        importlib.reload(contracting)
-
-                        self.log.info(f'New branch {self.branch_name} was reloaded OK.')
-                        self.upgrade = False
-
+                if self.contracting_branch_name == old_contract_name and self.branch_name == old_branch_name:
+                    self.log.info(f'New verions is already installed')
                 else:
-                    self.log.error(f'Update failed. Old branches restored.')
-                    version_reboot(old_branch_name, old_contract_name)
-                    self.reset()
+                    self.log.info(f'Old CIL branch={old_branch_name}, '
+                                  f'Old contract branch={old_contract_name}, '
+                                  f' Only contract update={only_contract}')
+
+                    if version_reboot(self.branch_name, self.contracting_branch_name, only_contract):
+                        p = build_pepper(cil_path)
+                        if self.pepper != p:
+                            self.log.error(f'peppers mismatch: {self.pepper} != {p}')
+                            self.log.error(f'Restore previous versions: {old_branch_name} -> {old_contract_name}')
+
+                            version_reboot(old_branch_name, old_contract_name, only_contract)
+                            self.reset()
+                        else:
+                            self.log.info('Pepper OK. restart new version')
+
+                            self.upgrade = True
+                            run_install(only_contract)
+
+                            self.reset()
+
+                            if not only_contract:
+                                importlib.reload(cilantro_ee)
+                            importlib.reload(contracting)
+
+                            self.log.info(f'New branch {self.branch_name} was reloaded OK.')
+                            self.upgrade = False
+
+                    else:
+                        self.log.error(f'Update failed. Old branches restored.')
+                        version_reboot(old_branch_name, old_contract_name)
+                        self.reset()
 
                 self.reset()
 

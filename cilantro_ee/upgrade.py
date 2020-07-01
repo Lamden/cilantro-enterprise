@@ -75,11 +75,14 @@ class UpgradeManager:
                         self.log.error(f'Restore previous versions: {old_branch_name} -> {old_contract_name}')
 
                         version_reboot(old_branch_name, old_contract_name, only_contract)
+                        self.reset()
                     else:
                         self.log.info('Pepper OK. restart new version')
 
                         self.upgrade = True
                         run_install(only_contract)
+
+                        self.reset()
 
                         if not only_contract:
                             importlib.reload(cilantro_ee)
@@ -87,24 +90,30 @@ class UpgradeManager:
 
                         self.log.info(f'New branch {self.branch_name} was reloaded OK.')
                         self.upgrade = False
+
                 else:
                     self.log.error(f'Update failed. Old branches restored.')
                     version_reboot(old_branch_name, old_contract_name)
+                    self.reset()
 
-                self.log.info('Upgrade process has concluded.')
+                self.reset()
 
-                self.client.set_var(contract='upgrade', variable='upg_init_time', value=None)
-                self.client.set_var(contract='upgrade', variable='upg_consensus', value=False)
+    def reset(self):
+        self.log.info('Upgrade process has concluded.')
 
-                self.client.set_var(contract='upgrade', variable='upg_lock', value=False)
-                self.client.set_var(contract='upgrade', variable='upg_pepper', value=None)
+        self.client.set_var(contract='upgrade', variable='upg_init_time', value=None)
+        self.client.set_var(contract='upgrade', variable='upg_consensus', value=False)
 
-                self.client.set_var(contract='upgrade', variable='branch_name', value=None)
-                self.client.set_var(contract='upgrade', variable='c_branch_name', value=None)
+        self.client.set_var(contract='upgrade', variable='upg_lock', value=False)
+        self.client.set_var(contract='upgrade', variable='upg_pepper', value=None)
 
-                self.client.set_var(contract='upgrade', variable='mn_vote', value=0)
-                self.client.set_var(contract='upgrade', variable='dl_vote', value=0)
-                self.client.set_var(contract='upgrade', variable='tot_mn', value=0)
-                self.client.set_var(contract='upgrade', variable='tot_dl', value=0)
+        self.client.set_var(contract='upgrade', variable='branch_name', value=None)
+        self.client.set_var(contract='upgrade', variable='c_branch_name', value=None)
 
-                self.log.info('Reset upgrade contract variables.')
+        self.client.set_var(contract='upgrade', variable='mn_vote', value=0)
+        self.client.set_var(contract='upgrade', variable='dl_vote', value=0)
+        self.client.set_var(contract='upgrade', variable='tot_mn', value=0)
+        self.client.set_var(contract='upgrade', variable='tot_dl', value=0)
+
+        self.log.info('Reset upgrade contract variables.')
+

@@ -18,6 +18,7 @@ TEST_FOUNDATION_WALLET = Wallet(MOCK_FOUNDER_SK)
 class MockNode:
     def __init__(self, ctx, index=1, genesis_path=os.path.dirname(os.path.abspath(__file__))):
         self.wallet = Wallet()
+        self.index = index
         port = 18000 + index
         self.ip = f'tcp://127.0.0.1:{port}'
 
@@ -44,7 +45,8 @@ class MockNode:
         self.ready_to_start = True
 
     def flush(self):
-        self.driver.flush()
+        self.driver.driver.client.drop_database(f'state-{self.index}')
+        self.nonces.client.drop_database(f'nonces-{index}')
 
 
 class MockMaster(MockNode):
@@ -78,7 +80,7 @@ class MockMaster(MockNode):
 
     def flush(self):
         super().flush()
-        self.blocks.drop_collections()
+        self.blocks.client.drop_database(f'blockchain-{self.index}')
 
     def stop(self):
         self.obj.stop()

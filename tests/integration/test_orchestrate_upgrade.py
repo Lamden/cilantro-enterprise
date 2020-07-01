@@ -151,6 +151,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
         # o = Orchestrator(2, 4, self.ctx)
         # o = Orchestrator(mns, dls, self.ctx)
         network = mocks.MockNetwork(num_of_masternodes=3, num_of_delegates=4, ctx=self.ctx)
+        network.flush()
 
         stu = network.masternodes[0].wallet
         stu2 = network.masternodes[1].wallet
@@ -158,7 +159,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
 
         async def test():
             await network.start()
-            network.refresh()
 
             await network.fund(stu.verifying_key)
             await network.fund(stu2.verifying_key)

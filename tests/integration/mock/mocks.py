@@ -46,7 +46,7 @@ class MockNode:
 
     def flush(self):
         self.driver.driver.client.drop_database(f'state-{self.index}')
-        self.nonces.client.drop_database(f'nonces-{index}')
+        self.nonces.client.drop_database(f'nonces-{self.index}')
 
 
 class MockMaster(MockNode):

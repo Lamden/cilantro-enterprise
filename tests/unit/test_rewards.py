@@ -107,6 +107,7 @@ class TestRewards(TestCase):
 
     def test_stamps_in_block(self):
         block = {
+            'number': 2,
             'subblocks': [
                 {
                     'transactions': [
@@ -161,6 +162,7 @@ class TestRewards(TestCase):
         )
 
         block = {
+            'number': 1,
             'subblocks': [
                 {
                     'transactions': [

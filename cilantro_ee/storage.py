@@ -13,15 +13,15 @@ log = get_logger('STATE')
 
 
 class NonceStorage:
-    def __init__(self, port=27027, db_name='blockchain', config_path=cilantro_ee.__path__[0]):
+    def __init__(self, port=27027, db_name='lamden', nonce_collection='nonces', pending_collection='pending_nonces', config_path=cilantro_ee.__path__[0]):
         self.config_path = config_path
 
         self.port = port
 
         self.client = MongoClient()
         self.db = self.client.get_database(db_name)
-        self.nonces = self.db['nonces']
-        self.pending_nonces = self.db['pending_nonces']
+        self.nonces = self.db[nonce_collection]
+        self.pending_nonces = self.db[pending_collection]
 
     @staticmethod
     def get_one(sender, processor, db):
@@ -76,8 +76,8 @@ class NonceStorage:
         return latest_nonce
 
     def flush(self):
-        self.nonces.remove()
-        self.pending_nonces.remove()
+        self.nonces.drop()
+        self.pending_nonces.drop()
 
 
 def get_latest_block_hash(driver: ContractDriver):
@@ -136,7 +136,7 @@ class BlockStorage:
     BLOCK = 0
     TX = 1
 
-    def __init__(self, port=27027, config_path=cilantro_ee.__path__[0], db='blockchain'):
+    def __init__(self, port=27027, config_path=cilantro_ee.__path__[0], db='lamden', blocks_collection='blocks', tx_collection='tx'):
         # Setup configuration file to read constants
         self.config_path = config_path
 
@@ -145,8 +145,8 @@ class BlockStorage:
         self.client = MongoClient()
         self.db = self.client.get_database(db)
 
-        self.blocks = self.db['blocks']
-        self.txs = self.db['tx']
+        self.blocks = self.db[blocks_collection]
+        self.txs = self.db[tx_collection]
 
     def q(self, v):
         if isinstance(v, int):
@@ -206,8 +206,8 @@ class BlockStorage:
         return tx
 
     def drop_collections(self):
-        self.blocks.remove()
-        self.txs.remove()
+        self.blocks.drop()
+        self.txs.drop()
 
     def store_block(self, block):
         self.put(block, BlockStorage.BLOCK)

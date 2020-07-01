@@ -209,6 +209,9 @@ class BlockStorage:
         self.blocks.drop()
         self.txs.drop()
 
+    def flush(self):
+        self.drop_collections()
+
     def store_block(self, block):
         self.put(block, BlockStorage.BLOCK)
         self.store_txs(block)

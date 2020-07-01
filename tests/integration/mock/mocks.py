@@ -22,12 +22,13 @@ class MockNode:
         port = 18000 + index
         self.ip = f'tcp://127.0.0.1:{port}'
 
-        self.driver = ContractDriver(driver=Driver(db=f'state-{index}'))
-        self.driver.driver.client.drop_database(f'state-{index}')
+        self.raw_driver = Driver(collection=f'state-{self.index}')
+
+        self.driver = ContractDriver(driver=self.raw_driver)
         self.driver.flush()
 
-        self.nonces = storage.NonceStorage(db_name=f'nonces-{index}')
-        self.nonces.client.drop_database(f'nonces-{index}')
+        self.nonces = storage.NonceStorage(nonce_collection=f'nonces-{self.index}', pending_collection=f'pending-{self.index}')
+        self.nonces.flush()
 
         self.ctx = ctx
 
@@ -45,8 +46,8 @@ class MockNode:
         self.ready_to_start = True
 
     def flush(self):
-        self.driver.driver.client.drop_database(f'state-{self.index}')
-        self.nonces.client.drop_database(f'nonces-{self.index}')
+        self.driver.flush()
+        self.nonces.flush()
 
 
 class MockMaster(MockNode):
@@ -56,8 +57,8 @@ class MockMaster(MockNode):
         self.webserver_port = 18080 + index
         self.webserver_ip = f'http://0.0.0.0:{self.webserver_port}'
 
-        self.blocks = storage.BlockStorage(db=f'blockchain-{index}')
-        self.blocks.client.drop_database(f'blockchain-{index}')
+        self.blocks = storage.BlockStorage(blocks_collection=f'blocks-{self.index}', tx_collection=f'tx-{self.index}')
+        self.blocks.flush()
 
     async def start(self):
         assert self.ready_to_start, 'Not ready to start!'
@@ -80,7 +81,7 @@ class MockMaster(MockNode):
 
     def flush(self):
         super().flush()
-        self.blocks.client.drop_database(f'blockchain-{self.index}')
+        self.blocks.flush()
 
     def stop(self):
         self.obj.stop()

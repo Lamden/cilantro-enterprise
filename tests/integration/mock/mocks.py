@@ -171,7 +171,7 @@ class MockNetwork:
             }
         )
 
-        await asyncio.sleep(2)
+        await asyncio.sleep(4)
 
     def get_vars(self, contract, variable, arguments):
         values = []

@@ -150,23 +150,24 @@ class TestUpgradeOrchestration(unittest.TestCase):
         # dls = 2
         # o = Orchestrator(2, 4, self.ctx)
         # o = Orchestrator(mns, dls, self.ctx)
-        network = mocks.MockNetwork(num_of_masternodes=3, num_of_delegates=4, ctx=self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
         network.flush()
 
         stu = network.masternodes[0].wallet
         stu2 = network.masternodes[1].wallet
-        stu3 = network.masternodes[2].wallet
 
         async def test():
             await network.start()
 
+            await asyncio.sleep(4)
+
             await network.fund(stu.verifying_key)
             await network.fund(stu2.verifying_key)
-            await network.fund(stu3.verifying_key)
             await network.fund(candidate.verifying_key)
             await network.fund(candidate2.verifying_key)
             await network.fund(network.delegates[0].wallet.verifying_key)
             await network.fund(network.delegates[1].wallet.verifying_key)
+            await network.fund(network.delegates[2].wallet.verifying_key)
 
             await network.make_and_push_tx(
                 contract='currency',
@@ -178,7 +179,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
             await network.make_and_push_tx(
                 contract='currency',
@@ -190,7 +191,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
             await network.make_and_push_tx(
                 contract='currency',
@@ -202,7 +203,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
             await network.make_and_push_tx(
                 contract='currency',
@@ -214,7 +215,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
             # This will just run an upgrade that doesn't change anything
             await network.make_and_push_tx(
@@ -229,7 +230,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 wallet=candidate
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
             await network.make_and_push_tx(
                 contract='upgrade',
@@ -252,19 +253,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 mn_idx=0
             )
 
-            await asyncio.sleep(2)
-
-            await network.make_and_push_tx(
-                contract='upgrade',
-                function='vote',
-                kwargs={
-                    'vk': network.masternodes[2].wallet.verifying_key
-                },
-                wallet=candidate,
-                mn_idx=0
-            )
-
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
             await network.make_and_push_tx(
                 contract='upgrade',
@@ -276,7 +265,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 mn_idx=0
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
 
             await network.make_and_push_tx(
                 contract='upgrade',
@@ -288,7 +277,19 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 mn_idx=0
             )
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.delegates[2].wallet.verifying_key
+                },
+                wallet=candidate,
+                mn_idx=0
+            )
+
+            await asyncio.sleep(4)
 
             await network.make_and_push_tx(
                 contract='currency',

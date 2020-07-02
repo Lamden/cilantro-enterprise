@@ -339,6 +339,184 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 mn_idx=0
             )
 
+            await asyncio.sleep(4)
+
+        a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key])
+        c = network.get_var('upgrade', 'upg_pepper', [network.masternodes[0].wallet.verifying_key])
+
+        print(f" a,c ={a,c}")
+
+        # asyncio.start_server(server_coro)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(test())
+
+        for node in network.masternodes + network.delegates:
+            v = node.driver.get_var(
+                contract='currency',
+                variable='balances',
+                arguments=['test1'])
+            v2 = node.driver.get_var(
+                contract='currency',
+                variable='balances',
+                arguments=['test2'])
+            self.assertEqual(v, 123)
+            self.assertEqual(v2, 321)
+
+            print(f'node={node.wallet.verifying_key} lock={v} test={v2}')
+            # self.assertDictEqual(v, {candidate.verifying_key().hex(): 1})
+        print('OK')
+
+    def test_upgrade_falls_back_and_processes_transactions_short(self):
+        current_branch = get_version()
+        current_contracting_branch = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
+
+        cil_path = os.path.dirname(cilantro_ee.__file__)
+        pepper = build_pepper(cil_path)
+
+        candidate = Wallet()
+        candidate2 = Wallet()
+        # stu = Wallet()
+        # mns = 2
+        # dls = 2
+        # o = Orchestrator(2, 4, self.ctx)
+        # o = Orchestrator(mns, dls, self.ctx)
+        network = mocks.MockNetwork(num_of_masternodes=1, num_of_delegates=1, ctx=self.ctx)
+        network.flush()
+
+        stu = network.masternodes[0].wallet
+
+        async def test():
+            await network.start()
+
+            await asyncio.sleep(4)
+
+            await network.fund(stu.verifying_key)
+            await network.fund(candidate.verifying_key)
+            await network.fund(candidate2.verifying_key)
+            await network.fund(network.delegates[0].wallet.verifying_key)
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 100_000,
+                    'to': 'elect_delegates'
+                },
+                wallet=candidate
+            )
+
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 99_000,
+                    'to': stu.verifying_key
+                },
+                wallet=candidate
+            )
+
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 200_000,
+                    'to': 'elect_delegates'
+                },
+                wallet=candidate
+            )
+
+            await asyncio.sleep(4)
+
+            # This will just run an upgrade that doesn't change anything
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='trigger_upgrade',
+                kwargs={
+                    'cilantro_branch_name': current_branch,
+                    'contract_branch_name': current_contracting_branch,
+                    'pepper': pepper,
+                    'initiator_vk': stu.verifying_key
+                },
+                wallet=candidate
+            )
+
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.masternodes[0].wallet.verifying_key
+                },
+                wallet=candidate
+            )
+
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                contract='upgrade',
+                function='vote',
+                kwargs={
+                    'vk': network.delegates[0].wallet.verifying_key
+                },
+                wallet=candidate,
+                mn_idx=0
+            )
+
+            await asyncio.sleep(4)
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='approve',
+                kwargs={
+                    'amount': 111_000,
+                    'to': 'elect_delegates'
+                },
+                wallet=candidate2,
+                mn_idx=0
+            )
+
+            await asyncio.sleep(2)
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 77_000,
+                    'to': stu.verifying_key
+                },
+                wallet=candidate2,
+                mn_idx=0
+            )
+
+            await asyncio.sleep(7)
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 123,
+                    'to': 'test1'
+                },
+                wallet=candidate2,
+                mn_idx=0
+            )
+
+            await network.make_and_push_tx(
+                contract='currency',
+                function='transfer',
+                kwargs={
+                    'amount': 321,
+                    'to': 'test2'
+                },
+                wallet=candidate2,
+                mn_idx=0
+            )
+
             await asyncio.sleep(60)
 
         a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key])

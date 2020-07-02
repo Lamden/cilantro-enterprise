@@ -103,19 +103,22 @@ class UpgradeManager:
     def reset(self):
         self.log.info('Upgrade process has concluded.')
 
-        self.client.set_var(contract='upgrade', variable='upg_init_time', value=None)
-        self.client.set_var(contract='upgrade', variable='upg_consensus', value=False)
+        self.client.raw_driver.driver.set('upgrade.upg_init_time', value=None)
+        self.client.raw_driver.driver.set('upgrade.upg_consensus', value=False)
 
-        self.client.set_var(contract='upgrade', variable='upg_lock', value=False)
-        self.client.set_var(contract='upgrade', variable='upg_pepper', value=None)
+        self.client.raw_driver.driver.set('upgrade.upg_lock', value=False)
+        self.client.raw_driver.driver.set('upgrade.upg_pepper', value=None)
 
-        self.client.set_var(contract='upgrade', variable='branch_name', value=None)
-        self.client.set_var(contract='upgrade', variable='c_branch_name', value=None)
+        self.client.raw_driver.driver.set('upgrade.branch_name', value=None)
+        self.client.raw_driver.driver.set('upgrade.c_branch_name', value=None)
 
-        self.client.set_var(contract='upgrade', variable='mn_vote', value=0)
-        self.client.set_var(contract='upgrade', variable='dl_vote', value=0)
-        self.client.set_var(contract='upgrade', variable='tot_mn', value=0)
-        self.client.set_var(contract='upgrade', variable='tot_dl', value=0)
+        self.client.raw_driver.driver.set('upgrade.mn_vote', value=0)
+        self.client.raw_driver.driver.set('upgrade.dl_vote', value=0)
+        self.client.raw_driver.driver.set('upgrade.tot_mn', value=0)
+        self.client.raw_driver.driver.set('upgrade.tot_dl', value=0)
+
+        self.client.raw_driver.commit()
+        self.client.raw_driver.clear_pending_state()
 
         self.log.info('Reset upgrade contract variables.')
 

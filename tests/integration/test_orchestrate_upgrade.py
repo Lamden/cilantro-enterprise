@@ -272,7 +272,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
         current_branch = get_version()
         current_contracting_branch = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
 
-        pepper = '351767476eb79434d60e47d3e349c7417a55912fe1fd8d1c53b5cc2f9944d173'
+        pepper = '7fff3105b123ceaa32dbae4487ecc9fbfc04ff80efd28cfb1f706999ceea2880'
 
         network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
         network.flush()

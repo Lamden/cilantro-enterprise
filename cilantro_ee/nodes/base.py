@@ -278,9 +278,6 @@ class Node:
         # self.new_block_processor.clean()
 
         # Finally, check and initiate an upgrade if one needs to be done
-        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
-        self.upgrade_manager.version_check()
-
         self.driver.commit()
         self.driver.clear_pending_state()
 

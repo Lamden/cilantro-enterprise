@@ -1,5 +1,5 @@
 from cilantro_ee.nodes.delegate import execution, work
-from cilantro_ee import router, storage, network
+from cilantro_ee import router, storage, network, upgrade
 from cilantro_ee.nodes import base
 from cilantro_ee.logger.base import get_logger
 import asyncio
@@ -202,6 +202,8 @@ class Delegate(base.Node):
 
     async def loop(self):
         self.log.info('=== ENTERING PROCESS NEW WORK STATE ===')
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
+        self.upgrade_manager.version_check()
         await self.process_new_work()
         self.log.info('=== ENTERING BLOCK CONFIRMATION STATE ===')
         await self.wait_for_new_block_confirmation()

@@ -1,12 +1,11 @@
 import asyncio
 import hashlib
 import time
-from cilantro_ee import router
+from cilantro_ee import router, upgrade
 from cilantro_ee.crypto.wallet import Wallet
 from cilantro_ee.storage import BlockStorage, get_latest_block_height
 from cilantro_ee.nodes.masternode import contender, webserver
 from cilantro_ee.formatting import primatives
-
 from cilantro_ee.nodes import base
 from contracting.db.driver import ContractDriver
 
@@ -255,6 +254,9 @@ class Masternode(base.Node):
 
     async def loop(self):
         self.log.info('=== ENTERING SEND WORK STATE ===')
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
+        self.upgrade_manager.version_check()
+
         block = await self.get_work_processed()
 
         await router.secure_multicast(

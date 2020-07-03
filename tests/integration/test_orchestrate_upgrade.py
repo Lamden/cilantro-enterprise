@@ -6,11 +6,11 @@ from contracting.client import ContractingClient
 from decimal import Decimal
 from cilantro_ee import storage
 from .mock import mocks
-from cilantro_ee.cli.utils import get_version, build_pepper
+from cilantro_ee.cli.utils import get_version, build_pepper, run_install
 import contracting
 import cilantro_ee
 from cilantro_ee.cli.utils import version_reboot
-
+import importlib
 from cilantro_ee.nodes import base
 
 
@@ -352,6 +352,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
         val = base.GET_BLOCK
 
         version_reboot(current_branch, current_contracting_branch, False)
+        run_install(False)
+        importlib.reload(cilantro_ee)
 
         self.assertEqual(val, 'XXXXX')
 

@@ -6,6 +6,13 @@ import os
 from cilantro_ee.cli.utils import version_reboot
 from cilantro_ee.cli.utils import build_pepper, run_install, get_version
 import importlib
+import sys
+
+
+def reload_module(module_name: str):
+    for name, module in sys.modules.items():
+        if name.startswith(module_name):
+            importlib.reload(module)
 
 
 class UpgradeManager:
@@ -87,8 +94,8 @@ class UpgradeManager:
                             self.reset()
 
                             if not only_contract:
-                                importlib.reload(cilantro_ee)
-                            importlib.reload(contracting)
+                                reload_module('cilantro_ee')
+                            reload_module('contracting')
 
                             self.log.info(f'New branch {self.branch_name} was reloaded OK.')
                             self.upgrade = False

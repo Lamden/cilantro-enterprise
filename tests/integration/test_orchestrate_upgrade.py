@@ -349,6 +349,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
+        importlib.reload(cilantro_ee.nodes.base)
+
         val = base.GET_BLOCK
 
         version_reboot(current_branch, current_contracting_branch, False)

@@ -11,7 +11,7 @@ import contracting
 import cilantro_ee
 from cilantro_ee.cli.utils import version_reboot
 
-from cilantro_ee.nodes.base import GET_BLOCK
+from cilantro_ee.nodes import base
 
 
 class TestUpgradeOrchestration(unittest.TestCase):
@@ -349,9 +349,12 @@ class TestUpgradeOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        self.assertEqual(GET_BLOCK, 'XXXXX')
+        val = base.GET_BLOCK
 
         version_reboot(current_branch, current_contracting_branch, False)
+
+        self.assertEqual(val, 'XXXXX')
+
 
     def test_impor(self):
         import importlib

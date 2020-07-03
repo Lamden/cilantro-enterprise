@@ -19,7 +19,7 @@ NEW_BLOCK_SERVICE = 'new_blocks'
 WORK_SERVICE = 'work'
 CONTENDER_SERVICE = 'contenders'
 
-GET_BLOCK = 'XXXXX'
+GET_BLOCK = 'get_block'
 GET_HEIGHT = 'get_height'
 
 

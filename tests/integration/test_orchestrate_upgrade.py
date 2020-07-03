@@ -12,7 +12,7 @@ import cilantro_ee
 from cilantro_ee.cli.utils import version_reboot
 import importlib
 from cilantro_ee.nodes import base
-
+from cilantro_ee.upgrade import reload_module
 
 class TestUpgradeOrchestration(unittest.TestCase):
     def setUp(self):
@@ -349,13 +349,13 @@ class TestUpgradeOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        importlib.reload(cilantro_ee.nodes.base)
+        # importlib.reload(cilantro_ee.nodes.base)
 
         val = base.GET_BLOCK
 
         version_reboot(current_branch, current_contracting_branch, False)
         run_install(False)
-        importlib.reload(cilantro_ee)
+        reload_module('cilantro_ee')
 
         self.assertEqual(val, 'XXXXX')
 

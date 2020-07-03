@@ -6,13 +6,13 @@ from contracting.client import ContractingClient
 from decimal import Decimal
 from cilantro_ee import storage
 from .mock import mocks
-from cilantro_ee.cli.utils import get_version, build_pepper
+from cilantro_ee.cli.utils import get_version, build_pepper, run_install
 import contracting
 import cilantro_ee
 from cilantro_ee.cli.utils import version_reboot
-
-from cilantro_ee.nodes.base import GET_BLOCK
-
+import importlib
+from cilantro_ee.nodes import base
+from cilantro_ee.upgrade import reload_module
 
 class TestUpgradeOrchestration(unittest.TestCase):
     def setUp(self):
@@ -272,8 +272,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
         current_branch = get_version()
         current_contracting_branch = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
 
-        cil_path = os.path.dirname(cilantro_ee.__file__)
-        pepper = build_pepper(cil_path)
+        pepper = '351767476eb79434d60e47d3e349c7417a55912fe1fd8d1c53b5cc2f9944d173'
 
         network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=3, ctx=self.ctx)
         network.flush()
@@ -350,9 +349,16 @@ class TestUpgradeOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        self.assertEqual(GET_BLOCK, 'XXXXX')
+        # importlib.reload(cilantro_ee.nodes.base)
+
+        val = base.GET_BLOCK
 
         version_reboot(current_branch, current_contracting_branch, False)
+        run_install(False)
+        reload_module('cilantro_ee')
+
+        self.assertEqual(val, 'XXXXX')
+
 
     def test_impor(self):
         import importlib

@@ -25,6 +25,7 @@ tot_dl = Variable()
 # Results
 upg_consensus = Variable()
 
+has_voted = Hash(default_value=False)
 
 @construct
 def seed():
@@ -37,13 +38,13 @@ def seed():
 
 
 @export
-def trigger_upgrade(cilantro_branch_name: str, contract_branch_name: str, pepper: str, initiator_vk: str):
+def trigger_upgrade(cilantro_branch_name: str, contract_branch_name: str, pepper: str):
     if upg_lock.get() is True:
         assert_parallel_upg_check()
 
     # for now only master's trigger upgrade
     # test_name.set(election_house.current_value_for_policy('masternodes')[0])
-    if initiator_vk in election_house.current_value_for_policy('masternodes'):
+    if ctx.caller in election_house.current_value_for_policy('masternodes') and not has_voted[ctx.caller]:
         upg_lock.set(True)
         #upg_init_time.set(now)
         upg_pepper.set(pepper)
@@ -62,12 +63,14 @@ def trigger_upgrade(cilantro_branch_name: str, contract_branch_name: str, pepper
         tot_dl.set(dnum)
 
 @export
-def vote(vk: str):
+def vote():
     if upg_lock.get() is True:
-        if vk in election_house.current_value_for_policy('masternodes'):
+        if ctx.caller in election_house.current_value_for_policy('masternodes') and not has_voted[ctx.caller]:
             mn_vote.set(mn_vote.get() + 1)
-        if vk in election_house.current_value_for_policy('delegates'):
+            has_voted[ctx.caller] = True
+        if ctx.caller in election_house.current_value_for_policy('delegates') and not has_voted[ctx.caller]:
             dl_vote.set(dl_vote.get() + 1)
+            has_voted[ctx.caller] = True
 
         # if now - upg_init_time.get() >= upg_window.get():
         #     reset_contract()
@@ -83,6 +86,8 @@ def check_vote_state():
 
     if all_votes > (all_nodes * 2/3):
         upg_consensus.set(True)
+
+    has_voted.clear()
 
 
 def reset_contract():

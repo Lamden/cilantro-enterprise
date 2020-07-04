@@ -124,6 +124,10 @@ def start_node(args):
     os.environ['PKG_ROOT'] = str(CURR_DIR.parent)
     os.environ['CIL_PATH'] = os.environ.get('PKG_ROOT') + '/cilantro_ee'
 
+    # Kill the
+    if args.pid > -1:
+        subprocess.check_call(['kill', '-15', args.pid])
+
     if args.node_type == 'masternode':
         # Start mongo
         start_mongo()
@@ -135,6 +139,7 @@ def start_node(args):
             bootnodes=bootnodes,
             constitution=const,
             webserver_port=args.webserver_port,
+            bypass_catchup=args.bypass_catchup
         )
     elif args.node_type == 'delegate':
         n = Delegate(
@@ -143,80 +148,7 @@ def start_node(args):
             socket_base=socket_base,
             bootnodes=bootnodes,
             constitution=const,
-        )
-
-    loop = asyncio.get_event_loop()
-    asyncio.async(n.start())
-    loop.run_forever()
-
-
-def setup_node():
-    node_type = ''
-    while node_type not in ['M', 'D']:
-        node_type = input('(M)asternode or (D)elegate: ').upper()
-
-    while True:
-        sk = getpass('Signing Key in Hex Format: ')
-
-        try:
-            wallet = Wallet(seed=bytes.fromhex(sk))
-            break
-        except:
-            print('Invalid format! Try again.')
-
-    join_or_start = ''
-    while join_or_start not in ['J', 'S']:
-        join_or_start = input('(J)oin or (S)tart: ').upper()
-
-    bootnodes = []
-    mn_seed = None
-    if join_or_start == 'S':
-        bootnode = ''
-        while len(bootnodes) < 1 or bootnode != '':
-            bootnode = input('Enter bootnodes as IP string. Press Enter twice to continue: ')
-            if is_valid_ip(bootnode):
-                print(f'Added {bootnode}.')
-                bootnodes.append(bootnode)
-            elif bootnode != '':
-                print(f'Invalid IP string: {bootnode}')
-    else:
-        while mn_seed is None:
-            mn_ip = input('Enter masternode as IP string: ')
-            if is_valid_ip(mn_ip):
-                mn_seed = mn_ip
-            else:
-                print(f'Invalid IP string: {mn_seed}')
-
-    ip_str = requests.get('http://api.ipify.org').text
-    socket_base = f'tcp://{ip_str}'
-    mn_seed_str = f'tcp://{mn_seed}'
-    const_url = input('URL of constitution: ')
-    c = requests.get(const_url)
-    const = resolve_raw_constitution(c.text)
-
-    # start_rocks()
-
-    if node_type == 'M':
-        # Start mongo
-        start_mongo()
-
-        n = Masternode(
-            wallet=wallet,
-            ctx=zmq.asyncio.Context(),
-            socket_base=socket_base,
-            bootnodes=bootnodes,
-            constitution=const,
-            webserver_port=18080,
-            mn_seed=mn_seed_str
-        )
-    elif node_type == 'D':
-        n = Delegate(
-            wallet=wallet,
-            ctx=zmq.asyncio.Context(),
-            socket_base=socket_base,
-            bootnodes=bootnodes,
-            constitution=const,
-            mn_seed=mn_seed_str
+            bypass_catchup=args.bypass_catchup
         )
 
     loop = asyncio.get_event_loop()

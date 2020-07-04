@@ -1,7 +1,7 @@
 import unittest
 import os
 from cilantro_ee.contracts import sync
-from cilantro_ee.cli.utils import build_pepper, get_version
+from cilantro_ee.upgrade import build_pepper, get_version
 from cilantro_ee.crypto.wallet import Wallet
 import cilantro_ee
 from unittest import TestCase

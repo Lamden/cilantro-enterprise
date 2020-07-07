@@ -10,6 +10,8 @@ from cilantro_ee.crypto.wallet import Wallet, verify
 from cilantro_ee import router
 from cilantro_ee.logger.base import get_logger
 
+IM_A_CONSTANT = 'howdy!'
+
 PROOF_EXPIRY = 15
 PEPPER = 'cilantroV1'
 LOGGER = get_logger('Network')

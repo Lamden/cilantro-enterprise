@@ -179,9 +179,9 @@ def get_version(path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..'
     return cur_branch_name
 
 
-def version_reboot(new_branch_name=None, new_contract_name=None):
+def version_reboot(new_branch_name, new_contract_name='dev', contract_only=False):
     try:
-        if new_branch_name is not None:
+        if not contract_only:
             path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')
             os.chdir(path)
 
@@ -190,11 +190,10 @@ def version_reboot(new_branch_name=None, new_contract_name=None):
             run("fetch", "--all")
             run("reset", "--hard", f"origin/{br}")
 
-        if new_contract_name is not None:
-            path2 = os.path.join(os.path.dirname(contracting.__file__), '..')
-            os.chdir(path2)
-            run("fetch", "--all")
-            run("reset", "--hard", f"origin/{new_contract_name}")
+        path2 =  os.path.join(os.path.dirname(contracting.__file__), '..')
+        os.chdir(path2)
+        run("fetch", "--all")
+        run("reset", "--hard", f"origin/{new_contract_name}")
 
     except OSError as err:
         print("OS error: {0}".format(err))

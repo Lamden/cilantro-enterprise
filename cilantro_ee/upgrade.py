@@ -45,6 +45,7 @@ class UpgradeManager:
 
         self.upgrade = False
         self.testing = testing
+        self.testing_flag = False
 
     def refresh(self):
         self.locked = self.get(arguments=['locked'])
@@ -64,6 +65,11 @@ class UpgradeManager:
 
             # check for vote consensys
             if self.consensus:
+                if self.testing:
+                    self.testing_flag = True
+                    self.reset_contract_variables()
+                    return
+
                 self.log.info(f'Rebooting Node with new verions: '
                               f'CIL -> {self.cilantro_branch_name}, CON -> {self.contracting_branch_name}')
 

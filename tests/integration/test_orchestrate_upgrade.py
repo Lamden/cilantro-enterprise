@@ -151,6 +151,9 @@ class TestUpgradeOrchestration(unittest.TestCase):
         async def test():
             await network.start()
 
+            for node in network.masternodes + network.delegates:
+                node.obj.upgrade_manager.testing = True
+
             await asyncio.sleep(4)
 
             await network.fund(network.masternodes[0].wallet.verifying_key)
@@ -274,6 +277,9 @@ class TestUpgradeOrchestration(unittest.TestCase):
         async def test():
             await network.start()
 
+            for node in network.masternodes + network.delegates:
+                node.obj.upgrade_manager.testing = True
+
             await asyncio.sleep(4)
 
             await network.fund(network.masternodes[0].wallet.verifying_key)
@@ -343,15 +349,8 @@ class TestUpgradeOrchestration(unittest.TestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
 
-        # importlib.reload(cilantro_ee.nodes.base)
-
-        val = base.GET_BLOCK
-
-        version_reboot(current_branch, current_contracting_branch, False)
-        run_install(False)
-        reload_module('cilantro_ee')
-
-        self.assertEqual(val, 'XXXXX')
+        for node in network.masternodes + network.delegates:
+            self.assertTrue(node.obj.upgrade_manager.testing_flag)
 
     def test_impor(self):
         import importlib

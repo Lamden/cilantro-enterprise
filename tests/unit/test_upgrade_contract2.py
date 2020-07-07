@@ -1,4 +1,3 @@
-import unittest
 import os
 from cilantro_ee.contracts import sync
 from cilantro_ee.upgrade import build_pepper, get_version
@@ -8,6 +7,7 @@ from unittest import TestCase
 from contracting.client import ContractingClient
 from contracting.stdlib.bridge.time import Datetime
 from datetime import datetime, timedelta
+
 
 class TestUpdateContractFix(TestCase):
     def setUp(self):
@@ -26,11 +26,7 @@ class TestUpdateContractFix(TestCase):
             root=cilantro_ee.contracts.__path__[0]
         )
 
-        with open(cilantro_ee.contracts.__path__[0] + '/genesis/new_upgrade.s.py') as f:
-            code = f.read()
-            self.client.submit(code, name='new_upgrade')
-
-        self.upgrade = self.client.get_contract('new_upgrade')
+        self.upgrade = self.client.get_contract('upgrade')
 
     def tearDown(self):
         self.client.flush()

@@ -142,8 +142,7 @@ class Masternode(base.Node):
         while len(self.tx_batcher.queue) <= 0 and len(self.new_block_processor.q) <= 0:
             if not self.running:
                 return
-            if self.upgrade_manager.vote_consensus:
-                return
+
             await asyncio.sleep(0)
         mn_logger.debug('Work / blocks available. Continuing.')
 

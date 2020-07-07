@@ -241,11 +241,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
 
             await asyncio.sleep(4)
 
-        a = network.get_var('upgrade', 'branch_name', [network.masternodes[0].wallet.verifying_key])
-        c = network.get_var('upgrade', 'upg_pepper', [network.masternodes[0].wallet.verifying_key])
-
-        print(f" a,c ={a,c}")
-
         # asyncio.start_server(server_coro)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
@@ -357,7 +352,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
         reload_module('cilantro_ee')
 
         self.assertEqual(val, 'XXXXX')
-
 
     def test_impor(self):
         import importlib

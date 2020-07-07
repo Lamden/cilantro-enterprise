@@ -255,7 +255,6 @@ class Masternode(base.Node):
 
     async def loop(self):
         self.log.info('=== ENTERING SEND WORK STATE ===')
-        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
         self.upgrade_manager.version_check()
 
         block = await self.get_work_processed()

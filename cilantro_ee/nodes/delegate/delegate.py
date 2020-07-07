@@ -202,9 +202,10 @@ class Delegate(base.Node):
 
     async def loop(self):
         self.log.info('=== ENTERING PROCESS NEW WORK STATE ===')
-        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
         self.upgrade_manager.version_check()
+
         await self.process_new_work()
+
         self.log.info('=== ENTERING BLOCK CONFIRMATION STATE ===')
         await self.wait_for_new_block_confirmation()
 

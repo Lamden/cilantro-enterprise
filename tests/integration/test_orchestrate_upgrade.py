@@ -165,7 +165,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
             # This will just run an upgrade that doesn't change anything
             await network.make_and_push_tx(
                 contract='upgrade',
-                function='trigger_upgrade',
+                function='vote',
                 kwargs={
                     'cilantro_branch_name': current_branch,
                     'contract_branch_name': current_contracting_branch,
@@ -291,7 +291,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
             # This will just run an upgrade that doesn't change anything
             await network.make_and_push_tx(
                 contract='upgrade',
-                function='trigger_upgrade',
+                function='vote',
                 kwargs={
                     'cilantro_branch_name': new_branch,
                     'contract_branch_name': current_contracting_branch,

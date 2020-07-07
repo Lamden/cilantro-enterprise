@@ -179,14 +179,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
             await network.make_and_push_tx(
                 contract='upgrade',
                 function='vote',
-                wallet=network.masternodes[0].wallet
-            )
-
-            await asyncio.sleep(2)
-
-            await network.make_and_push_tx(
-                contract='upgrade',
-                function='vote',
                 wallet=network.masternodes[1].wallet,
                 mn_idx=0
             )
@@ -210,15 +202,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
             )
 
             await asyncio.sleep(4)
-
-            await network.make_and_push_tx(
-                contract='upgrade',
-                function='vote',
-                wallet=network.delegates[2].wallet,
-                mn_idx=0
-            )
-
-            await asyncio.sleep(7)
 
             await network.make_and_push_tx(
                 contract='currency',

@@ -6,7 +6,8 @@ from cilantro_ee.crypto.wallet import Wallet
 import cilantro_ee
 from unittest import TestCase
 from contracting.client import ContractingClient
-
+from contracting.stdlib.bridge.time import Datetime
+from datetime import datetime, timedelta
 
 class TestUpdateContractFix(TestCase):
     def setUp(self):
@@ -36,7 +37,7 @@ class TestUpdateContractFix(TestCase):
 
     def test_initial_state(self):
         self.assertEqual(self.upgrade.upgrade_state['locked'], False)
-        self.assertEqual(self.upgrade.upgrade_state['has_consensus'], False)
+        self.assertEqual(self.upgrade.upgrade_state['consensus'], False)
 
         self.assertEqual(self.upgrade.upgrade_state['votes'], 0)
         self.assertEqual(self.upgrade.upgrade_state['voters'], 0)
@@ -71,7 +72,7 @@ class TestUpdateContractFix(TestCase):
         )
 
         self.assertEqual(self.upgrade.upgrade_state['locked'], True)
-        self.assertEqual(self.upgrade.upgrade_state['has_consensus'], False)
+        self.assertEqual(self.upgrade.upgrade_state['consensus'], False)
 
         self.assertEqual(self.upgrade.upgrade_state['votes'], 0)
         self.assertEqual(self.upgrade.upgrade_state['voters'], 6)
@@ -81,15 +82,20 @@ class TestUpdateContractFix(TestCase):
         self.assertEqual(self.upgrade.upgrade_state['contracting_branch_name'], 'hello2')
 
     def test_first_vote_starts_vote(self):
+        env = {
+            'now': Datetime._from_datetime(datetime.now())
+        }
+
         self.upgrade.vote(
             signer=self.mn_wallets[0],
             cilantro_branch_name='hello1',
             contracting_branch_name='hello2',
-            pepper='123xyz'
+            pepper='123xyz',
+            environment=env
         )
 
         self.assertEqual(self.upgrade.upgrade_state['locked'], True)
-        self.assertEqual(self.upgrade.upgrade_state['has_consensus'], False)
+        self.assertEqual(self.upgrade.upgrade_state['consensus'], False)
 
         self.assertEqual(self.upgrade.upgrade_state['votes'], 1)
         self.assertEqual(self.upgrade.upgrade_state['voters'], 6)
@@ -99,6 +105,8 @@ class TestUpdateContractFix(TestCase):
         self.assertEqual(self.upgrade.upgrade_state['contracting_branch_name'], 'hello2')
 
         self.assertEqual(self.upgrade.has_voted[self.mn_wallets[0]], True)
+
+        self.assertEqual(self.upgrade.upgrade_state['started'], env['now'])
 
     def test_second_vote_fails_if_already_voted(self):
         self.upgrade.vote(
@@ -126,6 +134,72 @@ class TestUpdateContractFix(TestCase):
         self.upgrade.vote(signer=self.mn_wallets[1])
         self.upgrade.vote(signer=self.mn_wallets[2])
         self.upgrade.vote(signer=self.dn_wallets[0])
+
+        self.assertTrue(self.upgrade.upgrade_state['consensus'])
+
+    def test_vote_after_window_resets(self):
+        self.upgrade.vote(
+            signer=self.mn_wallets[0],
+            cilantro_branch_name='hello1',
+            contracting_branch_name='hello2',
+            pepper='123xyz'
+        )
+
+        self.upgrade.vote(signer=self.mn_wallets[1])
+
+        self.assertEqual(self.upgrade.upgrade_state['votes'], 2)
+
+        env = {
+            'now': Datetime._from_datetime(datetime.now() + timedelta(weeks=2))
+        }
+
+        # This will fail because it needs the keyword arguments
+        with self.assertRaises(TypeError):
+            self.upgrade.vote(signer=self.mn_wallets[2], environment=env)
+
+        # This will pass
+        self.upgrade.vote(signer=self.mn_wallets[2],
+                          cilantro_branch_name='hello4',
+                          contracting_branch_name='hello6',
+                          pepper='693kdw',
+                          environment=env)
+
+        self.assertEqual(self.upgrade.upgrade_state['votes'], 1)
+
+        self.assertEqual(self.upgrade.upgrade_state['pepper'], '693kdw')
+        self.assertEqual(self.upgrade.upgrade_state['cilantro_branch_name'], 'hello4')
+        self.assertEqual(self.upgrade.upgrade_state['contracting_branch_name'], 'hello6')
+
+    def test_vote_after_window_reset_can_pass(self):
+        self.upgrade.vote(
+            signer=self.mn_wallets[0],
+            cilantro_branch_name='hello1',
+            contracting_branch_name='hello2',
+            pepper='123xyz'
+        )
+
+        self.upgrade.vote(signer=self.mn_wallets[1])
+
+        self.assertEqual(self.upgrade.upgrade_state['votes'], 2)
+
+        env = {
+            'now': Datetime._from_datetime(datetime.now() + timedelta(weeks=2))
+        }
+
+        # This will fail because it needs the keyword arguments
+        with self.assertRaises(TypeError):
+            self.upgrade.vote(signer=self.mn_wallets[2], environment=env)
+
+        # This will pass
+        self.upgrade.vote(signer=self.mn_wallets[2],
+                          cilantro_branch_name='hello4',
+                          contracting_branch_name='hello6',
+                          pepper='693kdw',
+                          environment=env)
+
+        self.upgrade.vote(signer=self.mn_wallets[0], environment=env)
+        self.upgrade.vote(signer=self.mn_wallets[1], environment=env)
+        self.upgrade.vote(signer=self.dn_wallets[0], environment=env)
 
         self.assertTrue(self.upgrade.upgrade_state['consensus'])
 

@@ -10,6 +10,8 @@ import os
 import importlib
 import sys
 
+from functools import partial
+
 
 def reload_module(module_name: str):
     for name, module in sys.modules.items():
@@ -28,42 +30,42 @@ class UpgradeManager:
         self.webserver_port = webserver_port
         self.wallet = wallet
 
-        self.refresh()
+        self.get = partial(self.client.get_var, contract='upgrade', variable='upgrade_state')
+
+        self.locked = self.get(arguments=['locked'])
+        self.consensus = self.get(arguments=['consensus'])
+
+        self.cilantro_branch_name = self.get(arguments=['cilantro_branch_name'])
+        self.contracting_branch_name = self.get(arguments=['contracting_branch_name'])
+
+        self.pepper = self.get(arguments=['pepper'])
+
+        self.votes = self.get(arguments=['votes'])
+        self.voters = self.get(arguments=['voters'])
 
         self.upgrade = False
         self.testing = testing
 
     def refresh(self):
-        self.active_upgrade = self.client.get_var(contract='upgrade', variable='upg_lock')
-        self.vote_consensus = self.client.get_var(contract='upgrade', variable='upg_consensus')
+        self.locked = self.get(arguments=['locked'])
+        self.consensus = self.get(arguments=['consensus'])
 
-        self.masternode_votes = self.client.get_var(contract='upgrade', variable='mn_vote')
-        if self.masternode_votes is None:
-            self.masternode_votes = 0
+        self.cilantro_branch_name = self.get(arguments=['cilantro_branch_name'])
+        self.contracting_branch_name = self.get(arguments=['contracting_branch_name'])
 
-        self.delegate_votes = self.client.get_var(contract='upgrade', variable='dl_votes')
-        if self.delegate_votes is None:
-            self.delegate_votes = 0
-
-        self.test_name = self.client.get_var(contract='upgrade', variable='test_name')
-        self.branch_name = self.client.get_var(contract='upgrade', variable='branch_name')
-        self.contracting_branch_name = self.client.get_var(contract='upgrade', variable='c_branch_name')
-
-        self.pepper = self.client.get_var(contract='upgrade', variable='upg_pepper')
+        self.pepper = self.get(arguments=['pepper'])
 
     def version_check(self):
         self.refresh()
 
         enabled = self.client.get_contract('upgrade') is not None
         if enabled:
-            self.log.info(f'# Master votes: {self.masternode_votes}, '
-                          f'# Del. votes: {self.delegate_votes}, '
-                          f'Test Name: {self.test_name}')
+            self.log.info(f'{self.votes}/{self.voters} nodes voted for the upgrade.')
 
             # check for vote consensys
-            if self.vote_consensus:
+            if self.consensus:
                 self.log.info(f'Rebooting Node with new verions: '
-                              f'CIL -> {self.branch_name}, CON -> {self.contracting_branch_name}')
+                              f'CIL -> {self.cilantro_branch_name}, CON -> {self.contracting_branch_name}')
 
                 cil_path = os.path.dirname(cilantro_ee.__file__)
 
@@ -72,15 +74,15 @@ class UpgradeManager:
 
                 old_branch_name = get_version()
                 old_contract_name = get_version(os.path.join(os.path.dirname(contracting.__file__), '..'))
-                only_contract = self.branch_name == old_branch_name
-                if self.contracting_branch_name == old_contract_name and self.branch_name == old_branch_name:
+                only_contract = self.cilantro_branch_name == old_branch_name
+                if self.contracting_branch_name == old_contract_name and self.cilantro_branch_name == old_branch_name:
                     self.log.info(f'New verions is already installed')
                 else:
                     self.log.info(f'Old CIL branch={old_branch_name}, '
                                   f'Old contract branch={old_contract_name}, '
                                   f' Only contract update={only_contract}')
 
-                    if version_reboot(self.branch_name, self.contracting_branch_name, only_contract):
+                    if version_reboot(self.cilantro_branch_name, self.contracting_branch_name, only_contract):
                         p = build_pepper(cil_path)
                         if self.pepper != p:
                             self.log.error(f'peppers mismatch: {self.pepper} != {p}')
@@ -99,7 +101,7 @@ class UpgradeManager:
                             if not self.testing:
                                 self.restart_node()
 
-                            self.log.info(f'New branch {self.branch_name} was reloaded OK.')
+                            self.log.info(f'New branch {self.cilantro_branch_name} was reloaded OK.')
                             self.upgrade = False
 
                     else:
@@ -114,22 +116,8 @@ class UpgradeManager:
     def reset_contract_variables(self):
         self.log.info('Upgrade process has concluded.')
 
-        self.client.raw_driver.driver.set('upgrade.upg_init_time', value=None)
-        self.client.raw_driver.driver.set('upgrade.upg_consensus', value=False)
-
-        self.client.raw_driver.driver.set('upgrade.upg_lock', value=False)
-        self.client.raw_driver.driver.set('upgrade.upg_pepper', value=None)
-
-        self.client.raw_driver.driver.set('upgrade.branch_name', value=None)
-        self.client.raw_driver.driver.set('upgrade.c_branch_name', value=None)
-
-        self.client.raw_driver.driver.set('upgrade.mn_vote', value=0)
-        self.client.raw_driver.driver.set('upgrade.dl_vote', value=0)
-        self.client.raw_driver.driver.set('upgrade.tot_mn', value=0)
-        self.client.raw_driver.driver.set('upgrade.tot_dl', value=0)
-
-        self.client.raw_driver.commit()
-        self.client.raw_driver.clear_pending_state()
+        self.client.raw_driver.driver.set('upgrade.upgrade_state:consensus', None)
+        self.client.raw_driver.driver.set('upgrade.upgrade_state:locked', False)
 
         self.log.info('Reset upgrade contract variables.')
 

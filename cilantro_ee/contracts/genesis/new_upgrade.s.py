@@ -10,7 +10,7 @@ has_voted = Hash(default_value=False)   # Address -> Votes hash
 @construct
 def seed():
     upgrade_state['locked'] = False
-    upgrade_state['has_consensus'] = False
+    upgrade_state['consensus'] = False
 
     upgrade_state['votes'] = 0
     upgrade_state['voters'] = 0

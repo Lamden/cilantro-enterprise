@@ -26,7 +26,6 @@ class TestFullFlowWithMocks(TestCase):
         self.ctx.destroy()
         self.loop.close()
 
-
     def test_vote_new_delegate(self):
         network = mocks.MockNetwork(num_of_masternodes=2, num_of_delegates=2, ctx=self.ctx)
 

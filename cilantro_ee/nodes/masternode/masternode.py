@@ -86,13 +86,15 @@ class Masternode(base.Node):
     def __init__(self, webserver_port=8080, *args, **kwargs):
         super().__init__(store=True, *args, **kwargs)
         # Services
+        self.webserver_port = webserver_port
         self.webserver = webserver.WebServer(
             contracting_client=self.client,
             driver=self.driver,
             blocks=self.blocks,
             wallet=self.wallet,
-            port=webserver_port
+            port=self.webserver_port
         )
+        self.upgrade_manager.webserver_port = self.webserver_port
 
         self.tx_batcher = TransactionBatcher(wallet=self.wallet, queue=[])
         self.webserver.queue = self.tx_batcher.queue

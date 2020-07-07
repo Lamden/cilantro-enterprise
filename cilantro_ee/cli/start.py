@@ -126,7 +126,7 @@ def start_node(args):
 
     # Kill the
     if args.pid > -1:
-        subprocess.check_call(['kill', '-15', args.pid])
+        subprocess.check_call(['kill', '-15', str(args.pid)])
 
     if args.node_type == 'masternode':
         # Start mongo

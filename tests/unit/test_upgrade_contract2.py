@@ -25,80 +25,121 @@ class TestUpdateContractFix(TestCase):
             root=cilantro_ee.contracts.__path__[0]
         )
 
+        with open(cilantro_ee.contracts.__path__[0] + '/genesis/new_upgrade.s.py') as f:
+            code = f.read()
+            self.client.submit(code, name='new_upgrade')
+
+        self.upgrade = self.client.get_contract('new_upgrade')
+
     def tearDown(self):
         self.client.flush()
 
-    def test_init_state(self):
-        upgrade = self.client.get_contract('upgrade')
-        lock = upgrade.quick_read(variable='upg_lock')
-        consensus = upgrade.quick_read(variable='upg_consensus')
+    def test_initial_state(self):
+        self.assertEqual(self.upgrade.upgrade_state['locked'], False)
+        self.assertEqual(self.upgrade.upgrade_state['has_consensus'], False)
 
-        self.assertEqual(lock, False)
-        self.assertEqual(consensus, False)
+        self.assertEqual(self.upgrade.upgrade_state['votes'], 0)
+        self.assertEqual(self.upgrade.upgrade_state['voters'], 0)
 
-    def test_trigger(self):
-        p = build_pepper()
-        vk = self.mn_wallets[0]
+    def test_is_valid_voter_true_for_master(self):
+        r = self.upgrade.run_private_function(
+            f='is_valid_voter',
+            address=self.mn_wallets[0]
+        )
+        self.assertTrue(r)
 
-        upgrade = self.client.get_contract('upgrade')
-        upgrade.trigger_upgrade(cilantro_branch_name='dev', pepper=p, initiator_vk=vk)
-        state = upgrade.quick_read(variable='upg_lock')
+    def test_is_valid_voter_true_for_delegate(self):
+        r = self.upgrade.run_private_function(
+            f='is_valid_voter',
+            address=self.dn_wallets[0]
+        )
+        self.assertTrue(r)
 
-        self.assertEqual(state, True)
+    def test_is_valid_voter_false_for_others(self):
+        r = self.upgrade.run_private_function(
+            f='is_valid_voter',
+            address=Wallet().verifying_key
+        )
+        self.assertFalse(r)
 
-    def test_consensys_n_reset(self):
-        upgrade = self.client.get_contract('upgrade')
-        p = build_pepper()
-        br_name = 'ori1-rel-gov-socks'
+    def test_start_vote_sets_state(self):
+        self.upgrade.run_private_function(
+            f='start_vote',
+            cilantro_branch_name='hello1',
+            contracting_branch_name='hello2',
+            pepper='123xyz'
+        )
 
-        upgrade.trigger_upgrade(cilantro_branch_name=br_name, contract_branch_name=br_name, pepper= p, initiator_vk=self.mn_wallets[0])
+        self.assertEqual(self.upgrade.upgrade_state['locked'], True)
+        self.assertEqual(self.upgrade.upgrade_state['has_consensus'], False)
 
-        upgrade.quick_write(variable='tot_mn', value=3)
-        upgrade.quick_write(variable='tot_dl', value=3)
-        upgrade.quick_write(variable='mn_vote', value=1)
-        upgrade.quick_write(variable='dl_vote', value=2)
+        self.assertEqual(self.upgrade.upgrade_state['votes'], 0)
+        self.assertEqual(self.upgrade.upgrade_state['voters'], 6)
 
-        upg_lock = upgrade.quick_read(variable='upg_lock')
-        self.assertEqual(upg_lock, True)
-        upgrade.vote(vk="tejas")
+        self.assertEqual(self.upgrade.upgrade_state['pepper'], '123xyz')
+        self.assertEqual(self.upgrade.upgrade_state['cilantro_branch_name'], 'hello1')
+        self.assertEqual(self.upgrade.upgrade_state['contracting_branch_name'], 'hello2')
 
-        master_votes = upgrade.quick_read(variable='mn_vote')
-        del_votes = upgrade.quick_read(variable='dl_vote')
+    def test_first_vote_starts_vote(self):
+        self.upgrade.vote(
+            signer=self.mn_wallets[0],
+            cilantro_branch_name='hello1',
+            contracting_branch_name='hello2',
+            pepper='123xyz'
+        )
 
-        print(master_votes)
-        print(del_votes)
-        result = upgrade.quick_read(variable='upg_consensus')
-        print(result)
+        self.assertEqual(self.upgrade.upgrade_state['locked'], True)
+        self.assertEqual(self.upgrade.upgrade_state['has_consensus'], False)
 
-        self.assertEqual(result, False)
-        upgrade.vote(vk= self.dn_wallets[0])
-        upgrade.vote(vk=self.dn_wallets[1])
-        master_votes = upgrade.quick_read(variable='mn_vote')
-        del_votes = upgrade.quick_read(variable='dl_vote')
-        br_name_contract = upgrade.quick_read(variable='branch_name')
-        self.assertEqual(br_name, br_name_contract)
-        self.assertEqual(master_votes, 1)
-        self.assertEqual(del_votes, 4)
-        result = upgrade.quick_read(variable='upg_consensus')
+        self.assertEqual(self.upgrade.upgrade_state['votes'], 1)
+        self.assertEqual(self.upgrade.upgrade_state['voters'], 6)
 
-        self.assertEqual(result, True)
+        self.assertEqual(self.upgrade.upgrade_state['pepper'], '123xyz')
+        self.assertEqual(self.upgrade.upgrade_state['cilantro_branch_name'], 'hello1')
+        self.assertEqual(self.upgrade.upgrade_state['contracting_branch_name'], 'hello2')
+
+        self.assertEqual(self.upgrade.has_voted[self.mn_wallets[0]], True)
+
+    def test_second_vote_fails_if_already_voted(self):
+        self.upgrade.vote(
+            signer=self.mn_wallets[0],
+            cilantro_branch_name='hello1',
+            contracting_branch_name='hello2',
+            pepper='123xyz'
+        )
+
+        with self.assertRaises(AssertionError):
+            self.upgrade.vote(signer=self.mn_wallets[0])
+
+    def test_non_voter_cannot_vote(self):
+        with self.assertRaises(AssertionError):
+            self.upgrade.vote(signer='someone')
+
+    def test_two_thirds_sets_consensus_to_true(self):
+        self.upgrade.vote(
+            signer=self.mn_wallets[0],
+            cilantro_branch_name='hello1',
+            contracting_branch_name='hello2',
+            pepper='123xyz'
+        )
+
+        self.upgrade.vote(signer=self.mn_wallets[1])
+        self.upgrade.vote(signer=self.mn_wallets[2])
+        self.upgrade.vote(signer=self.dn_wallets[0])
+
+        self.assertTrue(self.upgrade.upgrade_state['consensus'])
 
     def test_build_pepper(self):
         p = build_pepper()
         self.assertEqual(p, p)
 
     def test_git_branch(self):
-        path = os.path.join( os.path.dirname(cilantro_ee.__file__), '..')
+        path = os.path.join(os.path.dirname(cilantro_ee.__file__), '..')
         os.chdir(path)
 
-        new_branch_name=None
-        # subprocess.check_call(['git', "rev-parse", "--abbrev", "-ref", "HEAD"])  # git rev-parse --abbrev-ref HEAD
         from subprocess import check_output
         new_branch_name = check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).rstrip().decode()
-        print (new_branch_name)
+        print(new_branch_name)
         old_branch = get_version()
         flag = 'ori1-rel-gov-socks-upg' == old_branch
-        print(flag)
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertFalse(flag)

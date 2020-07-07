@@ -97,11 +97,7 @@ class UpgradeManager:
                             self.reset_contract_variables()
 
                             if not self.testing:
-                                pass
-
-                            if not only_contract:
-                                reload_module('cilantro_ee')
-                            reload_module('contracting')
+                                self.restart_node()
 
                             self.log.info(f'New branch {self.branch_name} was reloaded OK.')
                             self.upgrade = False
@@ -171,13 +167,14 @@ def verify_cil_pkg(pkg_hash):
 def run(*args):
     return subprocess.check_call(['git'] + list(args))
 
+
 def run_install(only_contract=False):
     if not only_contract:
         path = os.path.join(os.path.dirname(cilantro_ee.__file__),  '..')
         os.chdir(f'{path}')
         subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
 
-    path2 =  os.path.join(os.path.dirname(contracting.__file__),  '..')
+    path2 = os.path.join(os.path.dirname(contracting.__file__),  '..')
     os.chdir(f'{path2}')
     return subprocess.check_call(['python3', "setup.py", "develop"])  # "install"
 

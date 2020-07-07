@@ -168,7 +168,7 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 function='vote',
                 kwargs={
                     'cilantro_branch_name': current_branch,
-                    'contract_branch_name': current_contracting_branch,
+                    'contracting_branch_name': current_contracting_branch,
                     'pepper': pepper,
                 },
                 wallet=network.masternodes[0].wallet

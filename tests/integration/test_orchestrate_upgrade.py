@@ -277,21 +277,13 @@ class TestUpgradeOrchestration(unittest.TestCase):
                 function='vote',
                 kwargs={
                     'cilantro_branch_name': new_branch,
-                    'contract_branch_name': current_contracting_branch,
+                    'contracting_branch_name': current_contracting_branch,
                     'pepper': pepper,
                 },
                 wallet=network.masternodes[0].wallet
             )
 
             await asyncio.sleep(4)
-
-            await network.make_and_push_tx(
-                contract='upgrade',
-                function='vote',
-                wallet=network.masternodes[0].wallet
-            )
-
-            await asyncio.sleep(2)
 
             await network.make_and_push_tx(
                 contract='upgrade',
@@ -320,14 +312,6 @@ class TestUpgradeOrchestration(unittest.TestCase):
 
             await asyncio.sleep(4)
 
-            await network.make_and_push_tx(
-                contract='upgrade',
-                function='vote',
-                wallet=network.delegates[2].wallet,
-                mn_idx=0
-            )
-
-            await asyncio.sleep(7)
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())

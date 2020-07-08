@@ -95,6 +95,7 @@ class Masternode(base.Node):
             port=self.webserver_port
         )
         self.upgrade_manager.webserver_port = self.webserver_port
+        self.upgrade_manager.node_type = 'masternode'
 
         self.tx_batcher = TransactionBatcher(wallet=self.wallet, queue=[])
         self.webserver.queue = self.tx_batcher.queue
@@ -255,7 +256,7 @@ class Masternode(base.Node):
 
     async def loop(self):
         self.log.info('=== ENTERING SEND WORK STATE ===')
-        self.upgrade_manager.version_check()
+        self.upgrade_manager.version_check(constitution=self.make_constitution())
 
         block = await self.get_work_processed()
 

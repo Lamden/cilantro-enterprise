@@ -94,7 +94,7 @@ def ensure_in_constitution(verifying_key: str, constitution: dict):
 
 class Node:
     def __init__(self, socket_base, ctx: zmq.asyncio.Context, wallet, constitution: dict, bootnodes={}, blocks=storage.BlockStorage(),
-                 driver=ContractDriver(), debug=True, store=False, seed=None, bypass_catchup=False,
+                 driver=ContractDriver(), debug=True, store=False, seed=None, bypass_catchup=False, node_type=None,
                  genesis_path=cilantro_ee.contracts.__path__[0], reward_manager=rewards.RewardManager(), nonces=storage.NonceStorage()):
 
         self.driver = driver
@@ -348,3 +348,9 @@ class Node:
 
     def get_masternode_peers(self):
         return self._get_member_peers('masternodes')
+
+    def make_constitution(self):
+        return {
+            'masternodes': self.get_masternode_peers(),
+            'delegates': self.get_delegate_peers()
+        }

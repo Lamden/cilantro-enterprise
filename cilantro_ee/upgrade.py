@@ -9,6 +9,8 @@ import contracting
 import os
 import importlib
 import sys
+import secrets
+import json
 
 from functools import partial
 
@@ -20,7 +22,7 @@ def reload_module(module_name: str):
 
 
 class UpgradeManager:
-    def __init__(self, client: ContractingClient, wallet=None, node_type=None, constitution_filename=None, webserver_port=None, testing=False):
+    def __init__(self, client: ContractingClient, wallet=None, node_type=None, constitution_filename=None, webserver_port=18080, testing=False):
         self.client = client
         self.enabled = None
         self.log = get_logger('UPGRADE')
@@ -56,7 +58,7 @@ class UpgradeManager:
 
         self.pepper = self.get(arguments=['pepper'])
 
-    def version_check(self):
+    def version_check(self, constitution={}):
         self.refresh()
 
         enabled = self.client.get_contract('upgrade') is not None
@@ -127,13 +129,18 @@ class UpgradeManager:
 
         self.log.info('Reset upgrade contract variables.')
 
-    def restart_node(self):
+    def restart_node(self, constitution):
+        # Write the constitution
+        constitution_file = f'/tmp/{secrets.token_hex(32)}.json'
+        with open(constitution_file, 'w') as f:
+            json.dump(constitution, f)
+
         self_pid = os.getpid()
         subprocess.check_call(
             ['nohup',
              'cil', 'start', self.node_type,
              '-k', self.wallet.signing_key,
-             '-c', self.constitution_filename,
+             '-c', constitution_file,
              '-wp', self.webserver_port,
              '-p', self_pid,
              '-b', True,

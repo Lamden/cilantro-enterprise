@@ -115,6 +115,8 @@ class Delegate(base.Node):
         self.work_processor = WorkProcessor(client=self.client, nonces=self.nonces)
         self.router.add_service(WORK_SERVICE, self.work_processor)
 
+        self.upgrade_manager.node_type = 'delegate'
+
         self.log = get_logger(f'Delegate {self.wallet.vk_pretty[4:12]}')
 
     async def start(self):
@@ -202,7 +204,7 @@ class Delegate(base.Node):
 
     async def loop(self):
         self.log.info('=== ENTERING PROCESS NEW WORK STATE ===')
-        self.upgrade_manager.version_check()
+        self.upgrade_manager.version_check(constitution=self.make_constitution())
 
         await self.process_new_work()
 

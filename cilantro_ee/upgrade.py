@@ -141,9 +141,9 @@ class UpgradeManager:
              'cil', 'start', self.node_type,
              '-k', self.wallet.signing_key,
              '-c', constitution_file,
-             '-wp', self.webserver_port,
-             '-p', self_pid,
-             '-b', True,
+             '-wp', str(self.webserver_port),
+             '-p', str(self_pid),
+             '-b', 'true',
              '&']
         )
 

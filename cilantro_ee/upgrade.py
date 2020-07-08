@@ -131,13 +131,11 @@ class UpgradeManager:
 
     def restart_node(self, constitution):
         for k, v in constitution['masternodes'].items():
-            v = v.rstrip('/')
-            v = v.lstrip('tcp://')
+            v = v.split(':')[1].lstrip('//')
             constitution['masternodes'][k] = v
 
         for k, v in constitution['delegates'].items():
-            v = v.rstrip('/')
-            v = v.lstrip('tcp://')
+            v = v.split(':')[1].lstrip('//')
             constitution['delegates'][k] = v
 
         # Write the constitution

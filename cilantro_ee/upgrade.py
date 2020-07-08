@@ -107,7 +107,7 @@ class UpgradeManager:
                             self.reset_contract_variables()
 
                             if not self.testing:
-                                self.restart_node()
+                                self.restart_node(constitution=constitution)
 
                             self.log.info(f'New branch {self.cilantro_branch_name} was reloaded OK.')
                             self.upgrade = False

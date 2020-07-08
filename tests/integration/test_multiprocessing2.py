@@ -34,6 +34,11 @@ class TestFullFlowWithMocks(TestCase):
         candidate = Wallet()
         candidate2 = Wallet()
 
+        N_tx= 50
+        w_stu =[]
+        for k in range(N_tx):
+            w_stu.append(Wallet())
+
         async def test():
             await network.start()
             network.refresh()
@@ -44,38 +49,39 @@ class TestFullFlowWithMocks(TestCase):
                 function='transfer',
                 kwargs={
                     'amount': 1_000_000,
-                    'to': stu.verifying_key
+                    'to': w_stu[0].verifying_key
                 }
             )
+            # for k in range(1,N_tx):
+            #     await network.make_and_push_tx(
+            #         wallet=mocks.TEST_FOUNDATION_WALLET,
+            #         contract='currency',
+            #         function='transfer',
+            #         kwargs={
+            #             'amount': 2,
+            #             'to': w_stu[0].verifying_key
+            #         }
+            #     )
 
-            await asyncio.sleep(1)
-            await network.make_and_push_tx(
-                wallet=stu,
-                contract='currency',
-                function='transfer',
-                kwargs={
-                    'amount': 1338,
-                    'to': candidate.verifying_key
-                },
-            )
 
-            await asyncio.sleep(1)
-            await network.make_and_push_tx(
-                wallet=candidate,
-                contract='currency',
-                function='transfer',
-                kwargs={
-                    'amount': 10,
-                    'to': candidate2.verifying_key
-                },
-            )
-
-            await asyncio.sleep(14)
+            for k1 in range(N_tx -1):
+                # await asyncio.sleep(1)
+                k = N_tx - k1 - 2
+                await network.make_and_push_tx(
+                    wallet=w_stu[k],
+                    contract='currency',
+                    function='transfer',
+                    kwargs={
+                        'amount': 10,
+                        'to': w_stu[k+1].verifying_key
+                    },
+                )
+            await asyncio.sleep(2)
 
             self.assertEqual(network.get_var(
                 contract='currency',
                 variable='balances',
-                arguments=[candidate2.verifying_key]
+                arguments=[w_stu[N_tx-1].verifying_key]
             ), 10)
 
         self.loop.run_until_complete(test())

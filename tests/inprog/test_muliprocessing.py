@@ -60,11 +60,11 @@ class TestMultiprocessing(unittest.TestCase):
             contract='currency',
             function='transfer',
             kwargs={
-                'amount': 11_000 + k,
+                'amount': 22_000 + k,
                 'to': w_stu2[k].verifying_key
             },
             sender=w_stu1[k]
-            , pidx=1, add_mint= False
+            , pidx=1, add_mint= 10_000
         ))
 
         block_2 = []
@@ -77,7 +77,7 @@ class TestMultiprocessing(unittest.TestCase):
                 'to': w_stu[k].verifying_key
             },
             sender=w_stu2[k]
-            , pidx=2, add_mint= False
+            , pidx=2, add_mint= 1_000
         ))
         async def test():
             await o.start_network

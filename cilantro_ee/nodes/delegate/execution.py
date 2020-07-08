@@ -12,7 +12,7 @@ log = get_logger('EXE')
 import multiprocessing as mp
 import copy
 from time import time
-__N_WORKER__ = 3
+__N_WORKER__ = 8
 PoolExecutor = None
 def setPoolExecutor(executor):
     global PoolExecutor
@@ -90,13 +90,16 @@ def execute_tx_batch(executor, driver, batch, timestamp, input_hash, stamp_cost)
     tx_data = copy.deepcopy(result_list2)
     result_list2 = []
     tx_done_ok = [ tx['tx_number'] for tx in tx_data]
-    log.debug(f"tx_data={len(tx_data)}  tx_done_ok={tx_done_ok}")
+    tx_bad = [ tx['tx_number']  for tx in tx_data  if tx['status'] != 0]
+    log.debug(f"tx_data={len(tx_data)}  tx_done_ok={tx_done_ok}  tx_bad={tx_bad}")
+
+
     if len(tx_done_ok) < len(batch['transactions']):
         pool = mp.Pool(processes=__N_WORKER__)
         i = 0
         for transaction in batch['transactions']:
             if i not in tx_done_ok:
-                log.debug(f'rerurn Transaction {i}')  # {execute_tx(transaction, stamp_cost, environment)}
+                log.debug(f'rerun Transaction {i}')  # {execute_tx(transaction, stamp_cost, environment)}
                 pool.apply_async(execute_tx, args = (transaction, stamp_cost, environment) , callback = tx_result)
                 i += 1
         pool.close()

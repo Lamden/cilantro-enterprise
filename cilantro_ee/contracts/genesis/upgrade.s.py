@@ -54,6 +54,7 @@ def vote(**kwargs):
         start_vote(**kwargs)
     elif upgrade_state['votes'] + 1 >= (upgrade_state['voters'] * 2 // 3):
         upgrade_state['consensus'] = True
+        has_voted.clear()
 
     upgrade_state['votes'] += 1
     has_voted[ctx.caller] = True

@@ -127,7 +127,7 @@ class Node:
             bootnodes=self.bootnodes, ctx=self.ctx, client=self.client
         )
 
-        self.upgrade_manager = upgrade.UpgradeManager(client=self.client)
+        self.upgrade_manager = upgrade.UpgradeManager(client=self.client, wallet=self.wallet, node_type=node_type)
 
         self.router = router.Router(
             socket_id=socket_base,

@@ -139,7 +139,8 @@ def start_node(args):
             bootnodes=bootnodes,
             constitution=const,
             webserver_port=args.webserver_port,
-            bypass_catchup=args.bypass_catchup
+            bypass_catchup=args.bypass_catchup,
+            node_type=args.node_type
         )
     elif args.node_type == 'delegate':
         n = Delegate(
@@ -148,7 +149,8 @@ def start_node(args):
             socket_base=socket_base,
             bootnodes=bootnodes,
             constitution=const,
-            bypass_catchup=args.bypass_catchup
+            bypass_catchup=args.bypass_catchup,
+            node_type=args.node_type
         )
 
     loop = asyncio.get_event_loop()
@@ -193,7 +195,8 @@ def join_network(args):
             constitution=const,
             webserver_port=args.webserver_port,
             bootnodes=bootnodes,
-            seed=mn_seed
+            seed=mn_seed,
+            node_type=args.node_type
         )
     elif args.node_type == 'delegate':
         start_mongo()
@@ -203,7 +206,8 @@ def join_network(args):
             socket_base=socket_base,
             constitution=const,
             bootnodes=bootnodes,
-            seed=mn_seed
+            seed=mn_seed,
+            node_type=args.node_type
         )
 
     loop = asyncio.get_event_loop()

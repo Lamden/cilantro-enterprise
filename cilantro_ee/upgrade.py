@@ -130,6 +130,16 @@ class UpgradeManager:
         self.log.info('Reset upgrade contract variables.')
 
     def restart_node(self, constitution):
+        for k, v in constitution['masternodes'].items():
+            v = v.rstrip('/')
+            v = v.lstrip('tcp://')
+            constitution['masternodes'][k] = v
+
+        for k, v in constitution['delegates'].items():
+            v = v.rstrip('/')
+            v = v.lstrip('tcp://')
+            constitution['delegates'][k] = v
+
         # Write the constitution
         constitution_file = f'/tmp/{secrets.token_hex(32)}.json'
         with open(constitution_file, 'w') as f:

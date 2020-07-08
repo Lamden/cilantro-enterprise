@@ -136,16 +136,7 @@ class UpgradeManager:
             json.dump(constitution, f)
 
         self_pid = os.getpid()
-        subprocess.check_call(
-            ['nohup',
-             'cil', 'start', self.node_type,
-             '-k', self.wallet.signing_key,
-             '-c', constitution_file,
-             '-wp', str(self.webserver_port),
-             '-p', str(self_pid),
-             '-b', 'true',
-             '&']
-        )
+        subprocess.call(f'nohup cil start {self.node_type} -k {self.wallet.signing_key} -c {constitution_file} -wp {str(self.webserver_port)} -p {str(self_pid)} -b true &')
 
 
 def build_pepper(pkg_dir_path=os.path.dirname(cilantro_ee.__file__)):

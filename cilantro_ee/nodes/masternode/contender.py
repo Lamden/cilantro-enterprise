@@ -177,14 +177,14 @@ class SubBlockContender:
 
     @property
     def serialized_solution(self):
-        if not self.has_adequate_consensus or self.failed:
-            return None
+        #if not self.has_adequate_consensus or self.failed:
+        #    return None
 
         return self.best_solution.struct_to_dict()
 
 
 class BlockContender:
-    def __init__(self, total_contacts, total_subblocks, required_consensus=0.50, acceptable_consensus=0.33):
+    def __init__(self, total_contacts, total_subblocks, required_consensus=0.66, acceptable_consensus=0.5):
         self.total_contacts = total_contacts
         self.total_subblocks = total_subblocks
 
@@ -280,7 +280,7 @@ class Aggregator:
         self.log = get_logger('AGG')
         self.log.propagate = debug
 
-    async def gather_subblocks(self, total_contacts, current_height=0, current_hash='0' * 64, quorum_ratio=0.50, adequate_ratio=0.33, expected_subblocks=4):
+    async def gather_subblocks(self, total_contacts, current_height=0, current_hash='0' * 64, quorum_ratio=0.66, adequate_ratio=0.5, expected_subblocks=4):
         self.sbc_inbox.expected_subblocks = expected_subblocks
 
         self.log.info(f'Expecting {expected_subblocks} subblocks from {total_contacts} delegates.')

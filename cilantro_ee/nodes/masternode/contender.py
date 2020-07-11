@@ -304,6 +304,8 @@ class Aggregator:
 
         block = contenders.get_current_best_block()
 
+        self.log.info(f'Best block: {block}')
+
         return block_from_subblocks(
             block,
             previous_hash=current_hash,

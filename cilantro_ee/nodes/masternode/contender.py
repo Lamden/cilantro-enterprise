@@ -123,12 +123,15 @@ class SubBlockContender:
         self.required_consensus = required_consensus
         self.adequate_consensus = adequate_consensus
 
+        self.log = get_logger('SBC')
+
     def add_potential_solution(self, sbc):
         result_hash = sbc['merkle_tree']['leaves'][0]
 
         # Create a new potential solution if it is a new result hash
         if self.potential_solutions.get(result_hash) is None:
             self.potential_solutions[result_hash] = PotentialSolution(struct=sbc)
+            self.log.info(f'New result found. Creating a new solution: {result_hash[:8]}')
 
         # Add the signature to the potential solution
         p = self.potential_solutions.get(result_hash)

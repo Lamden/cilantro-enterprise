@@ -142,6 +142,8 @@ class SubBlockContender:
             self.best_solution = p
             self.log.info(f'New best result: {result_hash[:8]}')
 
+        self.log.info(f'Best solution votes: {self.best_solution.votes}')
+
         self.total_responses += 1
 
     @property

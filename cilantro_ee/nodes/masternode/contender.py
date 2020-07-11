@@ -140,6 +140,7 @@ class SubBlockContender:
         # Update the best solution if the current potential solution now has more votes
         if self.best_solution is None or p.votes > self.best_solution.votes:
             self.best_solution = p
+            self.log.info(f'New best result: {result_hash[:8]}')
 
         self.total_responses += 1
 

@@ -122,8 +122,10 @@ class TestCurrentContenders(TestCase):
     def test_adding_same_input_and_result_adds_to_the_set(self):
         # Input: 2 blocks
 
-        a = MockSBC(1, 2, 3).to_dict()
-        b = MockSBC(1, 2, 3).to_dict()
+        res = secrets.token_hex(8)
+
+        a = MockSBC(1, res, 3).to_dict()
+        b = MockSBC(1, res, 3).to_dict()
 
         c = [a, b]
 
@@ -133,13 +135,13 @@ class TestCurrentContenders(TestCase):
 
         sb = con.subblock_contenders[3]
 
-        self.assertEqual(sb.potential_solutions[2].votes, 2)
+        self.assertEqual(sb.potential_solutions[res].votes, 2)
 
     def test_adding_sbcs_updates_top_vote_initially(self):
         # Input: 2 blocks with different input hashes
-
-        a = MockSBC(1, 2, 1).to_dict()
-        b = MockSBC(2, 2, 3).to_dict()
+        res_1 = secrets.token_hex(8)
+        a = MockSBC(1, res_1, 1).to_dict()
+        b = MockSBC(2, res_1, 3).to_dict()
 
         c = [a, b]
 
@@ -157,8 +159,9 @@ class TestCurrentContenders(TestCase):
 
         # Input: 2 blocks with more different results
         # Check; votes for the first two potential solutions is still one
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=2, result=2, index=3).to_dict()
+        res_1 = secrets.token_hex(8)
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=2, result=res_1, index=3).to_dict()
 
         c = [a, b]
 
@@ -169,8 +172,9 @@ class TestCurrentContenders(TestCase):
         self.assertEqual(con.subblock_contenders[1].best_solution.votes, 1)
         self.assertEqual(con.subblock_contenders[3].best_solution.votes, 1)
 
-        a = MockSBC(input=1, result=3, index=1).to_dict()
-        b = MockSBC(input=2, result=3, index=3).to_dict()
+        res_2 = secrets.token_hex(8)
+        a = MockSBC(input=1, result=res_2, index=1).to_dict()
+        b = MockSBC(input=2, result=res_2, index=3).to_dict()
 
         c = [a, b]
 
@@ -180,8 +184,9 @@ class TestCurrentContenders(TestCase):
         self.assertEqual(con.subblock_contenders[3].best_solution.votes, 1)
 
     def test_adding_sbcs_increments_top_vote_if_new_result_multiple_and_more_than_previous_top_vote(self):
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=2, result=2, index=3).to_dict()
+        res_1 = secrets.token_hex(8)
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=2, result=res_1, index=3).to_dict()
 
         c = [a, b]
 
@@ -192,8 +197,9 @@ class TestCurrentContenders(TestCase):
         self.assertEqual(con.subblock_contenders[1].best_solution.votes, 1)
         self.assertEqual(con.subblock_contenders[3].best_solution.votes, 1)
 
-        a = MockSBC(input=1, result=3, index=1).to_dict()
-        b = MockSBC(input=2, result=3, index=3).to_dict()
+        res_2 = secrets.token_hex(8)
+        a = MockSBC(input=1, result=res_2, index=1).to_dict()
+        b = MockSBC(input=2, result=res_2, index=3).to_dict()
 
         c = [a, b]
 
@@ -202,8 +208,8 @@ class TestCurrentContenders(TestCase):
         self.assertEqual(con.subblock_contenders[1].best_solution.votes, 1)
         self.assertEqual(con.subblock_contenders[3].best_solution.votes, 1)
 
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=2, result=2, index=3).to_dict()
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=2, result=res_1, index=3).to_dict()
 
         c = [a, b]
 
@@ -290,8 +296,10 @@ class TestCurrentContenders(TestCase):
     def test_blocks_added_to_finished_when_quorum_met(self):
         con = contender.BlockContender(total_contacts=2, required_consensus=0.66, total_subblocks=4)
 
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=2, result=2, index=3).to_dict()
+        res_1 = secrets.token_hex(8)
+
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=2, result=res_1, index=3).to_dict()
 
         c = [a, b]
 
@@ -299,8 +307,10 @@ class TestCurrentContenders(TestCase):
 
         self.assertFalse(con.block_has_consensus())
 
-        a = MockSBC(1, 1, 1).to_dict()
-        b = MockSBC(2, 2, 3).to_dict()
+        res_2 = secrets.token_hex(8)
+
+        a = MockSBC(1, res_2, 1).to_dict()
+        b = MockSBC(2, res_1, 3).to_dict()
 
         c = [a, b]
 
@@ -311,8 +321,10 @@ class TestCurrentContenders(TestCase):
     def test_out_of_range_index_not_added(self):
         con = contender.BlockContender(total_contacts=2, required_consensus=0.66, total_subblocks=4)
 
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=2, result=2, index=300).to_dict()
+        res_1 = secrets.token_hex(8)
+
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=2, result=res_1, index=300).to_dict()
 
         c = [a, b]
 
@@ -323,7 +335,9 @@ class TestCurrentContenders(TestCase):
     def test_subblock_has_consensus_false_if_not_quorum(self):
         con = contender.BlockContender(total_contacts=2, required_consensus=0.66, total_subblocks=4)
 
-        a = MockSBC(input=1, result=2, index=1).to_dict()
+        res_1 = secrets.token_hex(8)
+
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
 
         c = [a]
 
@@ -334,17 +348,19 @@ class TestCurrentContenders(TestCase):
     def test_block_true_if_all_blocks_have_consensus(self):
         con = contender.BlockContender(total_contacts=2, required_consensus=0.66, total_subblocks=4)
 
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=1, result=2, index=1).to_dict()
+        res_1 = secrets.token_hex(8)
 
-        c = MockSBC(input=1, result=2, index=2).to_dict()
-        d = MockSBC(input=1, result=2, index=2).to_dict()
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=1, result=res_1, index=1).to_dict()
 
-        e = MockSBC(input=1, result=2, index=3).to_dict()
-        f = MockSBC(input=1, result=2, index=3).to_dict()
+        c = MockSBC(input=1, result=res_1, index=2).to_dict()
+        d = MockSBC(input=1, result=res_1, index=2).to_dict()
 
-        g = MockSBC(input=1, result=2, index=0).to_dict()
-        h = MockSBC(input=1, result=2, index=0).to_dict()
+        e = MockSBC(input=1, result=res_1, index=3).to_dict()
+        f = MockSBC(input=1, result=res_1, index=3).to_dict()
+
+        g = MockSBC(input=1, result=res_1, index=0).to_dict()
+        h = MockSBC(input=1, result=res_1, index=0).to_dict()
 
         con.add_sbcs([a, b, c, d, e, f, g, h])
 
@@ -353,17 +369,19 @@ class TestCurrentContenders(TestCase):
     def test_block_false_if_one_subblocks_doesnt_have_consensus(self):
         con = contender.BlockContender(total_contacts=2, required_consensus=0.66, total_subblocks=4)
 
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=1, result=2, index=1).to_dict()
+        res_1 = secrets.token_hex(8)
 
-        c = MockSBC(input=1, result=2, index=2).to_dict()
-        d = MockSBC(input=1, result=2, index=2).to_dict()
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=1, result=res_1, index=1).to_dict()
 
-        e = MockSBC(input=1, result=2, index=3).to_dict()
+        c = MockSBC(input=1, result=res_1, index=2).to_dict()
+        d = MockSBC(input=1, result=res_1, index=2).to_dict()
+
+        e = MockSBC(input=1, result=res_1, index=3).to_dict()
         # f = MockSBC(input=1, result=2, index=3)
 
-        g = MockSBC(input=1, result=2, index=0).to_dict()
-        h = MockSBC(input=1, result=2, index=0).to_dict()
+        g = MockSBC(input=1, result=res_1, index=0).to_dict()
+        h = MockSBC(input=1, result=res_1, index=0).to_dict()
 
         con.add_sbcs([a, b, c, d, e, g, h])
 
@@ -372,17 +390,19 @@ class TestCurrentContenders(TestCase):
     def test_block_false_if_one_subblock_is_none(self):
         con = contender.BlockContender(total_contacts=2, required_consensus=0.66, total_subblocks=4)
 
-        a = MockSBC(input=1, result=2, index=1).to_dict()
-        b = MockSBC(input=1, result=2, index=1).to_dict()
+        res_1 = secrets.token_hex(9)
 
-        c = MockSBC(input=1, result=2, index=2).to_dict()
-        d = MockSBC(input=1, result=2, index=2).to_dict()
+        a = MockSBC(input=1, result=res_1, index=1).to_dict()
+        b = MockSBC(input=1, result=res_1, index=1).to_dict()
+
+        c = MockSBC(input=1, result=res_1, index=2).to_dict()
+        d = MockSBC(input=1, result=res_1, index=2).to_dict()
 
         # e = MockSBC(input=1, result=2, index=3)
         # f = MockSBC(input=1, result=2, index=3)
 
-        g = MockSBC(input=1, result=2, index=0).to_dict()
-        h = MockSBC(input=1, result=2, index=0).to_dict()
+        g = MockSBC(input=1, result=res_1, index=0).to_dict()
+        h = MockSBC(input=1, result=res_1, index=0).to_dict()
 
         con.add_sbcs([a, b, c, d, g, h])
 

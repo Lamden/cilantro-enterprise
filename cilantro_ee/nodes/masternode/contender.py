@@ -180,7 +180,10 @@ class SubBlockContender:
         #if not self.has_adequate_consensus or self.failed:
         #    return None
 
-        return self.best_solution.struct_to_dict()
+        try:
+            return self.best_solution.struct_to_dict()
+        except:
+            return None
 
 
 class BlockContender:

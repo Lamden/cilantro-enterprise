@@ -29,7 +29,7 @@ class TestMultiprocessing(unittest.TestCase):
         stu1 = Wallet()
         stu2 = Wallet()
         stu3 = Wallet()
-        N_tx= 1
+        N_tx= 2
         w_stu =[]
         w_stu1 =[]
         w_stu2 =[]
@@ -81,13 +81,14 @@ class TestMultiprocessing(unittest.TestCase):
         ))
         async def test():
             await o.start_network
-            # o.refresh()
             await asyncio.sleep(2)
             await send_tx_batch(o.masternodes[0], block_0)
+            # await asyncio.sleep(2)
             await send_tx_batch(o.masternodes[1], block_1)
+            # await asyncio.sleep(2)
             await send_tx_batch(o.masternodes[2], block_2)
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(44)
 
             for k in range(N_tx):
                 # await asyncio.sleep(2)
@@ -117,7 +118,7 @@ class TestMultiprocessing(unittest.TestCase):
         stu1 = Wallet()
         stu2 = Wallet()
         stu3 = Wallet()
-        N_tx= 10
+        N_tx= 50
         w_stu =[]
         w_stu1 =[]
         w_stu2 =[]
@@ -173,11 +174,11 @@ class TestMultiprocessing(unittest.TestCase):
             await asyncio.sleep(2)
             await send_tx_batch(o.masternodes[0], [])
             await send_tx_batch(o.masternodes[0], block_0)
-            # await asyncio.sleep(8)
-            await send_tx_batch(o.masternodes[1], block_1)
-            # await asyncio.sleep(12)
-            await send_tx_batch(o.masternodes[2], block_2)
             await asyncio.sleep(2)
+            await send_tx_batch(o.masternodes[1], block_1)
+            await asyncio.sleep(2)
+            await send_tx_batch(o.masternodes[2], block_2)
+            await asyncio.sleep(44)
 
             for k in range(N_tx):
                 await asyncio.sleep(2)
@@ -190,9 +191,8 @@ class TestMultiprocessing(unittest.TestCase):
         # asyncio.start_server(server_coro)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test())
-        asyncio.sleep(12)
+        asyncio.sleep(4)
         a = o.get_var('currency', 'balances', [stu.verifying_key])
         c = o.get_var('currency', 'balances', [stu2.verifying_key])
-        print(f" 2) a,c ={a,c}")
         print('OK')
 

@@ -106,63 +106,63 @@ class TestProcessors(TestCase):
 
         self.assertIsNone(res)
 
-    def test_join_processor_good_message_offline_returns_none(self):
-        w = Wallet()
+    # def test_join_processor_good_message_offline_returns_none(self):
+    #     w = Wallet()
+    #
+    #     self.authenticator.add_verifying_key(w.verifying_key)
+    #     self.authenticator.configure()
+    #
+    #     msg = {
+    #         'vk': w.verifying_key,
+    #         'ip': 'tcp://127.0.0.1:18000'
+    #     }
+    #
+    #     j = JoinProcessor(
+    #         ctx=self.ctx,
+    #         peers={},
+    #         wallet=Wallet()
+    #     )
+    #
+    #     res = self.loop.run_until_complete(j.process_message(msg))
+    #     self.assertIsNone(res)
 
-        self.authenticator.add_verifying_key(w.verifying_key)
-        self.authenticator.configure()
-
-        msg = {
-            'vk': w.verifying_key,
-            'ip': 'tcp://127.0.0.1:18000'
-        }
-
-        j = JoinProcessor(
-            ctx=self.ctx,
-            peers={},
-            wallet=Wallet()
-        )
-
-        res = self.loop.run_until_complete(j.process_message(msg))
-        self.assertIsNone(res)
-
-    def test_join_processor_good_message_bad_proof_returns_none(self):
-        w = Wallet()
-
-        self.authenticator.add_verifying_key(w.verifying_key)
-        self.authenticator.configure()
-
-        msg = {
-            'vk': w.verifying_key,
-            'ip': 'tcp://127.0.0.1:18000'
-        }
-
-        j = JoinProcessor(
-            ctx=self.ctx,
-            peers={},
-            wallet=Wallet()
-        )
-
-        async def get():
-            res = await router.secure_request(
-                msg={"howdy": 123},
-                service=JOIN_SERVICE,
-                wallet=w,
-                vk=self.base_wallet.verifying_key,
-                ip=self.base_tcp,
-                ctx=self.ctx
-            )
-
-            return res
-
-        tasks = asyncio.gather(
-            get(),
-            j.process_message(msg)
-        )
-
-        res = self.loop.run_until_complete(tasks)
-
-        self.assertIsNone(res[1])
+    # def test_join_processor_good_message_bad_proof_returns_none(self):
+    #     w = Wallet()
+    #
+    #     self.authenticator.add_verifying_key(w.verifying_key)
+    #     self.authenticator.configure()
+    #
+    #     msg = {
+    #         'vk': w.verifying_key,
+    #         'ip': 'tcp://127.0.0.1:18000'
+    #     }
+    #
+    #     j = JoinProcessor(
+    #         ctx=self.ctx,
+    #         peers={},
+    #         wallet=Wallet()
+    #     )
+    #
+    #     async def get():
+    #         res = await router.secure_request(
+    #             msg={"howdy": 123},
+    #             service=JOIN_SERVICE,
+    #             wallet=w,
+    #             vk=self.base_wallet.verifying_key,
+    #             ip=self.base_tcp,
+    #             ctx=self.ctx
+    #         )
+    #
+    #         return res
+    #
+    #     tasks = asyncio.gather(
+    #         get(),
+    #         j.process_message(msg)
+    #     )
+    #
+    #     res = self.loop.run_until_complete(tasks)
+    #
+    #     self.assertIsNone(res[1])
 
     def test_join_processor_good_message_adds_to_peers(self):
         # Create a new peer (router and service)

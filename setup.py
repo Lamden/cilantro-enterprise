@@ -17,7 +17,7 @@ setup(
         # utils
         'coloredlogs',
         'checksumdir==1.1.7',
-        'PyNaCl==1.2.1',
+        'PyNaCl==1.6.2',
         'pyzmq==19.0.0',
         'requests>=2.21.0',
         'uvloop>=0.9.1',
